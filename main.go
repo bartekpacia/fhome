@@ -1,48 +1,59 @@
 package main
 
 import (
+	"flag"
 	"io"
 	"log"
-	"net/http"
+	"os"
 	"time"
 
 	"github.com/gorilla/websocket"
 )
 
+var (
+	email    string
+	uniqueID string
+)
+
 func init() {
 	log.SetFlags(0)
+
+	flag.StringVar(&email, "email", "", "email")
+	flag.StringVar(&uniqueID, "unique-id", "", "unique id")
 }
 
 const url = "wss://fhome.cloud/webapp-interface"
 
 var dialer = websocket.Dialer{
 	EnableCompression: true,
-	Proxy:             http.ProxyFromEnvironment,
 	HandshakeTimeout:  5 * time.Second,
 }
 
 func main() {
-	headers := http.Header{}
-	headers.Add("Pragma", "no-cache")
-	headers.Add("Accept-Encoding", "gzip, deflate, br")
-	headers.Add("Accept-Language", "pl-PL,pl;q=0.9,en-US;q=0.8,en;q=0.7")
-	conn, resp, err := websocket.DefaultDialer.Dial(url, headers)
+	// headers := http.Header{}
+	// headers.Add("Pragma", "no-cache")
+	// headers.Add("Accept-Encoding", "gzip, deflate, br")
+	// headers.Add("Accept-Language", "pl-PL,pl;q=0.9,en-US;q=0.8,en;q=0.7")
+	conn, resp, err := dialer.Dial(url, nil)
 	if err != nil {
+		log.Println("failed to dial:", err)
+
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			panic(err)
+			log.Fatalln("failed to read body:", err)
 		}
 
-		log.Println(resp.Header)
-		log.Println("body")
-		log.Println(string(body))
-		log.Fatalln("failed to dial:", err)
+		log.Printf("header: %s\n", resp.Header)
+		log.Printf("body: %s\n", string(body))
+
+		os.Exit(1)
 	}
+	defer conn.Close()
 
 	sessionMsg := make(map[string]string)
 	sessionMsg["action_name"] = "open_client_to_resource_session"
-	sessionMsg["email"] = "tomekpacia1975@gmail.com"
-	sessionMsg["unique_id"] = "uv83fYvi8aFbpe04rhKxfIF7h"
+	sessionMsg["email"] = email
+	sessionMsg["unique_id"] = uniqueID
 	sessionMsg["request_token"] = "2b359bfa7bb70"
 
 	err = conn.WriteJSON(sessionMsg)
