@@ -1,8 +1,5 @@
 all:
-	go build -o fhome main.go messages.go 
+	go build cmd/main.go
 
-cli:
-	go build -o fhome cmd/main.go
-
-clean:
-	rm fhome
+clean: main.go
+	rm main

@@ -25,36 +25,45 @@ var listCommand = cli.Command{
 		},
 	},
 	Action: func(c *cli.Context) error {
-		client := fhome.NewClient()
-
-		err := client.Connect()
+		client, err := fhome.NewClient()
 		if err != nil {
-			return fmt.Errorf("failed to connect: %v", err)
+			return fmt.Errorf("failed to create fhome client: %v", err)
 		}
+		email := os.Getenv("FHOME_EMAIL")
+		password := os.Getenv("FHOME_PASSWORD")
+
+		err = client.OpenClientSession(email, password)
+		if err != nil {
+			return fmt.Errorf("failed to open client session: %v", err)
+		}
+
+		log.Println("successfully opened client session")
 
 		_, err = client.GetMyResources()
 		if err != nil {
 			return fmt.Errorf("failed to get my resources: %v", err)
 		}
 
+		log.Println("successfully got my resources")
+
 		err = client.OpenClientToResourceSession()
 		if err != nil {
 			return fmt.Errorf("failed to open client to resource session: %v", err)
 		}
+
+		log.Println("successfully opened client to resource session")
 
 		file, err := client.GetUserConfig()
 		if err != nil {
 			return fmt.Errorf("failed to get user config: %v", err)
 		}
 
+		log.Println("successfully got user config")
+
 		fmt.Printf("there are %d cells\n", len(file.Cells))
 		for _, cell := range file.Cells {
 			fmt.Printf("id: %3d, name: %s\n", cell.ObjectID, cell.Name)
 		}
-
-		// verbose := c.Bool("verbose")
-
-		// err := fhome.List(verbose)
 		return nil
 	},
 }
@@ -77,7 +86,7 @@ var toggleCommand = cli.Command{
 		},
 	},
 	Action: func(c *cli.Context) error {
-		// verbose := c.Bool("verbose")
+		fmt.Println("not implemented")
 
 		return nil
 	},
