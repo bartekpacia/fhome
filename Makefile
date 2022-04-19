@@ -1,5 +1,5 @@
 all:
-	go build cmd/main.go
+	go build -o fhome cmd/main.go cmd/env.go
 
 clean: main.go
 	rm main

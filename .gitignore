@@ -1,3 +1,6 @@
 .env
 *.exe
 main
+
+fhome/
+!fhome

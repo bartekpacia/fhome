@@ -29,12 +29,11 @@ var listCommand = cli.Command{
 		if err != nil {
 			return fmt.Errorf("failed to create fhome client: %v", err)
 		}
-		email := os.Getenv("FHOME_EMAIL")
-		password := os.Getenv("FHOME_PASSWORD")
-		passwordHash := os.Getenv("FHOME_PASSWORD_HASH")
+		env := Env{}
+		env.Load()
 
 		// TODO: don't pass password hash
-		err = client.OpenClientSession(email, password, passwordHash)
+		err = client.OpenClientSession(env.email, env.password, env.passwordHash)
 		if err != nil {
 			return fmt.Errorf("failed to open client session: %v", err)
 		}
@@ -88,7 +87,43 @@ var toggleCommand = cli.Command{
 		},
 	},
 	Action: func(c *cli.Context) error {
-		fmt.Println("not implemented")
+		objectID := c.Int("object-id")
+
+		client, err := fhome.NewClient()
+		if err != nil {
+			return fmt.Errorf("failed to create fhome client: %v", err)
+		}
+		env := Env{}
+		env.Load()
+
+		// TODO: don't pass password hash
+		err = client.OpenClientSession(env.email, env.password, env.passwordHash)
+		if err != nil {
+			return fmt.Errorf("failed to open client session: %v", err)
+		}
+
+		log.Println("successfully opened client session")
+
+		_, err = client.GetMyResources()
+		if err != nil {
+			return fmt.Errorf("failed to get my resources: %v", err)
+		}
+
+		log.Println("successfully got my resources")
+
+		err = client.OpenClientToResourceSession()
+		if err != nil {
+			return fmt.Errorf("failed to open client to resource session: %v", err)
+		}
+
+		log.Println("successfully opened client to resource session")
+
+		err = client.XEvent(objectID, "0x4001", "HEX")
+		if err != nil {
+			return fmt.Errorf("failed to send xevent to object with id %d: %v", objectID, err)
+		}
+
+		log.Println("successfully sent xevent to object with id", objectID)
 
 		return nil
 	},

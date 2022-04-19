@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"strconv"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -33,7 +34,7 @@ type Client interface {
 
 	GetUserConfig() (*File, error)
 
-	XEvent(resourceID string, value string, eventType string) error
+	XEvent(resourceID int, value string, eventType string) error
 }
 
 type client struct {
@@ -244,8 +245,40 @@ func (c *client) GetUserConfig() (*File, error) {
 	}
 }
 
-func (c *client) XEvent(resourceID string, value string, eventType string) error {
-	return fmt.Errorf("not implemented yet")
+func (c *client) XEvent(resourceID int, value string, eventType string) error {
+	token := generateRequestToken()
+
+	actionName := ActionXEvent
+	err := c.conn.WriteJSON(XEvent{
+		ActionName:   ActionXEvent,
+		Login:        *c.email,
+		Password:     *c.passwordHash,
+		RequestToken: token,
+		CellID:       strconv.Itoa(resourceID),
+		Value:        "0x4001",
+		Type:         "HEX",
+	})
+	if err != nil {
+		return fmt.Errorf("failed to write %s to conn: %v", actionName, err)
+	}
+
+	for {
+		var response Response
+		err = c.conn.ReadJSON(&response)
+		if err != nil {
+			return fmt.Errorf("failed to read response: %v", err)
+		}
+
+		if response.RequestToken != token {
+			continue
+		}
+
+		if response.Status != "ok" || response.ActionName != actionName {
+			continue
+		}
+
+		return nil
+	}
 }
 
 func generateRequestToken() string {
