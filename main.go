@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bartekpacia/fhome/fhome"
 	"github.com/gorilla/websocket"
 )
 
@@ -61,8 +62,8 @@ func main() {
 	ack := make(chan interface{})
 	go listen(conn, ack)
 
-	err = conn.WriteJSON(OpenClientSessionMsg{
-		ActionName:   "open_client_to_resource_session",
+	err = conn.WriteJSON(fhome.OpenClientToResourceSession{
+		ActionName:   fhome.ActionOpenClienToResourceSession,
 		Email:        email,
 		UniqueID:     uniqueID,
 		RequestToken: requestToken,
@@ -74,13 +75,11 @@ func main() {
 	<-ack
 	log.Printf("success: open_client_to_resource_session")
 
-	err = conn.WriteJSON(XEventMsg{
-		Action: Action{
-			ActionName:   "xevent",
-			Login:        email,
-			Password:     hashPassword,
-			RequestToken: requestToken,
-		},
+	err = conn.WriteJSON(fhome.XEvent{
+		ActionName:   fhome.ActionXEvent,
+		Login:        email,
+		Password:     hashPassword,
+		RequestToken: requestToken,
 		CellID: strconv.Itoa(objectID),
 		Value:  "0x4001",
 		Type:   "HEX",
@@ -92,8 +91,8 @@ func main() {
 	<-ack
 	log.Println("success: xevent")
 
-	err = conn.WriteJSON(Action{
-		ActionName:   "get_user_config",
+	err = conn.WriteJSON(fhome.Action{
+		ActionName:   fhome.ActionGetUserConfig,
 		Login:        email,
 		Password:     hashPassword,
 		RequestToken: requestToken,
@@ -107,7 +106,7 @@ func main() {
 
 func listen(conn *websocket.Conn, ack chan interface{}) {
 	for {
-		var response Response
+		var response fhome.Response
 		err := conn.ReadJSON(&response)
 		if err != nil {
 			log.Fatalf("failed to read response: %s\n", err)
@@ -118,7 +117,7 @@ func listen(conn *websocket.Conn, ack chan interface{}) {
 		if response.ActionName == "get_user_config" {
 			strippedFile := strings.ReplaceAll(response.File, "\\", "")
 
-			file := File{}
+			file := fhome.File{}
 			err := json.Unmarshal([]byte(strippedFile), &file)
 			if err != nil {
 				log.Fatalf("failed to unmarshal json: %+v\n", err)
