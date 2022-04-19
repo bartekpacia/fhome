@@ -1,9 +1,11 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -16,6 +18,8 @@ var (
 	uniqueID     string
 )
 
+var objectID int
+
 const requestToken = "dupadupadupaX"
 
 func init() {
@@ -24,6 +28,13 @@ func init() {
 	password = os.Getenv("FHOME_PASSWORD")
 	hashPassword = os.Getenv("FHOME_HASH_PASSWORD")
 	uniqueID = os.Getenv("FHOME_UNIQUE_ID")
+
+	flag.IntVar(&objectID, "object-id", 0, "object id")
+	flag.Parse()
+
+	if objectID == 0 {
+		log.Fatalln("object-id is required")
+	}
 }
 
 const url = "wss://fhome.cloud/webapp-interface/" // There has to be a trailing slash, otherwise handshake fails
@@ -63,7 +74,7 @@ func main() {
 
 	err = conn.WriteJSON(XEventMsg{
 		ActionName:   "xevent",
-		CellID:       "291",
+		CellID:       strconv.Itoa(objectID),
 		Value:        "0x4001",
 		Type:         "HEX",
 		Login:        email,
