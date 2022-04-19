@@ -22,7 +22,7 @@ func init() {
 	flag.StringVar(&uniqueID, "unique-id", "", "unique id")
 }
 
-const url = "wss://fhome.cloud/webapp-interface"
+const url = "wss://fhome.cloud/webapp-interface/" // There has to be a trailing slash, otherwise handshake fails
 
 var dialer = websocket.Dialer{
 	EnableCompression: true,
@@ -30,8 +30,7 @@ var dialer = websocket.Dialer{
 }
 
 func main() {
-	// headers := http.Header{}
-	// headers.Add("Pragma", "no-cache")
+	// headers := http.Header{} headers.Add("Pragma", "no-cache")
 	// headers.Add("Accept-Encoding", "gzip, deflate, br")
 	// headers.Add("Accept-Language", "pl-PL,pl;q=0.9,en-US;q=0.8,en;q=0.7")
 	conn, resp, err := dialer.Dial(url, nil)
@@ -66,4 +65,6 @@ func main() {
 	if err != nil {
 		log.Fatalln("failed to read json:", err)
 	}
+
+	log.Println("success")
 }
