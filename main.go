@@ -1,11 +1,13 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -59,7 +61,7 @@ func main() {
 	ack := make(chan interface{})
 	go listen(conn, ack)
 
-	err = conn.WriteJSON(OpenClientSessionsMsg{
+	err = conn.WriteJSON(OpenClientSessionMsg{
 		ActionName:   "open_client_to_resource_session",
 		Email:        email,
 		UniqueID:     uniqueID,
@@ -73,13 +75,15 @@ func main() {
 	log.Printf("success: open_client_to_resource_session")
 
 	err = conn.WriteJSON(XEventMsg{
-		ActionName:   "xevent",
-		CellID:       strconv.Itoa(objectID),
-		Value:        "0x4001",
-		Type:         "HEX",
-		Login:        email,
-		Password:     hashPassword,
-		RequestToken: requestToken,
+		Action: Action{
+			ActionName:   "xevent",
+			Login:        email,
+			Password:     hashPassword,
+			RequestToken: requestToken,
+		},
+		CellID: strconv.Itoa(objectID),
+		Value:  "0x4001",
+		Type:   "HEX",
 	})
 	if err != nil {
 		log.Fatalln("failed to write xevent:", err)
@@ -87,17 +91,43 @@ func main() {
 
 	<-ack
 	log.Println("success: xevent")
+
+	err = conn.WriteJSON(Action{
+		ActionName:   "get_user_config",
+		Login:        email,
+		Password:     hashPassword,
+		RequestToken: requestToken,
+	})
+	if err != nil {
+		log.Fatalln("failed to write get_user_config:", err)
+	}
+	<-ack
+	<-ack
 }
 
-func listen(conn *websocket.Conn, ack chan interface{}) error {
+func listen(conn *websocket.Conn, ack chan interface{}) {
 	for {
 		var response Response
 		err := conn.ReadJSON(&response)
 		if err != nil {
-			return fmt.Errorf("failed to read json: %v", err)
+			log.Fatalf("failed to read response: %s\n", err)
 		}
 
-		fmt.Printf("response: %+v\n", response)
+		fmt.Printf("response to action %s, status %s\n", response.ActionName, response.Status)
+
+		if response.ActionName == "get_user_config" {
+			strippedFile := strings.ReplaceAll(response.File, "\\", "")
+			fmt.Println("original file:", response.File)
+			fmt.Println("stripped file:", strippedFile)
+
+			file := File{}
+			err := json.Unmarshal([]byte(strippedFile), &file)
+			if err != nil {
+				log.Fatalf("failed to unmarshal json: %+v\n", err)
+			}
+
+			fmt.Printf("data: %+v\n", file)
+		}
 
 		if response.Status == "ok" {
 			ack <- struct{}{}
