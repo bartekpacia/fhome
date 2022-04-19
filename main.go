@@ -7,7 +7,6 @@ import (
 	"log"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/bartekpacia/fhome/fhome"
@@ -80,9 +79,9 @@ func main() {
 		Login:        email,
 		Password:     hashPassword,
 		RequestToken: requestToken,
-		CellID: strconv.Itoa(objectID),
-		Value:  "0x4001",
-		Type:   "HEX",
+		CellID:       strconv.Itoa(objectID),
+		Value:        "0x4001",
+		Type:         "HEX",
 	})
 	if err != nil {
 		log.Fatalln("failed to write xevent:", err)
@@ -115,10 +114,8 @@ func listen(conn *websocket.Conn, ack chan interface{}) {
 		fmt.Printf("response to action %s, status %s\n", response.ActionName, response.Status)
 
 		if response.ActionName == "get_user_config" {
-			strippedFile := strings.ReplaceAll(response.File, "\\", "")
-
 			file := fhome.File{}
-			err := json.Unmarshal([]byte(strippedFile), &file)
+			err := json.Unmarshal([]byte(response.File), &file)
 			if err != nil {
 				log.Fatalf("failed to unmarshal json: %+v\n", err)
 			}

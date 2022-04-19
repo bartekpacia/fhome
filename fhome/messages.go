@@ -17,6 +17,12 @@ type OpenClientSession struct {
 	RequestToken string `json:"request_token"`
 }
 
+type GetMyResources struct {
+	ActionName   string `json:"action_name"`
+	Email        string `json:"email"`
+	RequestToken string `json:"request_token"`
+}
+
 type OpenClientToResourceSession struct {
 	ActionName   string `json:"action_name"`
 	Email        string `json:"email"`

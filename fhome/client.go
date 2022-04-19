@@ -28,7 +28,9 @@ type Client interface {
 
 	OpenClientSession(email, password string) error
 
-	OpenClientToResourceSession(resourceID string) error
+	GetMyResources() (*GetMyResourcesResponse, error)
+
+	OpenClientToResourceSession() error
 
 	GetUserConfig() (*File, error)
 
@@ -38,7 +40,6 @@ type Client interface {
 type client struct {
 	conn     *websocket.Conn
 	email    *string
-	password *string // hashed
 	uniqueID *string
 }
 
@@ -95,16 +96,50 @@ func (c *client) OpenClientSession(email, password string) error {
 		}
 
 		c.email = &email
-		c.password = &password // FIXME: this is unqiueID, not a real password
 
 		fmt.Printf("response to action %s, status %s\n", response.ActionName, response.Status)
 
 		return nil
-
 	}
 }
 
-func (c *client) OpenClientToResourceSession(resourceID string) error {
+// Gets resources assigned to the user.
+//
+// Most of the time, there will be just one resource. Currently we handle only
+// this case and assign its unique ID on the client.
+func (c *client) GetMyResources() (*GetMyResourcesResponse, error) {
+	token := generateRequestToken()
+
+	err := c.conn.WriteJSON(GetMyResources{
+		ActionName:   ActionGetMyResources,
+		Email:        *c.email,
+		RequestToken: token,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get my resoucres: %v", err)
+	}
+
+	for {
+		var response GetMyResourcesResponse
+		err = c.conn.ReadJSON(&response)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read response: %v", err)
+		}
+
+		if response.RequestToken != token {
+			continue
+		}
+
+		c.uniqueID = &response.UniqueID0
+
+		fmt.Printf("response to action %s, status %s\n", response.ActionName, response.Status)
+
+		return &response, nil
+	}
+}
+
+// Connects to the resource of id c.uniqueID.
+func (c *client) OpenClientToResourceSession() error {
 	token := generateRequestToken()
 
 	err := c.conn.WriteJSON(OpenClientToResourceSession{
@@ -129,6 +164,8 @@ func (c *client) OpenClientToResourceSession(resourceID string) error {
 		}
 
 		fmt.Printf("response to action %s, status %s\n", response.ActionName, response.Status)
+
+		return nil
 	}
 }
 

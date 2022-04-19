@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
+	"github.com/bartekpacia/fhome/fhome"
 	"github.com/urfave/cli/v2"
 )
 
@@ -23,6 +25,33 @@ var listCommand = cli.Command{
 		},
 	},
 	Action: func(c *cli.Context) error {
+		client := fhome.NewClient()
+
+		err := client.Connect()
+		if err != nil {
+			return fmt.Errorf("failed to connect: %v", err)
+		}
+
+		_, err = client.GetMyResources()
+		if err != nil {
+			return fmt.Errorf("failed to get my resources: %v", err)
+		}
+
+		err = client.OpenClientToResourceSession()
+		if err != nil {
+			return fmt.Errorf("failed to open client to resource session: %v", err)
+		}
+
+		file, err := client.GetUserConfig()
+		if err != nil {
+			return fmt.Errorf("failed to get user config: %v", err)
+		}
+
+		fmt.Printf("there are %d cells\n", len(file.Cells))
+		for _, cell := range file.Cells {
+			fmt.Printf("id: %3d, name: %s\n", cell.ObjectID, cell.Name)
+		}
+
 		// verbose := c.Bool("verbose")
 
 		// err := fhome.List(verbose)
@@ -33,7 +62,6 @@ var listCommand = cli.Command{
 var toggleCommand = cli.Command{
 	Name:  "toggle",
 	Usage: "toggle an object on/off",
-
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:    "object-id",
