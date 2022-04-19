@@ -31,8 +31,10 @@ var listCommand = cli.Command{
 		}
 		email := os.Getenv("FHOME_EMAIL")
 		password := os.Getenv("FHOME_PASSWORD")
+		passwordHash := os.Getenv("FHOME_PASSWORD_HASH")
 
-		err = client.OpenClientSession(email, password)
+		// TODO: don't pass password hash
+		err = client.OpenClientSession(email, password, passwordHash)
 		if err != nil {
 			return fmt.Errorf("failed to open client session: %v", err)
 		}

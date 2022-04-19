@@ -15,8 +15,7 @@ import (
 
 var (
 	email        string
-	password     string
-	hashPassword string
+	passwordHash string
 	uniqueID     string
 )
 
@@ -27,8 +26,7 @@ const requestToken = "dupadupadupaX"
 func init() {
 	log.SetFlags(0)
 	email = os.Getenv("FHOME_EMAIL")
-	password = os.Getenv("FHOME_PASSWORD")
-	hashPassword = os.Getenv("FHOME_HASH_PASSWORD")
+	passwordHash = os.Getenv("FHOME_PASSWORD_HASH")
 	uniqueID = os.Getenv("FHOME_UNIQUE_ID")
 
 	flag.IntVar(&objectID, "object-id", 0, "object id")
@@ -39,7 +37,8 @@ func init() {
 	}
 }
 
-const url = "wss://fhome.cloud/webapp-interface/" // There has to be a trailing slash, otherwise handshake fails
+// There has to be a trailing slash, otherwise handshake fails
+const url = "wss://fhome.cloud/webapp-interface/"
 
 var dialer = websocket.Dialer{
 	EnableCompression: true,
@@ -77,7 +76,7 @@ func main() {
 	err = conn.WriteJSON(fhome.XEvent{
 		ActionName:   fhome.ActionXEvent,
 		Login:        email,
-		Password:     hashPassword,
+		Password:     passwordHash,
 		RequestToken: requestToken,
 		CellID:       strconv.Itoa(objectID),
 		Value:        "0x4001",
@@ -93,7 +92,7 @@ func main() {
 	err = conn.WriteJSON(fhome.Action{
 		ActionName:   fhome.ActionGetUserConfig,
 		Login:        email,
-		Password:     hashPassword,
+		Password:     passwordHash,
 		RequestToken: requestToken,
 	})
 	if err != nil {

@@ -25,7 +25,7 @@ var dialer = websocket.Dialer{
 type Client interface {
 	Close() error
 
-	OpenClientSession(email, password string) error
+	OpenClientSession(email, password, passwordHash string) error
 
 	GetMyResources() (*GetMyResourcesResponse, error)
 
@@ -37,9 +37,10 @@ type Client interface {
 }
 
 type client struct {
-	conn     *websocket.Conn
-	email    *string
-	uniqueID *string
+	conn         *websocket.Conn
+	email        *string
+	passwordHash *string // FIXME: should not be used directly
+	uniqueID     *string
 }
 
 // NewClient creates a new client and automatically starts connecting to
@@ -87,7 +88,7 @@ func (c *client) Close() error {
 	return nil
 }
 
-func (c *client) OpenClientSession(email, password string) error {
+func (c *client) OpenClientSession(email, password, passwordHash string) error {
 	token := generateRequestToken()
 
 	actionName := ActionOpenClientSession
@@ -108,8 +109,6 @@ func (c *client) OpenClientSession(email, password string) error {
 			return fmt.Errorf("failed to read response: %v", err)
 		}
 
-		log.Println("xd")
-
 		if response.Status != "ok" {
 			return fmt.Errorf("response status is %s", response.Status)
 		}
@@ -119,8 +118,7 @@ func (c *client) OpenClientSession(email, password string) error {
 		}
 
 		c.email = &email
-
-		fmt.Printf("response to action %s, status %s\n", response.ActionName, response.Status)
+		c.passwordHash = &passwordHash
 
 		return nil
 	}
@@ -160,8 +158,6 @@ func (c *client) GetMyResources() (*GetMyResourcesResponse, error) {
 
 		c.uniqueID = &response.UniqueID0
 
-		fmt.Printf("response to action %s, status %s\n", response.ActionName, response.Status)
-
 		return &response, nil
 	}
 }
@@ -177,8 +173,6 @@ func (c *client) OpenClientToResourceSession() error {
 	c.conn = conn
 
 	token := generateRequestToken()
-
-	fmt.Println("email:", *c.email, ", uniqueID:", *c.uniqueID, ", token:", token)
 
 	actionName := ActionOpenClienToResourceSession
 	err = c.conn.WriteJSON(OpenClientToResourceSession{
@@ -207,8 +201,6 @@ func (c *client) OpenClientToResourceSession() error {
 			return fmt.Errorf("response status is %s", response.Status)
 		}
 
-		fmt.Printf("response to action %s, status %s\n", response.ActionName, response.Status)
-
 		return nil
 	}
 }
@@ -220,7 +212,7 @@ func (c *client) GetUserConfig() (*File, error) {
 	err := c.conn.WriteJSON(Action{
 		ActionName:   actionName,
 		Login:        *c.email,
-		Password:     *c.uniqueID, // FIXME: This has to be some hashed password
+		Password:     *c.passwordHash, // FIXME: use password hash retrieved
 		RequestToken: token,
 	})
 	if err != nil {
@@ -233,7 +225,6 @@ func (c *client) GetUserConfig() (*File, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to read response: %v", err)
 		}
-		log.Printf("response: %+v\n", response)
 
 		if response.RequestToken != token {
 			continue
@@ -247,11 +238,6 @@ func (c *client) GetUserConfig() (*File, error) {
 		err = json.Unmarshal([]byte(response.File), &file)
 		if err != nil {
 			return nil, fmt.Errorf("unmarshal json: %v", err)
-		}
-
-		fmt.Printf("there are %d cells\n", len(file.Cells))
-		for _, cell := range file.Cells {
-			fmt.Printf("id: %3d, name: %s\n", cell.ObjectID, cell.Name)
 		}
 
 		return &file, nil
