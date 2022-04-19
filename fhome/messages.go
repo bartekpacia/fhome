@@ -1,6 +1,23 @@
-package main
+package fhome
 
-type OpenClientSessionMsg struct {
+const (
+	ActionOpenClientSession          = "open_client_session"
+	ActionGetMyData                  = "get_my_data"
+	ActionGetMyResources             = "get_my_resources"
+	ActionOpenClienToResourceSession = "open_client_to_resource_session"
+	ActionTouches                    = "touches"
+	ActionGetUserConfig              = "get_user_config"
+	ActionXEvent                     = "xevent"
+)
+
+type OpenClientSession struct {
+	ActionName   string `json:"action_name"`
+	Email        string `json:"email"`
+	Password     string `json:"password"`
+	RequestToken string `json:"request_token"`
+}
+
+type OpenClientToResourceSession struct {
 	ActionName   string `json:"action_name"`
 	Email        string `json:"email"`
 	UniqueID     string `json:"unique_id"`
@@ -25,7 +42,7 @@ type Response struct {
 	ActionName string `json:"action_name"`
 	Status     string `json:"status"`
 	Source     string `json:"source"`
-	File       string   `json:"file"`
+	File       string `json:"file"`
 }
 
 type File struct {
@@ -37,15 +54,17 @@ type File struct {
 }
 
 type Cell struct {
-	ObjectID int    `json:"objectId"`
-	Icon     string `json:"icon"`
-	Name     string `json:"name"`
-	// PositionInPanel []struct {
-	// 	Orientation string `json:"orientation"`
-	// 	PanelID     string `json:"panelId"`
-	// 	X           int    `json:"x"`
-	// 	Y           int    `json:"y"`
-	// } `json:"positionInPanel"`
+	ObjectID        int               `json:"objectId"`
+	Icon            string            `json:"icon"`
+	Name            string            `json:"name"`
+	PositionInPanel []PositionInPanel `json:"positionInPanel"`
+}
+
+type PositionInPanel struct {
+	Orientation string `json:"orientation"`
+	PanelID     string `json:"panelId"`
+	X           int    `json:"x"`
+	Y           int    `json:"y"`
 }
 
 type Panel struct {
