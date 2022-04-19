@@ -6,7 +6,9 @@ system](https://www.fhome.pl).
 > Note: extremely alpha, work in progress
 
 F&Home doesn't provide any kind of API, but I managed to figure out how it works
-using Chrome Devtools and looking at the messages it sends over websockets.
+using Chrome Devtools and by looking at the messages it sends over websockets.
+
+Then I started putting together this project.
 
 ## Using CLI
 
