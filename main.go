@@ -1,8 +1,7 @@
 package main
 
 import (
-	"flag"
-	"io"
+	"fmt"
 	"log"
 	"os"
 	"time"
@@ -11,15 +10,20 @@ import (
 )
 
 var (
-	email    string
-	uniqueID string
+	email        string
+	password     string
+	hashPassword string
+	uniqueID     string
 )
+
+const requestToken = "dupadupadupaX"
 
 func init() {
 	log.SetFlags(0)
-
-	flag.StringVar(&email, "email", "", "email")
-	flag.StringVar(&uniqueID, "unique-id", "", "unique id")
+	email = os.Getenv("FHOME_EMAIL")
+	password = os.Getenv("FHOME_PASSWORD")
+	hashPassword = os.Getenv("FHOME_HASH_PASSWORD")
+	uniqueID = os.Getenv("FHOME_UNIQUE_ID")
 }
 
 const url = "wss://fhome.cloud/webapp-interface/" // There has to be a trailing slash, otherwise handshake fails
@@ -30,41 +34,62 @@ var dialer = websocket.Dialer{
 }
 
 func main() {
-	// headers := http.Header{} headers.Add("Pragma", "no-cache")
-	// headers.Add("Accept-Encoding", "gzip, deflate, br")
-	// headers.Add("Accept-Language", "pl-PL,pl;q=0.9,en-US;q=0.8,en;q=0.7")
 	conn, resp, err := dialer.Dial(url, nil)
 	if err != nil {
-		log.Println("failed to dial:", err)
-
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			log.Fatalln("failed to read body:", err)
+		log.Printf("status: %s\n", resp.Status)
+		for name, value := range resp.Header {
+			log.Printf("header %s: %s\n", name, value)
 		}
 
-		log.Printf("header: %s\n", resp.Header)
-		log.Printf("body: %s\n", string(body))
-
-		os.Exit(1)
+		log.Fatalln("failed to dial:", err)
 	}
 	defer conn.Close()
 
-	sessionMsg := make(map[string]string)
-	sessionMsg["action_name"] = "open_client_to_resource_session"
-	sessionMsg["email"] = email
-	sessionMsg["unique_id"] = uniqueID
-	sessionMsg["request_token"] = "2b359bfa7bb70"
+	ack := make(chan interface{})
+	go listen(conn, ack)
 
-	err = conn.WriteJSON(sessionMsg)
+	err = conn.WriteJSON(OpenClientSessionsMsg{
+		ActionName:   "open_client_to_resource_session",
+		Email:        email,
+		UniqueID:     uniqueID,
+		RequestToken: requestToken,
+	})
 	if err != nil {
-		log.Fatalln("failed to write json:", err)
+		log.Fatalln("failed to open client to resource session:", err)
 	}
 
-	response := make(map[string]interface{})
-	err = conn.ReadJSON(&response)
+	<-ack
+	log.Printf("success: open_client_to_resource_session")
+
+	err = conn.WriteJSON(XEventMsg{
+		ActionName:   "xevent",
+		CellID:       "291",
+		Value:        "0x4001",
+		Type:         "HEX",
+		Login:        email,
+		Password:     hashPassword,
+		RequestToken: requestToken,
+	})
 	if err != nil {
-		log.Fatalln("failed to read json:", err)
+		log.Fatalln("failed to write xevent:", err)
 	}
 
-	log.Println("success")
+	<-ack
+	log.Println("success: xevent")
+}
+
+func listen(conn *websocket.Conn, ack chan interface{}) error {
+	for {
+		var response Response
+		err := conn.ReadJSON(&response)
+		if err != nil {
+			return fmt.Errorf("failed to read json: %v", err)
+		}
+
+		fmt.Printf("response: %+v\n", response)
+
+		if response.Status == "ok" {
+			ack <- struct{}{}
+		}
+	}
 }
