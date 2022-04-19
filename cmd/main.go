@@ -88,6 +88,9 @@ var toggleCommand = cli.Command{
 	},
 	Action: func(c *cli.Context) error {
 		objectID := c.Int("object-id")
+		if objectID == 0 {
+			return fmt.Errorf("object-id is empty")
+		}
 
 		client, err := fhome.NewClient()
 		if err != nil {

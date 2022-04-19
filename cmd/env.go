@@ -13,7 +13,11 @@ type Env struct {
 }
 
 func (e Env) String() string {
-	return fmt.Sprint("listenHost:", e.email, " password:", e.password, " passwordHash:", e.passwordHash)
+	return fmt.Sprint(
+		"listenHost:", e.email,
+		" password:", e.password,
+		" passwordHash:", e.passwordHash,
+	)
 }
 
 // Load loads env vars from shell to e.
