@@ -117,8 +117,6 @@ func listen(conn *websocket.Conn, ack chan interface{}) {
 
 		if response.ActionName == "get_user_config" {
 			strippedFile := strings.ReplaceAll(response.File, "\\", "")
-			fmt.Println("original file:", response.File)
-			fmt.Println("stripped file:", strippedFile)
 
 			file := File{}
 			err := json.Unmarshal([]byte(strippedFile), &file)
@@ -126,7 +124,10 @@ func listen(conn *websocket.Conn, ack chan interface{}) {
 				log.Fatalf("failed to unmarshal json: %+v\n", err)
 			}
 
-			fmt.Printf("data: %+v\n", file)
+			fmt.Printf("there are %d cells\n", len(file.Cells))
+			for _, cell := range file.Cells {
+				fmt.Printf("id: %3d, name: %s\n", cell.ObjectID, cell.Name)
+			}
 		}
 
 		if response.Status == "ok" {
