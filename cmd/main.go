@@ -61,9 +61,22 @@ var listCommand = cli.Command{
 
 		log.Println("successfully got user config")
 
+		panels := map[string]fhome.Panel{}
+		for _, panel := range file.Panels {
+			panels[panel.ID] = panel
+		}
+
 		fmt.Printf("there are %d cells\n", len(file.Cells))
 		for _, cell := range file.Cells {
 			fmt.Printf("id: %3d, name: %s\n", cell.ObjectID, cell.Name)
+			for _, pos := range cell.PositionInPanel {
+				fmt.Printf("\tin panel %s\n", panels[pos.PanelID].Name)
+			}
+		}
+
+		fmt.Printf("there are %d panels\n", len(file.Panels))
+		for _, panel := range file.Panels {
+			fmt.Printf("id: %s, name: %s\n", panel.ID, panel.Name)
 		}
 		return nil
 	},
