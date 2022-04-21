@@ -3,6 +3,8 @@
 package fhome
 
 import (
+	"crypto/sha1"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -11,6 +13,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"golang.org/x/crypto/pbkdf2"
 )
 
 // URL at which F&Home API lives.
@@ -291,4 +294,15 @@ func generateRequestToken() string {
 	}
 
 	return string(b)
+}
+
+func generatePasswordHash(password string) string {
+	const wordSizeInBytes = 4
+	const salt = "fhome123" // yes, they really did it
+
+	keyLength := (256 / 32) * wordSizeInBytes
+
+	hash := pbkdf2.Key([]byte(password), []byte(salt), 1e4, keyLength, sha1.New)
+	stringHash := base64.StdEncoding.EncodeToString(hash)
+	return stringHash
 }
