@@ -216,7 +216,7 @@ func (c *client) GetUserConfig() (*File, error) {
 	err := c.conn.WriteJSON(Action{
 		ActionName:   actionName,
 		Login:        *c.email,
-		Password:     *c.passwordHash, // FIXME: use password hash retrieved
+		PasswordHash: *c.passwordHash,
 		RequestToken: token,
 	})
 	if err != nil {
@@ -255,7 +255,7 @@ func (c *client) XEvent(resourceID int, value string, eventType string) error {
 	err := c.conn.WriteJSON(XEvent{
 		ActionName:   ActionXEvent,
 		Login:        *c.email,
-		Password:     *c.passwordHash,
+		PasswordHash: *c.passwordHash,
 		RequestToken: token,
 		CellID:       strconv.Itoa(resourceID),
 		Value:        "0x4001",

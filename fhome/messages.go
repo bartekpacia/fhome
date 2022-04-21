@@ -33,14 +33,14 @@ type OpenClientToResourceSession struct {
 type Action struct {
 	ActionName   string `json:"action_name"`
 	Login        string `json:"login"`
-	Password     string `json:"password"`
+	PasswordHash string `json:"password"`
 	RequestToken string `json:"request_token"`
 }
 
 type XEvent struct {
 	ActionName   string `json:"action_name"`
 	Login        string `json:"login"`
-	Password     string `json:"password"`
+	PasswordHash string `json:"password"`
 	RequestToken string `json:"request_token"`
 	CellID       string `json:"cell_id"`
 	Value        string `json:"value"`
