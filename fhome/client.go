@@ -29,7 +29,7 @@ var dialer = websocket.Dialer{
 type Client interface {
 	Close() error
 
-	OpenClientSession(email, password, passwordHash string) error
+	OpenClientSession(email, password string) error
 
 	GetMyResources() (*GetMyResourcesResponse, error)
 
@@ -92,7 +92,7 @@ func (c *client) Close() error {
 	return nil
 }
 
-func (c *client) OpenClientSession(email, password, passwordHash string) error {
+func (c *client) OpenClientSession(email, password string) error {
 	token := generateRequestToken()
 
 	actionName := ActionOpenClientSession
@@ -122,7 +122,7 @@ func (c *client) OpenClientSession(email, password, passwordHash string) error {
 		}
 
 		c.email = &email
-		c.passwordHash = &passwordHash
+		c.passwordHash = generatePasswordHash(password)
 
 		return nil
 	}
@@ -296,7 +296,7 @@ func generateRequestToken() string {
 	return string(b)
 }
 
-func generatePasswordHash(password string) string {
+func generatePasswordHash(password string) *string {
 	const wordSizeInBytes = 4
 	const salt = "fhome123" // yes, they really did it
 
@@ -304,5 +304,5 @@ func generatePasswordHash(password string) string {
 
 	hash := pbkdf2.Key([]byte(password), []byte(salt), 1e4, keyLength, sha1.New)
 	stringHash := base64.StdEncoding.EncodeToString(hash)
-	return stringHash
+	return &stringHash
 }

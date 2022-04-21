@@ -33,7 +33,7 @@ var listCommand = cli.Command{
 		env.Load()
 
 		// TODO: don't pass password hash
-		err = client.OpenClientSession(env.email, env.password, env.passwordHash)
+		err = client.OpenClientSession(env.email, env.password)
 		if err != nil {
 			return fmt.Errorf("failed to open client session: %v", err)
 		}
@@ -113,7 +113,7 @@ var toggleCommand = cli.Command{
 		env.Load()
 
 		// TODO: don't pass password hash
-		err = client.OpenClientSession(env.email, env.password, env.passwordHash)
+		err = client.OpenClientSession(env.email, env.password)
 		if err != nil {
 			return fmt.Errorf("failed to open client session: %v", err)
 		}
