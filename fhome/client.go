@@ -37,13 +37,13 @@ type Client interface {
 
 	GetUserConfig() (*File, error)
 
-	XEvent(resourceID int, value string, eventType string) error
+	XEvent(resourceID int, value string) error
 }
 
 type client struct {
 	conn         *websocket.Conn
 	email        *string
-	passwordHash *string // FIXME: should not be used directly
+	passwordHash *string
 	uniqueID     *string
 }
 
@@ -248,19 +248,20 @@ func (c *client) GetUserConfig() (*File, error) {
 	}
 }
 
-func (c *client) XEvent(resourceID int, value string, eventType string) error {
+func (c *client) XEvent(resourceID int, value string) error {
 	token := generateRequestToken()
 
 	actionName := ActionXEvent
-	err := c.conn.WriteJSON(XEvent{
+	xevent := XEvent{
 		ActionName:   ActionXEvent,
 		Login:        *c.email,
 		PasswordHash: *c.passwordHash,
 		RequestToken: token,
 		CellID:       strconv.Itoa(resourceID),
-		Value:        "0x4001",
+		Value:        value,
 		Type:         "HEX",
-	})
+	}
+	err := c.conn.WriteJSON(xevent)
 	if err != nil {
 		return fmt.Errorf("failed to write %s to conn: %v", actionName, err)
 	}
@@ -281,6 +282,7 @@ func (c *client) XEvent(resourceID int, value string, eventType string) error {
 		}
 
 		return nil
+
 	}
 }
 

@@ -1,7 +1,5 @@
 package fhome
 
-import "strconv"
-
 const (
 	ActionOpenClientSession          = "open_client_session"
 	ActionGetMyData                  = "get_my_data"
@@ -13,14 +11,33 @@ const (
 )
 
 var (
-	ValueToggle = strconv.FormatInt(0x4001, 8)
-	Value0      = strconv.FormatInt(0x6000, 8)
-	Value20     = strconv.FormatInt(0x6014, 8)
-	Value40     = strconv.FormatInt(0x6028, 8)
-	Value60     = strconv.FormatInt(0x603C, 8)
-	Value80     = strconv.FormatInt(0x6050, 8)
-	Value100    = strconv.FormatInt(0x6064, 8)
+	ValueToggle = "0x4001"
+	Value0      = "0x6000"
+	Value20     = "0x6014"
+	Value40     = "0x6028"
+	Value60     = "0x603C"
+	Value80     = "0x6050"
+	Value100    = "0x6064"
 )
+
+func MapToValue(v int) string {
+	switch value := v; {
+	case value < 0:
+		return Value0
+	case value < 20:
+		return Value20
+	case value < 40:
+		return Value40
+	case value < 60:
+		return Value60
+	case value < 80:
+		return Value80
+	case value < 100:
+		return Value100
+	default:
+		return Value100
+	}
+}
 
 type OpenClientSession struct {
 	ActionName   string `json:"action_name"`

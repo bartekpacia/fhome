@@ -25,15 +25,7 @@ var listCommand = cli.Command{
 		},
 	},
 	Action: func(c *cli.Context) error {
-		client, err := fhome.NewClient()
-		if err != nil {
-			return fmt.Errorf("failed to create fhome client: %v", err)
-		}
-		env := Env{}
-		env.Load()
-
-		// TODO: don't pass password hash
-		err = client.OpenClientSession(env.email, env.password)
+		err := client.OpenClientSession(env.email, env.password)
 		if err != nil {
 			return fmt.Errorf("failed to open client session: %v", err)
 		}
@@ -87,10 +79,11 @@ var toggleCommand = cli.Command{
 	Usage: "toggle an object on/off",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
-			Name:    "object-id",
-			Aliases: []string{"id"},
-			Value:   "",
-			Usage:   "id of object to toggle",
+			Name:     "object-id",
+			Aliases:  []string{"id"},
+			Value:    "",
+			Usage:    "id of object to toggle",
+			Required: true,
 		},
 		&cli.BoolFlag{
 			Name:    "verbose",
@@ -101,19 +94,9 @@ var toggleCommand = cli.Command{
 	},
 	Action: func(c *cli.Context) error {
 		objectID := c.Int("object-id")
-		if objectID == 0 {
-			return fmt.Errorf("object-id is empty")
-		}
 
-		client, err := fhome.NewClient()
-		if err != nil {
-			return fmt.Errorf("failed to create fhome client: %v", err)
-		}
-		env := Env{}
-		env.Load()
-
-		// TODO: don't pass password hash
-		err = client.OpenClientSession(env.email, env.password)
+		log.Printf("email: %s, password: %s\n", env.email, env.password)
+		err := client.OpenClientSession(env.email, env.password)
 		if err != nil {
 			return fmt.Errorf("failed to open client session: %v", err)
 		}
@@ -134,7 +117,7 @@ var toggleCommand = cli.Command{
 
 		log.Println("successfully opened client to resource session")
 
-		err = client.XEvent(objectID, "0x4001", "HEX")
+		err = client.XEvent(objectID, fhome.ValueToggle)
 		if err != nil {
 			return fmt.Errorf("failed to send xevent to object with id %d: %v", objectID, err)
 		}
@@ -145,6 +128,83 @@ var toggleCommand = cli.Command{
 	},
 }
 
+var setCommand = cli.Command{
+	Name:  "set",
+	Usage: "set value of an object (0-100)",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:     "object-id",
+			Aliases:  []string{"id"},
+			Value:    "",
+			Usage:    "id of object to toggle",
+			Required: true,
+		},
+		&cli.IntFlag{
+			Name:     "value",
+			Aliases:  []string{"val"},
+			Usage:    "value (0-100)",
+			Required: true,
+		},
+		&cli.BoolFlag{
+			Name:    "verbose",
+			Aliases: []string{"v"},
+			Value:   false,
+			Usage:   "print extensive logs",
+		},
+	},
+	Action: func(c *cli.Context) error {
+		objectID := c.Int("object-id")
+		value := fhome.MapToValue(c.Int("value"))
+
+		err := client.OpenClientSession(env.email, env.password)
+		if err != nil {
+			return fmt.Errorf("failed to open client session: %v", err)
+		}
+
+		log.Println("successfully opened client session")
+
+		_, err = client.GetMyResources()
+		if err != nil {
+			return fmt.Errorf("failed to get my resources: %v", err)
+		}
+
+		log.Println("successfully got my resources")
+
+		err = client.OpenClientToResourceSession()
+		if err != nil {
+			return fmt.Errorf("failed to open client to resource session: %v", err)
+		}
+
+		log.Println("successfully opened client to resource session")
+
+		err = client.XEvent(objectID, value)
+		if err != nil {
+			return fmt.Errorf("failed to send xevent to object with id %d: %v", objectID, err)
+		}
+
+		log.Println("successfully sent xevent to object with id", objectID)
+
+		return nil
+	},
+}
+
+var (
+	client fhome.Client
+	env    Env
+)
+
+func init() {
+	c, err := fhome.NewClient()
+	if err != nil {
+		log.Fatalf("failed to create fhome client: %v\n", err)
+	}
+
+	env = Env{}
+	env.Load()
+
+	client = c
+}
+
 func main() {
 	app := &cli.App{
 		Name:  "fhome",
@@ -152,6 +212,7 @@ func main() {
 		Commands: []*cli.Command{
 			&listCommand,
 			&toggleCommand,
+			&setCommand,
 		},
 		CommandNotFound: func(c *cli.Context, command string) {
 			log.Printf("invalid command '%s'. See 'fhome --help'\n", command)
