@@ -25,7 +25,7 @@ var listCommand = cli.Command{
 		},
 	},
 	Action: func(c *cli.Context) error {
-		err := client.OpenClientSession(env.email, env.password)
+		err := client.OpenClientSession(env.email, env.cloudPassword)
 		if err != nil {
 			return fmt.Errorf("failed to open client session: %v", err)
 		}
@@ -39,7 +39,7 @@ var listCommand = cli.Command{
 
 		log.Println("successfully got my resources")
 
-		err = client.OpenClientToResourceSession()
+		err = client.OpenClientToResourceSession(env.resourcePassword)
 		if err != nil {
 			return fmt.Errorf("failed to open client to resource session: %v", err)
 		}
@@ -95,8 +95,7 @@ var toggleCommand = cli.Command{
 	Action: func(c *cli.Context) error {
 		objectID := c.Int("object-id")
 
-		log.Printf("email: %s, password: %s\n", env.email, env.password)
-		err := client.OpenClientSession(env.email, env.password)
+		err := client.OpenClientSession(env.email, env.cloudPassword)
 		if err != nil {
 			return fmt.Errorf("failed to open client session: %v", err)
 		}
@@ -110,7 +109,7 @@ var toggleCommand = cli.Command{
 
 		log.Println("successfully got my resources")
 
-		err = client.OpenClientToResourceSession()
+		err = client.OpenClientToResourceSession(env.resourcePassword)
 		if err != nil {
 			return fmt.Errorf("failed to open client to resource session: %v", err)
 		}
@@ -156,7 +155,7 @@ var setCommand = cli.Command{
 		objectID := c.Int("object-id")
 		value := fhome.MapToValue(c.Int("value"))
 
-		err := client.OpenClientSession(env.email, env.password)
+		err := client.OpenClientSession(env.email, env.cloudPassword)
 		if err != nil {
 			return fmt.Errorf("failed to open client session: %v", err)
 		}
@@ -170,7 +169,7 @@ var setCommand = cli.Command{
 
 		log.Println("successfully got my resources")
 
-		err = client.OpenClientToResourceSession()
+		err = client.OpenClientToResourceSession(env.resourcePassword)
 		if err != nil {
 			return fmt.Errorf("failed to open client to resource session: %v", err)
 		}
@@ -189,20 +188,20 @@ var setCommand = cli.Command{
 }
 
 var (
-	client fhome.Client
+	client *fhome.Client
 	env    Env
 )
 
 func init() {
-	c, err := fhome.NewClient()
+	var err error
+
+	client, err = fhome.NewClient()
 	if err != nil {
 		log.Fatalf("failed to create fhome client: %v\n", err)
 	}
 
 	env = Env{}
 	env.Load()
-
-	client = c
 }
 
 func main() {

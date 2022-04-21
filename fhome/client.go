@@ -26,30 +26,16 @@ var dialer = websocket.Dialer{
 	HandshakeTimeout:  5 * time.Second,
 }
 
-type Client interface {
-	Close() error
-
-	OpenClientSession(email, password string) error
-
-	GetMyResources() (*GetMyResourcesResponse, error)
-
-	OpenClientToResourceSession() error
-
-	GetUserConfig() (*File, error)
-
-	XEvent(resourceID int, value string) error
-}
-
-type client struct {
-	conn         *websocket.Conn
-	email        *string
-	passwordHash *string
-	uniqueID     *string
+type Client struct {
+	conn                 *websocket.Conn
+	email                *string
+	resourcePasswordHash *string
+	uniqueID             *string
 }
 
 // NewClient creates a new client and automatically starts connecting to
 // websockets.
-func NewClient() (Client, error) {
+func NewClient() (*Client, error) {
 	conn, err := connect()
 	if err != nil {
 		return nil, fmt.Errorf("create client: %v", err)
@@ -65,7 +51,7 @@ func NewClient() (Client, error) {
 		return nil, fmt.Errorf("wrong first message received")
 	}
 
-	c := client{conn: conn}
+	c := Client{conn: conn}
 	return &c, nil
 }
 
@@ -83,7 +69,7 @@ func connect() (*websocket.Conn, error) {
 	return conn, nil
 }
 
-func (c *client) Close() error {
+func (c *Client) Close() error {
 	err := c.conn.Close()
 	if err != nil {
 		return fmt.Errorf("failed to close connection: %v", err)
@@ -92,7 +78,7 @@ func (c *client) Close() error {
 	return nil
 }
 
-func (c *client) OpenClientSession(email, password string) error {
+func (c *Client) OpenClientSession(email, password string) error {
 	token := generateRequestToken()
 
 	actionName := ActionOpenClientSession
@@ -122,7 +108,7 @@ func (c *client) OpenClientSession(email, password string) error {
 		}
 
 		c.email = &email
-		c.passwordHash = generatePasswordHash(password)
+		// c.resourcePasswordHash = generatePasswordHash(password)
 
 		return nil
 	}
@@ -132,7 +118,7 @@ func (c *client) OpenClientSession(email, password string) error {
 //
 // Most of the time, there will be just one resource. Currently we handle only
 // this case and assign its unique ID on the client.
-func (c *client) GetMyResources() (*GetMyResourcesResponse, error) {
+func (c *Client) GetMyResources() (*GetMyResourcesResponse, error) {
 	token := generateRequestToken()
 
 	actionName := ActionGetMyResources
@@ -167,7 +153,7 @@ func (c *client) GetMyResources() (*GetMyResourcesResponse, error) {
 }
 
 // Connects to the resource of id c.uniqueID.
-func (c *client) OpenClientToResourceSession() error {
+func (c *Client) OpenClientToResourceSession(resourcePassword string) error {
 	// we have to reconnect
 	conn, err := connect()
 	if err != nil {
@@ -205,18 +191,22 @@ func (c *client) OpenClientToResourceSession() error {
 			return fmt.Errorf("response status is %s", response.Status)
 		}
 
-		return nil
+		break
 	}
+
+	c.resourcePasswordHash = generatePasswordHash(resourcePassword)
+
+	return nil
 }
 
-func (c *client) GetUserConfig() (*File, error) {
+func (c *Client) GetUserConfig() (*File, error) {
 	token := generateRequestToken()
 
 	actionName := ActionGetUserConfig
 	err := c.conn.WriteJSON(Action{
 		ActionName:   actionName,
 		Login:        *c.email,
-		PasswordHash: *c.passwordHash,
+		PasswordHash: *c.resourcePasswordHash,
 		RequestToken: token,
 	})
 	if err != nil {
@@ -248,14 +238,14 @@ func (c *client) GetUserConfig() (*File, error) {
 	}
 }
 
-func (c *client) XEvent(resourceID int, value string) error {
+func (c *Client) XEvent(resourceID int, value string) error {
 	token := generateRequestToken()
 
 	actionName := ActionXEvent
 	xevent := XEvent{
 		ActionName:   ActionXEvent,
 		Login:        *c.email,
-		PasswordHash: *c.passwordHash,
+		PasswordHash: *c.resourcePasswordHash,
 		RequestToken: token,
 		CellID:       strconv.Itoa(resourceID),
 		Value:        value,
