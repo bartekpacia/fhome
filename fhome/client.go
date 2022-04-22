@@ -114,7 +114,7 @@ func (c *Client) OpenClientSession(email, password string) error {
 	}
 }
 
-// Gets resources assigned to the user.
+// GetMyResources gets resources assigned to the user.
 //
 // Most of the time, there will be just one resource. Currently we handle only
 // this case and assign its unique ID on the client.
@@ -152,7 +152,9 @@ func (c *Client) GetMyResources() (*GetMyResourcesResponse, error) {
 	}
 }
 
-// Connects to the resource of id c.uniqueID.
+// OpenClientToResourceSession connects to the user's resource.
+//
+// Currently, it assumes that a user has only one resource.
 func (c *Client) OpenClientToResourceSession(resourcePassword string) error {
 	// we have to reconnect
 	conn, err := connect()
