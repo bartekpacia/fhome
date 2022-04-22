@@ -1,5 +1,7 @@
 package fhome
 
+import "fmt"
+
 type File struct {
 	Cells  []Cell  `json:"cells"`
 	Panels []Panel `json:"panels"`
@@ -22,6 +24,10 @@ type PositionInPanel struct {
 	PanelID     string `json:"panelId"`
 	X           int    `json:"x"`
 	Y           int    `json:"y"`
+}
+
+func (p PositionInPanel) String() string {
+	return fmt.Sprintf("X: %d, Y: %d", p.X, p.Y)
 }
 
 type Panel struct {
