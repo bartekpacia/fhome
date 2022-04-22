@@ -46,7 +46,8 @@ type MobileDisplayCell struct {
 	Cd string `json:"CD"`
 	// Object ID
 	Oi string `json:"OI"`
-	// Type number
+	// Type number. Known values: 706, 707, 708, 709, 710, 711, 717, 718, 719,
+	// 722, 724, 760
 	Tn string `json:"TN"`
 	// Preset. Known values: 0, 1, 4
 	P string `json:"P"`
