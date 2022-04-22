@@ -27,7 +27,10 @@ var dialer = websocket.Dialer{
 }
 
 type Client struct {
-	conn                 *websocket.Conn
+	// First websocket connection that is used for open_client_session,
+	// get_my_data and get_my_resources actions.
+	conn1                *websocket.Conn
+	conn2                *websocket.Conn
 	email                *string
 	resourcePasswordHash *string
 	uniqueID             *string
@@ -51,7 +54,7 @@ func NewClient() (*Client, error) {
 		return nil, fmt.Errorf("wrong first message received")
 	}
 
-	c := Client{conn: conn}
+	c := Client{conn1: conn}
 	return &c, nil
 }
 
@@ -70,9 +73,12 @@ func connect() (*websocket.Conn, error) {
 }
 
 func (c *Client) Close() error {
-	err := c.conn.Close()
-	if err != nil {
-		return fmt.Errorf("failed to close connection: %v", err)
+	if err := c.conn1.Close(); err != nil {
+		return fmt.Errorf("failed to close connection 1: %v", err)
+	}
+
+	if err := c.conn2.Close(); err != nil {
+		return fmt.Errorf("failed to close connection 2: %v", err)
 	}
 
 	return nil
@@ -82,7 +88,7 @@ func (c *Client) OpenClientSession(email, password string) error {
 	token := generateRequestToken()
 
 	actionName := ActionOpenClientSession
-	err := c.conn.WriteJSON(OpenClientSession{
+	err := c.conn1.WriteJSON(OpenClientSession{
 		ActionName:   actionName,
 		Email:        email,
 		Password:     password,
@@ -94,7 +100,7 @@ func (c *Client) OpenClientSession(email, password string) error {
 
 	for {
 		var response Response
-		err = c.conn.ReadJSON(&response)
+		err = c.conn1.ReadJSON(&response)
 		if err != nil {
 			return fmt.Errorf("failed to read response: %v", err)
 		}
@@ -122,7 +128,7 @@ func (c *Client) GetMyResources() (*GetMyResourcesResponse, error) {
 	token := generateRequestToken()
 
 	actionName := ActionGetMyResources
-	err := c.conn.WriteJSON(GetMyResources{
+	err := c.conn1.WriteJSON(GetMyResources{
 		ActionName:   actionName,
 		Email:        *c.email,
 		RequestToken: token,
@@ -133,7 +139,7 @@ func (c *Client) GetMyResources() (*GetMyResourcesResponse, error) {
 
 	for {
 		var response GetMyResourcesResponse
-		err = c.conn.ReadJSON(&response)
+		err = c.conn1.ReadJSON(&response)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read response: %v", err)
 		}
@@ -156,18 +162,18 @@ func (c *Client) GetMyResources() (*GetMyResourcesResponse, error) {
 //
 // Currently, it assumes that a user has only one resource.
 func (c *Client) OpenClientToResourceSession(resourcePassword string) error {
-	// we have to reconnect
+	// We can't use the old connection.
 	conn, err := connect()
 	if err != nil {
 		return fmt.Errorf("reconnect: %v", err)
 	}
 
-	c.conn = conn
+	c.conn2 = conn
 
 	token := generateRequestToken()
 
 	actionName := ActionOpenClienToResourceSession
-	err = c.conn.WriteJSON(OpenClientToResourceSession{
+	err = c.conn2.WriteJSON(OpenClientToResourceSession{
 		ActionName:   actionName,
 		Email:        *c.email,
 		UniqueID:     *c.uniqueID,
@@ -179,7 +185,7 @@ func (c *Client) OpenClientToResourceSession(resourcePassword string) error {
 
 	for {
 		var response Response
-		err = c.conn.ReadJSON(&response)
+		err = c.conn2.ReadJSON(&response)
 		if err != nil {
 			return fmt.Errorf("failed to read response: %v", err)
 		}
@@ -205,7 +211,7 @@ func (c *Client) GetUserConfig() (*File, error) {
 	token := generateRequestToken()
 
 	actionName := ActionGetUserConfig
-	err := c.conn.WriteJSON(Action{
+	err := c.conn2.WriteJSON(Action{
 		ActionName:   actionName,
 		Login:        *c.email,
 		PasswordHash: *c.resourcePasswordHash,
@@ -217,7 +223,7 @@ func (c *Client) GetUserConfig() (*File, error) {
 
 	for {
 		var response Response
-		err = c.conn.ReadJSON(&response)
+		err = c.conn2.ReadJSON(&response)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read response: %v", err)
 		}
@@ -253,14 +259,14 @@ func (c *Client) XEvent(resourceID int, value string) error {
 		Value:        value,
 		Type:         "HEX",
 	}
-	err := c.conn.WriteJSON(xevent)
+	err := c.conn2.WriteJSON(xevent)
 	if err != nil {
 		return fmt.Errorf("failed to write %s to conn: %v", actionName, err)
 	}
 
 	for {
 		var response Response
-		err = c.conn.ReadJSON(&response)
+		err = c.conn2.ReadJSON(&response)
 		if err != nil {
 			return fmt.Errorf("failed to read response: %v", err)
 		}
