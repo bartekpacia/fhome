@@ -1,5 +1,10 @@
 package fhome
 
+// Message is a websocket message sent from the client to the server.
+//
+// Messages are most commonly used to make server do perform somehing, e.g
+// change the status of some resource/device.
+
 const (
 	ActionOpenClientSession          = "open_client_session"
 	ActionGetMyData                  = "get_my_data"

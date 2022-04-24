@@ -1,0 +1,44 @@
+[
+  // lampa on
+  {
+    "action_name": "statustoucheschanged",
+    "response": {
+      "ProjectVersion": "68",
+      "Status": true,
+      "StatusText": "OK",
+      "CV": [
+        {
+          "VOI": "291",
+          "II": "1",
+          "DT": "PROC",
+          "DV": "0x6000",
+          "DVS": "0%"
+        }
+      ],
+      "ServerTime": 1650832819
+    },
+    "status": "ok",
+    "source": "resource"
+  },
+  // lampa off
+  {
+    "action_name": "statustoucheschanged",
+    "response": {
+      "ProjectVersion": "68",
+      "Status": true,
+      "StatusText": "OK",
+      "CV": [
+        {
+          "VOI": "291",
+          "II": "6",
+          "DT": "PROC",
+          "DV": "0x6064",
+          "DVS": "100%"
+        }
+      ],
+      "ServerTime": 1650832831
+    },
+    "status": "ok",
+    "source": "resource"
+  }
+]

@@ -1,5 +1,8 @@
 package fhome
 
+// Response is a websocket message sent from the server to the client in
+// response to the client's previous websocket message to the server.
+
 type Response struct {
 	ActionName   string `json:"action_name"`
 	RequestToken string `json:"request_token"`

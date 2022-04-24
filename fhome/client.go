@@ -284,8 +284,8 @@ func (c *Client) XEvent(resourceID int, value string) error {
 	}
 }
 
-func (c *Client) Listen(responses chan Response, errors chan error) {
-	responsesInternal := make(chan Response)
+func (c *Client) Listen(responses chan StatusTouchesChangedResponse, errors chan error) {
+	responsesInternal := make(chan StatusTouchesChangedResponse)
 	errorsInternal := make(chan error)
 
 	listener := func() {
@@ -296,9 +296,9 @@ func (c *Client) Listen(responses chan Response, errors chan error) {
 				return
 			}
 
-			fmt.Println("new msg: msgType", msgType, "content:", string(msg))
+			fmt.Println("new msg: msgType:", msgType, "content:", string(msg))
 
-			var response Response
+			var response StatusTouchesChangedResponse
 			err = json.Unmarshal(msg, &response)
 			if err != nil {
 				errorsInternal <- fmt.Errorf("unmarshal message into json: %v", err)

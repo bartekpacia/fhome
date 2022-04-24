@@ -99,7 +99,7 @@ var watchCommand = cli.Command{
 
 		log.Println("successfully opened client to resource session")
 
-		responses := make(chan fhome.Response)
+		responses := make(chan fhome.StatusTouchesChangedResponse)
 		errors := make(chan error)
 
 		go client.Listen(responses, errors)
@@ -107,7 +107,7 @@ var watchCommand = cli.Command{
 		for {
 			select {
 			case msg := <-responses:
-				fmt.Printf("message: %+v\n", msg)
+				fmt.Printf("%s\n", fhome.Pprint(msg))
 			case err := <-errors:
 				return fmt.Errorf("failed to listen: %v", err)
 			}
