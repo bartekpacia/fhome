@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/bartekpacia/fhome/fhome"
+	fhome "github.com/bartekpacia/fhome-api"
 	"github.com/urfave/cli/v2"
 )
 

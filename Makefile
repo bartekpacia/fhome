@@ -1,5 +1,5 @@
 all:
-	go build -o fh cmd/main.go cmd/env.go
+	go build -o fhomectl main.go env.go
 
-clean: main.go
-	rm main
+clean:
+	rm ./fhomectl
