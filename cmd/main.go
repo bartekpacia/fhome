@@ -206,15 +206,15 @@ func init() {
 
 func main() {
 	app := &cli.App{
-		Name:  "fhome",
-		Usage: "interact with F&Home API",
+		Name:  "fh",
+		Usage: "interact with smart devices connected to F&Home system",
 		Commands: []*cli.Command{
 			&listCommand,
 			&toggleCommand,
 			&setCommand,
 		},
 		CommandNotFound: func(c *cli.Context, command string) {
-			log.Printf("invalid command '%s'. See 'fhome --help'\n", command)
+			log.Printf("invalid command '%s'. See 'fh --help'\n", command)
 		},
 	}
 
