@@ -22,17 +22,17 @@ var (
 
 func MapToValue(v int) string {
 	switch value := v; {
-	case value < 0:
+	case value <= 0:
 		return Value0
-	case value < 20:
+	case value <= 20:
 		return Value20
-	case value < 40:
+	case value <= 40:
 		return Value40
-	case value < 60:
+	case value <= 60:
 		return Value60
-	case value < 80:
+	case value <= 80:
 		return Value80
-	case value < 100:
+	case value <= 100:
 		return Value100
 	default:
 		return Value100
