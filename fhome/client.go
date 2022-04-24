@@ -290,10 +290,18 @@ func (c *Client) Listen(responses chan Response, errors chan error) {
 
 	listener := func() {
 		for {
-			var response Response
-			err := c.conn2.ReadJSON(&response)
+			msgType, msg, err := c.conn2.ReadMessage()
 			if err != nil {
-				errorsInternal <- fmt.Errorf("read json from conn2: %v", err)
+				errorsInternal <- fmt.Errorf("read message from conn2: %v", err)
+				return
+			}
+
+			fmt.Println("new msg: msgType", msgType, "content:", string(msg))
+
+			var response Response
+			err = json.Unmarshal(msg, &response)
+			if err != nil {
+				errorsInternal <- fmt.Errorf("unmarshal message into json: %v", err)
 				return
 			}
 
