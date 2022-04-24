@@ -7,8 +7,8 @@ import (
 
 // Env represents all config vars from the .env file.
 type Env struct {
-	email            string
-	cloudPassword    string
+	email    string
+	cloudPassword string
 	resourcePassword string
 }
 
