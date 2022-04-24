@@ -284,6 +284,35 @@ func (c *Client) XEvent(resourceID int, value string) error {
 	}
 }
 
+func (c *Client) Listen(responses chan Response, errors chan error) {
+	responsesInternal := make(chan Response)
+	errorsInternal := make(chan error)
+
+	listener := func() {
+		for {
+			var response Response
+			err := c.conn2.ReadJSON(&response)
+			if err != nil {
+				errorsInternal <- fmt.Errorf("read json from conn2: %v", err)
+				return
+			}
+
+			responsesInternal <- response
+		}
+	}
+
+	go listener()
+
+	for {
+		select {
+		case response := <-responsesInternal:
+			responses <- response
+		case err := <-errorsInternal:
+			errors <- err
+		}
+	}
+}
+
 func generateRequestToken() string {
 	rand.Seed(time.Now().UnixNano())
 	letters := []rune("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz")

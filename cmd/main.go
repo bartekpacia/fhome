@@ -74,6 +74,47 @@ var listCommand = cli.Command{
 	},
 }
 
+var watchCommand = cli.Command{
+	Name:  "watch",
+	Usage: "watch incoming messages on websockets",
+	Action: func(c *cli.Context) error {
+		err := client.OpenClientSession(env.email, env.cloudPassword)
+		if err != nil {
+			return fmt.Errorf("failed to open client session: %v", err)
+		}
+
+		log.Println("successfully opened client session")
+
+		_, err = client.GetMyResources()
+		if err != nil {
+			return fmt.Errorf("failed to get my resources: %v", err)
+		}
+
+		log.Println("successfully got my resources")
+
+		err = client.OpenClientToResourceSession(env.resourcePassword)
+		if err != nil {
+			return fmt.Errorf("failed to open client to resource session: %v", err)
+		}
+
+		log.Println("successfully opened client to resource session")
+
+		responses := make(chan fhome.Response)
+		errors := make(chan error)
+
+		go client.Listen(responses, errors)
+
+		for {
+			select {
+			case msg := <-responses:
+				fmt.Printf("message: %+v\n", msg)
+			case err := <-errors:
+				return fmt.Errorf("failed to listen: %v", err)
+			}
+		}
+	},
+}
+
 var toggleCommand = cli.Command{
 	Name:  "toggle",
 	Usage: "toggle an object on/off",
@@ -210,6 +251,7 @@ func main() {
 		Usage: "interact with smart devices connected to F&Home system",
 		Commands: []*cli.Command{
 			&listCommand,
+			&watchCommand,
 			&toggleCommand,
 			&setCommand,
 		},
