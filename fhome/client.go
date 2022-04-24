@@ -296,7 +296,7 @@ func (c *Client) Listen(responses chan StatusTouchesChangedResponse, errors chan
 				return
 			}
 
-			fmt.Println("new msg: msgType:", msgType, "content:", string(msg))
+			fmt.Printf("new message of type %d\n", msgType)
 
 			var response StatusTouchesChangedResponse
 			err = json.Unmarshal(msg, &response)
