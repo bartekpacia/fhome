@@ -64,6 +64,8 @@ func main() {
 	go client.Listen(messages, errors)
 
 	for {
+		err, msg := client.ReadMsg(fhome.ActionStatusTouchesChanged, nil)
+
 		select {
 		case msg := <-messages:
 			var resp fhome.StatusTouchesChangedResponse

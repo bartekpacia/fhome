@@ -313,33 +313,6 @@ func (c *Client) XEvent(resourceID int, value string) error {
 	return err
 }
 
-func (c *Client) Listen(messages chan Message, errors chan error) {
-	messagesInternal := make(chan Message)
-	errorsInternal := make(chan error)
-
-	listener := func() {
-		for {
-			msg, err := c.ReadMsg(nil, nil)
-			if err != nil {
-				errorsInternal <- err
-			}
-
-			messagesInternal <- *msg
-		}
-	}
-
-	go listener()
-
-	for {
-		select {
-		case response := <-messagesInternal:
-			messages <- response
-		case err := <-errorsInternal:
-			errors <- err
-		}
-	}
-}
-
 func generateRequestToken() string {
 	rand.Seed(time.Now().UnixNano())
 	letters := []rune("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz")
