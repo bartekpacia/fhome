@@ -108,6 +108,7 @@ func setUpHap() {
 		if err != nil {
 			log.Fatalf("failed to send event with value %s: %v\n", newValue, err)
 		}
+		log.Println("succeess")
 	})
 
 	// Store the data in the "./db" directory.
