@@ -190,7 +190,7 @@ func (c *Client) OpenResourceSession(resourcePassword string) error {
 
 	go c.msgReader() // TODO: think about closing this goroutine
 
-	_, err = c.ReadMsg(&actionName, &token)
+	_, err = c.ReadMessage(actionName, token)
 	if err != nil {
 		return fmt.Errorf("failed to read %s: %v", actionName, err)
 	}
@@ -200,13 +200,13 @@ func (c *Client) OpenResourceSession(resourcePassword string) error {
 	return nil
 }
 
-// ReadMsg waits until the client receives message with matching actionName and
-// requestToken.
+// ReadMessage waits until the client receives message with matching actionName
+// and requestToken.
 //
-// If actionName or requestToken is null, then it is ignored.
+// If requestToken is empty, then it is ignored.
 //
 // If its status is not "ok", it returns an error.
-func (c *Client) ReadMsg(actionName *string, requestToken *string) (*Message, error) {
+func (c *Client) ReadMessage(actionName string, requestToken string) (*Message, error) {
 	for {
 		msg := <-c.messages
 
@@ -216,26 +216,34 @@ func (c *Client) ReadMsg(actionName *string, requestToken *string) (*Message, er
 			}
 		}
 
-		actionOk := true
-		if actionName != nil {
-			if *actionName != msg.ActionName {
-				actionOk = false
-			}
-		}
-
 		tokenOk := true
-		if requestToken != nil {
+		if requestToken != "" {
 			if msg.RequestToken == nil {
 				tokenOk = false
-			} else if *requestToken != *msg.RequestToken {
+			} else if requestToken != *msg.RequestToken {
 				tokenOk = false
 			}
 		}
 
-		if actionOk && tokenOk {
+		if actionName == msg.ActionName && tokenOk {
 			return &msg, nil
 		}
 	}
+}
+
+// ReadAnyMessage returns any message received from the server.
+//
+// If the message has status and it is not ok, it returns an error.
+func (c *Client) ReadAnyMessage() (*Message, error) {
+	msg := <-c.messages
+
+	if msg.Status != nil {
+		if *msg.Status != "ok" {
+			return nil, fmt.Errorf("message status is %s", *msg.Status)
+		}
+	}
+
+	return &msg, nil
 }
 
 func (c *Client) msgReader() {
@@ -271,7 +279,7 @@ func (c *Client) GetUserConfig() (*File, error) {
 		return nil, fmt.Errorf("failed to write %s to conn: %v", actionName, err)
 	}
 
-	msg, err := c.ReadMsg(&actionName, &token)
+	msg, err := c.ReadMessage(actionName, token)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read messagee: %v", err)
 	}
@@ -309,7 +317,7 @@ func (c *Client) XEvent(resourceID int, value string) error {
 		return fmt.Errorf("failed to write %s to conn: %v", actionName, err)
 	}
 
-	_, err = c.ReadMsg(&actionName, &token)
+	_, err = c.ReadMessage(actionName, token)
 	return err
 }
 

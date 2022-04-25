@@ -58,39 +58,32 @@ func main() {
 
 	log.Println("successfully opened client to resource session")
 
-	messages := make(chan fhome.Message)
-	errors := make(chan error)
-
-	go client.Listen(messages, errors)
-
 	for {
-		err, msg := client.ReadMsg(fhome.ActionStatusTouchesChanged, nil)
+		msg, err := client.ReadMessage(fhome.ActionStatusTouchesChanged, "")
+		if err != nil {
+			log.Fatalln("failed to read message:", err)
+		}
 
-		select {
-		case msg := <-messages:
-			var resp fhome.StatusTouchesChangedResponse
+		var resp fhome.StatusTouchesChangedResponse
 
-			err := json.Unmarshal(msg.Orig, &resp)
-			if err != nil {
-				log.Fatalln("failed to unmarshal message:", err)
+		err = json.Unmarshal(msg.Orig, &resp)
+		if err != nil {
+			log.Fatalln("failed to unmarshal message:", err)
+		}
+
+		if len(resp.Response.Cv) == 0 {
+			continue
+		}
+
+		cellValue := resp.Response.Cv[0]
+		if cellValue.Voi == "291" {
+			if cellValue.Dvs == "100%" {
+				log.Println("lamp 291 enabled through fhome")
+				a.Switch.On.SetValue(true)
+			} else {
+				log.Println("lamp 291 disabled through fhome")
+				a.Switch.On.SetValue(false)
 			}
-
-			if len(resp.Response.Cv) == 0 {
-				continue
-			}
-
-			cellValue := resp.Response.Cv[0]
-			if cellValue.Voi == "291" {
-				if cellValue.Dvs == "100%" {
-					log.Println("f&home ON")
-					a.Switch.On.SetValue(true)
-				} else {
-					log.Println("f&home OFF")
-					a.Switch.On.SetValue(false)
-				}
-			}
-		case err := <-errors:
-			log.Fatalf("failed to listen: %v", err)
 		}
 	}
 }
@@ -104,10 +97,10 @@ func setUpHap() {
 	a.Switch.On.OnValueRemoteUpdate(func(on bool) {
 		var newValue string
 		if on {
-			log.Println("Switch is on")
+			log.Println("switch is enabled through apple")
 			newValue = fhome.Value100
 		} else {
-			log.Println("Switch is off")
+			log.Println("switch is disabled through apple")
 			newValue = fhome.Value0
 		}
 

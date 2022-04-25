@@ -102,7 +102,7 @@ var watchCommand = cli.Command{
 		log.Println("successfully opened client to resource session")
 
 		for {
-			msg, err := client.ReadMsg(nil, nil)
+			msg, err := client.ReadAnyMessage()
 			if err != nil {
 				return fmt.Errorf("failed to listen: %v", err)
 			}
