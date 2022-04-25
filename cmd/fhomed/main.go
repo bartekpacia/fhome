@@ -17,6 +17,7 @@ import (
 var (
 	client *fhome.Client
 	e      env.Env
+	a      *accessory.Switch
 )
 
 func init() {
@@ -66,6 +67,12 @@ func main() {
 		select {
 		case msg := <-responses:
 			if msg.Response.Cv[0].Voi == "291" {
+				if msg.Response.Cv[0].Dvs == "100%" {
+					a.Switch.On.SetValue(true)
+				} else {
+					log.Println("Switch is off")
+					a.Switch.On.SetValue(false)
+				}
 			}
 
 			fmt.Printf("%s\n", fhome.Pprint(msg))
@@ -77,7 +84,7 @@ func main() {
 
 func setUpHap() {
 	// Create the switch accessory.
-	a := accessory.NewSwitch(accessory.Info{
+	a = accessory.NewSwitch(accessory.Info{
 		Name: "Bartek's Lamp",
 	})
 
