@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -100,18 +101,22 @@ var watchCommand = cli.Command{
 
 		log.Println("successfully opened client to resource session")
 
-		messages := make(chan fhome.Message)
-		errors := make(chan error)
-
-		go client.Listen(messages, errors)
-
 		for {
-			select {
-			case msg := <-messages:
-				fmt.Printf("%s\n", fhome.Pprint(msg))
-			case err := <-errors:
+			msg, err := client.ReadMsg(nil, nil)
+			if err != nil {
 				return fmt.Errorf("failed to listen: %v", err)
 			}
+
+			if msg.ActionName == fhome.ActionStatusTouchesChanged {
+				var touches fhome.StatusTouchesChangedResponse
+				err = json.Unmarshal(msg.Orig, &touches)
+				if err != nil {
+					return fmt.Errorf("failed to unmarshal touches: %v", err)
+				}
+
+				fmt.Printf("%s\n", fhome.Pprint(touches))
+			}
+
 		}
 	},
 }

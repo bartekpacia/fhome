@@ -6,7 +6,7 @@ package fhome
 // change the status of some resource/device.
 
 type Message struct {
-	ActionName   string `json:"action_name"`
+	ActionName   string  `json:"action_name"`
 	RequestToken *string `json:"request_token"`
 	Status       *string `json:"status"`
 	Orig         []byte
@@ -20,6 +20,7 @@ const (
 	ActionTouches                    = "touches"
 	ActionGetUserConfig              = "get_user_config"
 	ActionXEvent                     = "xevent"
+	ActionStatusTouchesChanged       = "statustoucheschanged"
 )
 
 var (

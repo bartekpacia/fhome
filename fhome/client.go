@@ -190,7 +190,7 @@ func (c *Client) OpenResourceSession(resourcePassword string) error {
 
 	go c.msgReader() // TODO: think about closing this goroutine
 
-	_, err = c.readMsg(&actionName, &token)
+	_, err = c.ReadMsg(&actionName, &token)
 	if err != nil {
 		return fmt.Errorf("failed to read %s: %v", actionName, err)
 	}
@@ -200,13 +200,13 @@ func (c *Client) OpenResourceSession(resourcePassword string) error {
 	return nil
 }
 
-// readMsg waits until the client receives message with matching actionName and
+// ReadMsg waits until the client receives message with matching actionName and
 // requestToken.
 //
 // If actionName or requestToken is null, then it is ignored.
 //
 // If its status is not "ok", it returns an error.
-func (c *Client) readMsg(actionName *string, requestToken *string) (*Message, error) {
+func (c *Client) ReadMsg(actionName *string, requestToken *string) (*Message, error) {
 	for {
 		msg := <-c.messages
 
@@ -271,7 +271,7 @@ func (c *Client) GetUserConfig() (*File, error) {
 		return nil, fmt.Errorf("failed to write %s to conn: %v", actionName, err)
 	}
 
-	msg, err := c.readMsg(&actionName, &token)
+	msg, err := c.ReadMsg(&actionName, &token)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read messagee: %v", err)
 	}
@@ -309,7 +309,7 @@ func (c *Client) XEvent(resourceID int, value string) error {
 		return fmt.Errorf("failed to write %s to conn: %v", actionName, err)
 	}
 
-	_, err = c.readMsg(&actionName, &token)
+	_, err = c.ReadMsg(&actionName, &token)
 	return err
 }
 
@@ -319,7 +319,7 @@ func (c *Client) Listen(messages chan Message, errors chan error) {
 
 	listener := func() {
 		for {
-			msg, err := c.readMsg(nil, nil)
+			msg, err := c.ReadMsg(nil, nil)
 			if err != nil {
 				errorsInternal <- err
 			}
