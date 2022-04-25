@@ -34,6 +34,8 @@ type Client struct {
 	email                *string
 	resourcePasswordHash *string
 	uniqueID             *string
+
+	messages chan Message
 }
 
 // NewClient creates a new client and automatically starts connecting to
@@ -171,10 +173,11 @@ func (c *Client) OpenResourceSession(resourcePassword string) error {
 	}
 
 	c.conn2 = conn
-
-	token := generateRequestToken()
+	c.messages = make(chan Message)
 
 	actionName := ActionOpenClienToResourceSession
+	token := generateRequestToken()
+
 	err = c.conn2.WriteJSON(OpenClientToResourceSession{
 		ActionName:   actionName,
 		Email:        *c.email,
@@ -185,28 +188,71 @@ func (c *Client) OpenResourceSession(resourcePassword string) error {
 		return fmt.Errorf("failed to write %s: %v", actionName, err)
 	}
 
-	for {
-		var response Response
-		err = c.conn2.ReadJSON(&response)
-		if err != nil {
-			return fmt.Errorf("failed to read response: %v", err)
-		}
+	go c.msgReader() // TODO: think about closing this goroutine
 
-		if response.RequestToken != token {
-			continue
-		}
-
-		if response.Status != "ok" {
-			fmt.Printf("response: %+v\n", response)
-			return fmt.Errorf("response status is %s", response.Status)
-		}
-
-		break
+	_, err = c.readMsg(actionName, token)
+	if err != nil {
+		return fmt.Errorf("failed to read %s: %v", actionName, err)
 	}
 
 	c.resourcePasswordHash = generatePasswordHash(resourcePassword)
 
 	return nil
+}
+
+// readMsg waits until the client receives message with matching actionName and
+// requestToken.
+//
+// If its status is not "ok", it returns an error.
+func (c *Client) readMsg(actionName string, requestToken string) (*Message, error) {
+	for {
+		msg := <-c.messages
+		if msg.ActionName != actionName || msg.RequestToken != requestToken {
+			continue
+		}
+
+		if msg.Status != "ok" {
+			return nil, fmt.Errorf("message status is %s", msg.Status)
+		}
+
+		return &msg, nil
+	}
+}
+
+func (c *Client) msgReader() {
+	for {
+		println("xdxd")
+		// var rawMsg map[string]interface{}
+
+		_, msgByte, err := c.conn2.ReadMessage()
+		if err != nil {
+			log.Fatalln("failed to read json from conn2:", err)
+		}
+		println("xdxd 232")
+
+		// msgByte, err := json.Marshal(rawMsg)
+		// if err != nil {
+		// 	log.Fatalln("failed to marshal rawMsg into msgByte:", err)
+		// }
+
+		var msg Message
+		err = json.Unmarshal(msgByte, &msg)
+		if err != nil {
+			log.Fatalln("failed to unmarshal message:", err)
+		}
+
+		// delete(rawMsg, "action_name")
+		// delete(rawMsg, "request_token")
+		// delete(rawMsg, "status")
+		// dataByte, err := json.Marshal(rawMsg)
+		// if err != nil {
+		// 	log.Fatalln("failed to marshal rawMsg into dataByte:", err)
+		// }
+
+		msg.Orig = msgByte
+
+		c.messages <- msg
+	}
 }
 
 func (c *Client) GetUserConfig() (*File, error) {
@@ -223,37 +269,32 @@ func (c *Client) GetUserConfig() (*File, error) {
 		return nil, fmt.Errorf("failed to write %s to conn: %v", actionName, err)
 	}
 
-	for {
-		var response Response
-		err = c.conn2.ReadJSON(&response)
-		if err != nil {
-			return nil, fmt.Errorf("failed to read response: %v", err)
-		}
-
-		if response.RequestToken != token {
-			continue
-		}
-
-		if response.Status != "ok" || response.ActionName != actionName {
-			continue
-		}
-
-		file := File{}
-		err = json.Unmarshal([]byte(response.File), &file)
-		if err != nil {
-			return nil, fmt.Errorf("unmarshal json: %v", err)
-		}
-
-		return &file, nil
+	msg, err := c.readMsg(actionName, token)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read messagee: %v", err)
 	}
+
+	var userConfigResponse GetUserConfigResponse
+	err = json.Unmarshal(msg.Orig, &userConfigResponse)
+	if err != nil {
+		return nil, fmt.Errorf("unmarshal user config response to json: %v", err)
+	}
+
+	var file File
+	err = json.Unmarshal([]byte(userConfigResponse.File), &file)
+	if err != nil {
+		return nil, fmt.Errorf("unmarshal file to json: %v", err)
+	}
+
+	return &file, nil
 }
 
 func (c *Client) XEvent(resourceID int, value string) error {
+	actionName := ActionXEvent
 	token := generateRequestToken()
 
-	actionName := ActionXEvent
 	xevent := XEvent{
-		ActionName:   ActionXEvent,
+		ActionName:   actionName,
 		Login:        *c.email,
 		PasswordHash: *c.resourcePasswordHash,
 		RequestToken: token,
@@ -266,24 +307,8 @@ func (c *Client) XEvent(resourceID int, value string) error {
 		return fmt.Errorf("failed to write %s to conn: %v", actionName, err)
 	}
 
-	for {
-		var response Response
-		err = c.conn2.ReadJSON(&response)
-		if err != nil {
-			return fmt.Errorf("failed to read response: %v", err)
-		}
-
-		if response.RequestToken != token {
-			continue
-		}
-
-		if response.Status != "ok" || response.ActionName != actionName {
-			continue
-		}
-
-		return nil
-
-	}
+	_, err = c.readMsg(actionName, token)
+	return err
 }
 
 func (c *Client) Listen(responses chan StatusTouchesChangedResponse, errors chan error) {

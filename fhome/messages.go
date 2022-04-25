@@ -5,6 +5,13 @@ package fhome
 // Messages are most commonly used to make server do perform somehing, e.g
 // change the status of some resource/device.
 
+type Message struct {
+	ActionName   string `json:"action_name"`
+	RequestToken string `json:"request_token"`
+	Status       string `json:"status"`
+	Orig         []byte
+}
+
 const (
 	ActionOpenClientSession          = "open_client_session"
 	ActionGetMyData                  = "get_my_data"
