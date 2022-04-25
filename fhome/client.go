@@ -221,33 +221,16 @@ func (c *Client) readMsg(actionName string, requestToken string) (*Message, erro
 
 func (c *Client) msgReader() {
 	for {
-		println("xdxd")
-		// var rawMsg map[string]interface{}
-
 		_, msgByte, err := c.conn2.ReadMessage()
 		if err != nil {
 			log.Fatalln("failed to read json from conn2:", err)
 		}
-		println("xdxd 232")
-
-		// msgByte, err := json.Marshal(rawMsg)
-		// if err != nil {
-		// 	log.Fatalln("failed to marshal rawMsg into msgByte:", err)
-		// }
 
 		var msg Message
 		err = json.Unmarshal(msgByte, &msg)
 		if err != nil {
 			log.Fatalln("failed to unmarshal message:", err)
 		}
-
-		// delete(rawMsg, "action_name")
-		// delete(rawMsg, "request_token")
-		// delete(rawMsg, "status")
-		// dataByte, err := json.Marshal(rawMsg)
-		// if err != nil {
-		// 	log.Fatalln("failed to marshal rawMsg into dataByte:", err)
-		// }
 
 		msg.Orig = msgByte
 
