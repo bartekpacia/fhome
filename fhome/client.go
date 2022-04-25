@@ -209,7 +209,6 @@ func (c *Client) OpenResourceSession(resourcePassword string) error {
 func (c *Client) readMsg(actionName *string, requestToken *string) (*Message, error) {
 	for {
 		msg := <-c.messages
-		fmt.Println("got msg", msg.ActionName)
 
 		if msg.Status != nil {
 			if *msg.Status != "ok" {
@@ -236,12 +235,6 @@ func (c *Client) readMsg(actionName *string, requestToken *string) (*Message, er
 		if actionOk && tokenOk {
 			return &msg, nil
 		}
-
-		// if (*actionName == msg.ActionName || actionName == nil) &&
-		// 	(*requestToken == *msg.RequestToken || requestToken == nil) {
-		// 	return &msg, nil
-		// }
-
 	}
 }
 
