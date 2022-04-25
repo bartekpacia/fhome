@@ -1,5 +1,10 @@
-all:
-	go build -o fh cmd/main.go cmd/env.go
+all: fh fhomed
 
-clean: main.go
-	rm main
+fh: cmd/fh/main.go
+	go build -o fh cmd/fh/main.go
+
+fhomed: cmd/fhomed/main.go
+	go build -o fhomed cmd/fhomed/main.go
+
+clean:
+	rm -f ./fh ./fhomed

@@ -235,6 +235,7 @@ var (
 )
 
 func init() {
+	log.SetFlags(0)
 	var err error
 
 	client, err = fhome.NewClient()

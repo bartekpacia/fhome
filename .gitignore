@@ -1,4 +1,5 @@
 .env
 *.exe
-./fh
+/fh
+/fhomed
 *.js
