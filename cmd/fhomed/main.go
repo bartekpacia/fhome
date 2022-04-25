@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"os"
 	"os/signal"
@@ -57,20 +58,26 @@ func main() {
 
 	log.Println("successfully opened client to resource session")
 
-	responses := make(chan fhome.StatusTouchesChangedResponse)
+	messages := make(chan fhome.Message)
 	errors := make(chan error)
 
-	go client.Listen(responses, errors)
+	go client.Listen(messages, errors)
 
 	for {
 		select {
-		case msg := <-responses:
-			if len(msg.Response.Cv) == 0 {
+		case msg := <-messages:
+			var resp fhome.StatusTouchesChangedResponse
+
+			err := json.Unmarshal(msg.Orig, &resp)
+			if err != nil {
+				log.Fatalln("failed to unmarshal message:", err)
+			}
+
+			if len(resp.Response.Cv) == 0 {
 				continue
 			}
 
-			cellValue := msg.Response.Cv[0]
-			// fmt.Println("got msg:", cellValue)
+			cellValue := resp.Response.Cv[0]
 			if cellValue.Voi == "291" {
 				if cellValue.Dvs == "100%" {
 					log.Println("f&home ON")

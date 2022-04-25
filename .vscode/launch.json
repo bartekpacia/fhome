@@ -11,6 +11,15 @@
       "mode": "debug",
       "program": "${workspaceFolder}/cmd",
       "args": ["toggle", "--object-id", "291"]
+    },
+    {
+      "name": "fhomed",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "envFile": "${workspaceFolder}/.env",
+      "program": "${workspaceFolder}/cmd/fhomed",
+      "args": []
     }
   ]
 }
