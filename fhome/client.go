@@ -317,8 +317,8 @@ func (c *Client) XEvent(resourceID int, value string) error {
 		return fmt.Errorf("failed to write %s to conn: %v", actionName, err)
 	}
 
-	_, err = c.ReadMessage(actionName, token)
-	return err
+	//_, err = c.ReadMessage(actionName, token)
+	return nil
 }
 
 func generateRequestToken() string {
