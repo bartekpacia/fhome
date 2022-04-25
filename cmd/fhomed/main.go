@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -35,7 +34,7 @@ func init() {
 }
 
 func main() {
-	setUpHap()
+	go setUpHap()
 
 	err := client.OpenClientSession(e.Email, e.CloudPassword)
 	if err != nil {
@@ -66,16 +65,21 @@ func main() {
 	for {
 		select {
 		case msg := <-responses:
-			if msg.Response.Cv[0].Voi == "291" {
-				if msg.Response.Cv[0].Dvs == "100%" {
+			if len(msg.Response.Cv) == 0 {
+				continue
+			}
+
+			cellValue := msg.Response.Cv[0]
+			// fmt.Println("got msg:", cellValue)
+			if cellValue.Voi == "291" {
+				if cellValue.Dvs == "100%" {
+					log.Println("f&home ON")
 					a.Switch.On.SetValue(true)
 				} else {
-					log.Println("Switch is off")
+					log.Println("f&home OFF")
 					a.Switch.On.SetValue(false)
 				}
 			}
-
-			fmt.Printf("%s\n", fhome.Pprint(msg))
 		case err := <-errors:
 			log.Fatalf("failed to listen: %v", err)
 		}
@@ -89,10 +93,18 @@ func setUpHap() {
 	})
 
 	a.Switch.On.OnValueRemoteUpdate(func(on bool) {
+		var newValue string
 		if on {
 			log.Println("Switch is on")
+			newValue = fhome.Value100
 		} else {
 			log.Println("Switch is off")
+			newValue = fhome.Value0
+		}
+
+		err := client.XEvent(291, newValue)
+		if err != nil {
+			log.Fatalf("failed to send event with value %s: %v\n", newValue, err)
 		}
 	})
 
