@@ -36,7 +36,7 @@ func init() {
 func main() {
 	go setUpHap()
 
-	err := client.OpenClientSession(e.Email, e.CloudPassword)
+	err := client.OpenCloudSession(e.Email, e.CloudPassword)
 	if err != nil {
 		log.Fatalf("failed to open client session: %v", err)
 	}
@@ -50,7 +50,7 @@ func main() {
 
 	log.Println("successfully got my resources")
 
-	err = client.OpenClientToResourceSession(e.ResourcePassword)
+	err = client.OpenResourceSession(e.ResourcePassword)
 	if err != nil {
 		log.Fatalf("failed to open client to resource session: %v", err)
 	}

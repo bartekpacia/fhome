@@ -26,7 +26,7 @@ var listCommand = cli.Command{
 		},
 	},
 	Action: func(c *cli.Context) error {
-		err := client.OpenClientSession(e.Email, e.CloudPassword)
+		err := client.OpenCloudSession(e.Email, e.CloudPassword)
 		if err != nil {
 			return fmt.Errorf("failed to open client session: %v", err)
 		}
@@ -40,7 +40,7 @@ var listCommand = cli.Command{
 
 		log.Println("successfully got my resources")
 
-		err = client.OpenClientToResourceSession(e.ResourcePassword)
+		err = client.OpenResourceSession(e.ResourcePassword)
 		if err != nil {
 			return fmt.Errorf("failed to open client to resource session: %v", err)
 		}
@@ -79,7 +79,7 @@ var watchCommand = cli.Command{
 	Name:  "watch",
 	Usage: "watch incoming messages on websockets",
 	Action: func(c *cli.Context) error {
-		err := client.OpenClientSession(e.Email, e.CloudPassword)
+		err := client.OpenCloudSession(e.Email, e.CloudPassword)
 		if err != nil {
 			return fmt.Errorf("failed to open client session: %v", err)
 		}
@@ -93,7 +93,7 @@ var watchCommand = cli.Command{
 
 		log.Println("successfully got my resources")
 
-		err = client.OpenClientToResourceSession(e.ResourcePassword)
+		err = client.OpenResourceSession(e.ResourcePassword)
 		if err != nil {
 			return fmt.Errorf("failed to open client to resource session: %v", err)
 		}
@@ -137,7 +137,7 @@ var toggleCommand = cli.Command{
 	Action: func(c *cli.Context) error {
 		objectID := c.Int("object-id")
 
-		err := client.OpenClientSession(e.Email, e.CloudPassword)
+		err := client.OpenCloudSession(e.Email, e.CloudPassword)
 		if err != nil {
 			return fmt.Errorf("failed to open client session: %v", err)
 		}
@@ -151,7 +151,7 @@ var toggleCommand = cli.Command{
 
 		log.Println("successfully got my resources")
 
-		err = client.OpenClientToResourceSession(e.ResourcePassword)
+		err = client.OpenResourceSession(e.ResourcePassword)
 		if err != nil {
 			return fmt.Errorf("failed to open client to resource session: %v", err)
 		}
@@ -197,7 +197,7 @@ var setCommand = cli.Command{
 		objectID := c.Int("object-id")
 		value := fhome.MapToValue(c.Int("value"))
 
-		err := client.OpenClientSession(e.Email, e.CloudPassword)
+		err := client.OpenCloudSession(e.Email, e.CloudPassword)
 		if err != nil {
 			return fmt.Errorf("failed to open client session: %v", err)
 		}
@@ -211,7 +211,7 @@ var setCommand = cli.Command{
 
 		log.Println("successfully got my resources")
 
-		err = client.OpenClientToResourceSession(e.ResourcePassword)
+		err = client.OpenResourceSession(e.ResourcePassword)
 		if err != nil {
 			return fmt.Errorf("failed to open client to resource session: %v", err)
 		}

@@ -84,7 +84,8 @@ func (c *Client) Close() error {
 	return nil
 }
 
-func (c *Client) OpenClientSession(email, password string) error {
+// OpenCloudSession opens a websocket connection to F&Home Cloud.
+func (c *Client) OpenCloudSession(email, password string) error {
 	token := generateRequestToken()
 
 	actionName := ActionOpenClientSession
@@ -158,11 +159,12 @@ func (c *Client) GetMyResources() (*GetMyResourcesResponse, error) {
 	}
 }
 
-// OpenClientToResourceSession connects to the user's resource.
+// OpenResourceSession open a websocket connection to the only resource that the
+// user has.
 //
 // Currently, it assumes that a user has only one resource.
-func (c *Client) OpenClientToResourceSession(resourcePassword string) error {
-	// We can't use the old connection.
+func (c *Client) OpenResourceSession(resourcePassword string) error {
+	// We can't use the connection that was used to connect to Cloud.
 	conn, err := connect()
 	if err != nil {
 		return fmt.Errorf("reconnect: %v", err)
