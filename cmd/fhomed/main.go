@@ -3,11 +3,13 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"github.com/bartekpacia/fhome/cmd/fhomed/config"
 	"github.com/bartekpacia/fhome/env"
 	"github.com/bartekpacia/fhome/fhome"
 	"github.com/brutella/hap"
@@ -17,7 +19,6 @@ import (
 var (
 	client *fhome.Client
 	e      env.Env
-	a      *accessory.Switch
 )
 
 func init() {
@@ -35,8 +36,6 @@ func init() {
 }
 
 func main() {
-	go setUpHap()
-
 	err := client.OpenCloudSession(e.Email, e.CloudPassword)
 	if err != nil {
 		log.Fatalf("failed to open client session: %v", err)
@@ -57,6 +56,22 @@ func main() {
 	}
 
 	log.Println("successfully opened client to resource session")
+
+	file, err := client.GetUserConfig()
+	if err != nil {
+		log.Fatalf("failed to get user config: %v", err)
+	}
+	config, err := fileToConfig(file)
+	if err != nil {
+		log.Fatalf("failed to convert file to config: %v", err)
+	}
+
+	errors := make(chan error)
+	go setUpHap(config, errors)
+	go func() {
+		err := <-errors
+		log.Fatalln("set up hap failed:", err)
+	}()
 
 	for {
 		msg, err := client.ReadMessage(fhome.ActionStatusTouchesChanged, "")
@@ -88,34 +103,68 @@ func main() {
 	}
 }
 
-func setUpHap() {
-	// Create the switch accessory.
-	a = accessory.NewSwitch(accessory.Info{
-		Name: "Bartek's Lamp",
-	})
-
-	a.Switch.On.OnValueRemoteUpdate(func(on bool) {
-		var newValue string
-		if on {
-			log.Println("switch is enabled through apple")
-			newValue = fhome.Value100
-		} else {
-			log.Println("switch is disabled through apple")
-			newValue = fhome.Value0
+func fileToConfig(f *fhome.File) (*config.Config, error) {
+	panels := make([]config.Panel, 0)
+	for _, fPanel := range f.Panels {
+		fCells := f.GetCellsByPanelID(fPanel.ID)
+		cells := make([]config.Cell, 0)
+		for _, fCell := range fCells {
+			cell := config.Cell{
+				ID:   fCell.ObjectID,
+				Name: fCell.Name,
+			}
+			cells = append(cells, cell)
 		}
 
-		err := client.XEvent(291, newValue)
-		if err != nil {
-			log.Fatalf("failed to send event with value %s: %v\n", newValue, err)
+		panel := config.Panel{
+			ID:    fPanel.ID,
+			Name:  fPanel.Name,
+			Cells: cells,
 		}
-		log.Println("succeess")
-	})
+
+		panels = append(panels, panel)
+	}
+
+	return &config.Config{Panels: panels}, nil
+}
+
+func setUpHap(cfg *config.Config, errors chan error) {
+	var switches []*accessory.A
+	bartekPanel, err := cfg.GetPanelByName("Bartek")
+	if err != nil {
+		errors <- fmt.Errorf("failed to get panel by name: %v", err)
+		return
+	}
+
+	for _, cell := range bartekPanel.Cells {
+		swtch := accessory.NewSwitch(accessory.Info{Name: cell.Name})
+		swtch.Switch.On.OnValueRemoteUpdate(func(on bool) {
+			var newValue string
+			if on {
+				log.Printf("Tapped %d\n ON", cell.ID)
+				newValue = fhome.Value100
+			} else {
+				log.Printf("Tapped %d\n OFF", cell.ID)
+				newValue = fhome.Value0
+			}
+
+			err := client.XEvent(cell.ID, newValue)
+			if err != nil {
+				log.Fatalf("failed to send event with value %s: %v\n", newValue, err)
+			}
+			log.Println("succeess")
+		})
+
+		switches = append(switches, swtch.A)
+	}
+
+	bridge := accessory.NewBridge(accessory.Info{Name: "Bartek"})
 
 	// Store the data in the "./db" directory.
 	fs := hap.NewFsStore("./db")
 
 	// Create the hap server.
-	server, err := hap.NewServer(fs, a.A)
+	server, err := hap.NewServer(fs, bridge.A, switches...)
 	if err != nil {
 		// stop if an error happens
 		log.Panic(err)

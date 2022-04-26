@@ -8,6 +8,19 @@ type File struct {
 	Server Server  `json:"server"`
 }
 
+func (f *File) GetCellsByPanelID(id string) []Cell {
+	cells := make([]Cell, 0)
+	for _, cell := range f.Cells {
+		for _, pos := range cell.PositionInPanel {
+			if pos.PanelID == id {
+				cells = append(cells, cell)
+			}
+		}
+	}
+
+	return cells
+}
+
 type Server struct {
 	ProjectVersion string `json:"projectVersion"`
 }
