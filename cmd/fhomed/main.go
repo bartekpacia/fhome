@@ -5,10 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"os"
-	"os/signal"
 	"strconv"
-	"syscall"
 
 	"github.com/bartekpacia/fhome/cmd/fhomed/config"
 	"github.com/bartekpacia/fhome/env"
@@ -184,30 +181,12 @@ func setUpHap(cfg *config.Config, results chan map[int]*accessory.Switch, errors
 
 	bridge := accessory.NewBridge(accessory.Info{Name: "Bartek"})
 
-	// Store the data in the "./db" directory.
 	fs := hap.NewFsStore("./db")
-
-	// Create the hap server.
 	server, err := hap.NewServer(fs, bridge.A, switches...)
 	if err != nil {
-		// stop if an error happens
 		log.Panic(err)
 	}
 
-	// Setup a listener for interrupts and SIGTERM signals to stop the server.
-	c := make(chan os.Signal)
-	signal.Notify(c, os.Interrupt)
-	signal.Notify(c, syscall.SIGTERM)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	go func() {
-		<-c
-		// Stop delivering signals.
-		signal.Stop(c)
-		// Cancel the context to stop the server.
-		cancel()
-	}()
-
 	results <- mapping
-	server.ListenAndServe(ctx)
+	server.ListenAndServe(context.Background())
 }
