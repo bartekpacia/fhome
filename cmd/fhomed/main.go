@@ -74,8 +74,6 @@ func main() {
 
 	result := <-results
 
-	fmt.Printf("result: %+v\n", result)
-
 	for {
 		msg, err := client.ReadMessage(fhome.ActionStatusTouchesChanged, "")
 		if err != nil {
@@ -156,13 +154,14 @@ func setUpHap(cfg *config.Config, results chan map[int]*accessory.Switch, errors
 
 	mapping := make(map[int]*accessory.Switch)
 	for _, cell := range bartekPanel.Cells {
+		cell := cell
 		swtch := accessory.NewSwitch(accessory.Info{Name: cell.Name})
 		mapping[cell.ID] = swtch
 
 		swtch.Switch.On.OnValueRemoteUpdate(func(on bool) {
 			var newValue string
 			if on {
-				log.Printf("Tapped %d ON\n", cell.ID)
+				log.Printf("c %d ON\n", cell.ID)
 				newValue = fhome.Value100
 			} else {
 				log.Printf("Tapped %d OFF\n", cell.ID)
