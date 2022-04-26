@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 
 	"github.com/bartekpacia/fhome/cmd/fhomed/config"
@@ -66,12 +67,17 @@ func main() {
 		log.Fatalf("failed to convert file to config: %v", err)
 	}
 
+	results := make(chan map[int]*accessory.Switch)
 	errors := make(chan error)
-	go setUpHap(config, errors)
+	go setUpHap(config, results, errors)
 	go func() {
 		err := <-errors
 		log.Fatalln("set up hap failed:", err)
 	}()
+
+	result := <-results
+
+	fmt.Printf("result: %+v\n", result)
 
 	for {
 		msg, err := client.ReadMessage(fhome.ActionStatusTouchesChanged, "")
@@ -91,13 +97,28 @@ func main() {
 		}
 
 		cellValue := resp.Response.Cv[0]
-		if cellValue.Voi == "291" {
+		cellID, err := strconv.Atoi(cellValue.Voi)
+		if err != nil {
+			log.Fatalln("failed to convert cell id to int:", err)
+		}
+
+		if cellID == 291 || cellID == 370 || cellID == 380 || cellID == 381 || cellID == 382 {
+			swtch := result[cellID]
+
 			if cellValue.Dvs == "100%" {
-				log.Println("lamp 291 enabled through fhome")
-				a.Switch.On.SetValue(true)
+				log.Printf("lamp %d enabled through fhome\n", cellID)
+				if swtch != nil {
+					swtch.Switch.On.SetValue(true)
+				} else {
+					log.Printf("switch for objectID %d not found\n", cellID)
+				}
 			} else {
-				log.Println("lamp 291 disabled through fhome")
-				a.Switch.On.SetValue(false)
+				log.Printf("lamp %d disabled through fhome\n", cellID)
+				if swtch != nil {
+					swtch.Switch.On.SetValue(false)
+				} else {
+					log.Printf("switch for objectID %d not found\n", cellID)
+				}
 			}
 		}
 	}
@@ -128,7 +149,7 @@ func fileToConfig(f *fhome.File) (*config.Config, error) {
 	return &config.Config{Panels: panels}, nil
 }
 
-func setUpHap(cfg *config.Config, errors chan error) {
+func setUpHap(cfg *config.Config, results chan map[int]*accessory.Switch, errors chan error) {
 	var switches []*accessory.A
 	bartekPanel, err := cfg.GetPanelByName("Bartek")
 	if err != nil {
@@ -136,15 +157,18 @@ func setUpHap(cfg *config.Config, errors chan error) {
 		return
 	}
 
+	mapping := make(map[int]*accessory.Switch)
 	for _, cell := range bartekPanel.Cells {
 		swtch := accessory.NewSwitch(accessory.Info{Name: cell.Name})
+		mapping[cell.ID] = swtch
+
 		swtch.Switch.On.OnValueRemoteUpdate(func(on bool) {
 			var newValue string
 			if on {
-				log.Printf("Tapped %d\n ON", cell.ID)
+				log.Printf("Tapped %d ON\n", cell.ID)
 				newValue = fhome.Value100
 			} else {
-				log.Printf("Tapped %d\n OFF", cell.ID)
+				log.Printf("Tapped %d OFF\n", cell.ID)
 				newValue = fhome.Value0
 			}
 
@@ -170,8 +194,7 @@ func setUpHap(cfg *config.Config, errors chan error) {
 		log.Panic(err)
 	}
 
-	// Setup a listener for interrupts and SIGTERM signals
-	// to stop the server.
+	// Setup a listener for interrupts and SIGTERM signals to stop the server.
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt)
 	signal.Notify(c, syscall.SIGTERM)
@@ -185,6 +208,6 @@ func setUpHap(cfg *config.Config, errors chan error) {
 		cancel()
 	}()
 
-	// Run the server.
+	results <- mapping
 	server.ListenAndServe(ctx)
 }
