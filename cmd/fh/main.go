@@ -31,29 +31,39 @@ var listCommand = cli.Command{
 		if err != nil {
 			return fmt.Errorf("failed to open client session: %v", err)
 		}
-
 		log.Println("successfully opened client session")
 
 		_, err = client.GetMyResources()
 		if err != nil {
 			return fmt.Errorf("failed to get my resources: %v", err)
 		}
-
 		log.Println("successfully got my resources")
 
 		err = client.OpenResourceSession(e.ResourcePassword)
 		if err != nil {
 			return fmt.Errorf("failed to open client to resource session: %v", err)
 		}
-
 		log.Println("successfully opened client to resource session")
 
 		file, err := client.GetUserConfig()
 		if err != nil {
 			return fmt.Errorf("failed to get user config: %v", err)
 		}
-
 		log.Println("successfully got user config")
+
+		touches, err := client.Touches()
+		if err != nil {
+			return fmt.Errorf("failed to get touches: %v", err)
+		}
+		log.Println("successfully got touches")
+
+		fmt.Println("touches go first")
+		cells := touches.Response.MobileDisplayProperties.Cells
+		for _, cell := range cells {
+			fmt.Printf("id: %s %s, dt: %s, preset: %s\n", cell.Oi, cell.Cd, cell.Dt, cell.P)
+		}
+
+		fmt.Println("=== ===")
 
 		panels := map[string]fhome.Panel{}
 		for _, panel := range file.Panels {
@@ -62,10 +72,11 @@ var listCommand = cli.Command{
 
 		fmt.Printf("there are %d cells\n", len(file.Cells))
 		for _, cell := range file.Cells {
-			fmt.Printf("id: %3d, name: %s\n", cell.ObjectID, cell.Name)
+			fmt.Printf("id: %3d, name: %s, panels:", cell.ObjectID, cell.Name)
 			for _, pos := range cell.PositionInPanel {
-				fmt.Printf("\tin panel %s\n", panels[pos.PanelID].Name)
+				fmt.Printf(" %s", panels[pos.PanelID].Name)
 			}
+			fmt.Println()
 		}
 
 		fmt.Printf("there are %d panels\n", len(file.Panels))

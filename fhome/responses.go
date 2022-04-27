@@ -64,13 +64,34 @@ type MobileDisplayCell struct {
 	P string `json:"P"`
 	// Style
 	Se  string `json:"Se"`
+	// Minimum value
 	Min string `json:"Min"`
+	// Maximum value
 	Max string `json:"Max"`
-	// Step (aka current value).
+	// Step (aka current value)
 	Sp string `json:"Sp"`
 	// Display Type. Known values: BIT, BYTE, TEMP (Temperature), PROC
 	// (Percentage), RGB (Light)
 	Dt string `json:"DT"`
 	// Cell permission. Known values: FC (Full Control), RO (Read Only)
 	Cp string `json:"CP"`
+}
+
+type StatusTouchesChangedResponse struct {
+	ActionName string `json:"action_name"`
+	Response   struct {
+		ProjectVersion string `json:"ProjectVersion"`
+		Status         bool   `json:"Status"`
+		StatusText     string `json:"StatusText"`
+		Cv             []struct {
+			Voi string `json:"VOI"`
+			Ii  string `json:"II"`
+			Dt  string `json:"DT"`
+			Dv  string `json:"DV"`
+			Dvs string `json:"DVS"`
+		} `json:"CV"`
+		ServerTime int `json:"ServerTime"`
+	} `json:"response"`
+	Status string `json:"status"`
+	Source string `json:"source"`
 }

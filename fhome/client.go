@@ -65,32 +65,6 @@ func NewClient() (*Client, error) {
 	return &c, nil
 }
 
-func connect() (*websocket.Conn, error) {
-	conn, resp, err := dialer.Dial(apiURL, nil)
-	if err != nil {
-		log.Printf("status: %s\n", resp.Status)
-		for name, value := range resp.Header {
-			log.Printf("header %s: %s\n", name, value)
-		}
-
-		return nil, fmt.Errorf("failed to dial: %v", err)
-	}
-
-	return conn, nil
-}
-
-func (c *Client) Close() error {
-	if err := c.conn1.Close(); err != nil {
-		return fmt.Errorf("failed to close connection 1: %v", err)
-	}
-
-	if err := c.conn2.Close(); err != nil {
-		return fmt.Errorf("failed to close connection 2: %v", err)
-	}
-
-	return nil
-}
-
 // OpenCloudSession opens a websocket connection to F&Home Cloud.
 func (c *Client) OpenCloudSession(email, password string) error {
 	token := generateRequestToken()
@@ -204,6 +178,34 @@ func (c *Client) OpenResourceSession(resourcePassword string) error {
 	return nil
 }
 
+func (c *Client) Touches() (*TouchesResponse, error) {
+	actionName := ActionTouches
+	token := generateRequestToken()
+
+	err := c.conn2.WriteJSON(Action{
+		ActionName:   actionName,
+		Login:        *c.email,
+		PasswordHash: *c.resourcePasswordHash,
+		RequestToken: token,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to write %s: %v", actionName, err)
+	}
+
+	msg, err := c.ReadMessage(actionName, token)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read message: %v", err)
+	}
+
+	var response TouchesResponse
+	err = json.Unmarshal(msg.Orig, &response)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal: %v", err)
+	}
+
+	return &response, nil
+}
+
 // ReadMessage waits until the client receives message with matching actionName
 // and requestToken.
 //
@@ -309,6 +311,18 @@ func (c *Client) SendXEvent(resourceID int, value string) error {
 	return err
 }
 
+func (c *Client) Close() error {
+	if err := c.conn1.Close(); err != nil {
+		return fmt.Errorf("failed to close connection 1: %v", err)
+	}
+
+	if err := c.conn2.Close(); err != nil {
+		return fmt.Errorf("failed to close connection 2: %v", err)
+	}
+
+	return nil
+}
+
 func (c *Client) read() <-chan Message {
 	ch := make(chan Message, 1)
 	c.subs[id()] = ch
@@ -339,6 +353,20 @@ func (c *Client) reader() {
 			delete(c.subs, i)
 		}
 	}
+}
+
+func connect() (*websocket.Conn, error) {
+	conn, resp, err := dialer.Dial(apiURL, nil)
+	if err != nil {
+		log.Printf("status: %s\n", resp.Status)
+		for name, value := range resp.Header {
+			log.Printf("header %s: %s\n", name, value)
+		}
+
+		return nil, fmt.Errorf("failed to dial: %v", err)
+	}
+
+	return conn, nil
 }
 
 func generateRequestToken() string {
