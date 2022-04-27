@@ -192,7 +192,7 @@ func (c *Client) OpenResourceSession(resourcePassword string) error {
 		return fmt.Errorf("failed to write %s: %v", actionName, err)
 	}
 
-	go c.msgReader() // TODO: think about closing this goroutine
+	go c.reader()
 
 	_, err = c.ReadMessage(actionName, token)
 	if err != nil {
@@ -202,12 +202,6 @@ func (c *Client) OpenResourceSession(resourcePassword string) error {
 	c.resourcePasswordHash = generatePasswordHash(resourcePassword)
 
 	return nil
-}
-
-func (c *Client) read() chan Message {
-	ch := make(chan Message, 1)
-	c.subs[id()] = ch
-	return ch
 }
 
 // ReadMessage waits until the client receives message with matching actionName
@@ -255,42 +249,6 @@ func (c *Client) ReadAnyMessage() (*Message, error) {
 	}
 
 	return &msg, nil
-}
-
-func (c *Client) msgReader() {
-	for {
-		// read new message
-		_, msgByte, err := c.conn2.ReadMessage()
-		if err != nil {
-			log.Fatalln("failed to read json from conn2:", err)
-		}
-
-		// unmarshal it
-		var msg Message
-		err = json.Unmarshal(msgByte, &msg)
-		if err != nil {
-			log.Fatalln("failed to unmarshal message:", err)
-		}
-		msg.Orig = msgByte
-
-		// deliver it to all subscribers
-		for i, ch := range c.subs {
-			ch <- msg
-			close(ch)
-			delete(c.subs, i)
-		}
-
-		// // asynchronously deliver it to all subscribers
-		// for i, sub := range c.subs {
-		// 	go func(ch chan Message, i int) {
-		// 		ch <- msg
-		// 		c.mu.Lock()
-		// 		defer c.mu.Unlock()
-		// 		close(ch)
-		// 		delete(c.subs, i)
-		// 	}(sub, i)
-		// }
-	}
 }
 
 func (c *Client) GetUserConfig() (*File, error) {
@@ -349,6 +307,38 @@ func (c *Client) SendXEvent(resourceID int, value string) error {
 
 	_, err = c.ReadMessage(actionName, token)
 	return err
+}
+
+func (c *Client) read() chan Message {
+	ch := make(chan Message, 1)
+	c.subs[id()] = ch
+	return ch
+}
+
+/// reader starts a goroutine that reads messages from c.conn2.
+func (c *Client) reader() {
+	for {
+		// read new message
+		_, msgByte, err := c.conn2.ReadMessage()
+		if err != nil {
+			log.Fatalln("failed to read json from conn2:", err)
+		}
+
+		// unmarshal it
+		var msg Message
+		err = json.Unmarshal(msgByte, &msg)
+		if err != nil {
+			log.Fatalln("failed to unmarshal message:", err)
+		}
+		msg.Orig = msgByte
+
+		// deliver it to all subscribers
+		for i, ch := range c.subs {
+			ch <- msg
+			close(ch)
+			delete(c.subs, i)
+		}
+	}
 }
 
 func generateRequestToken() string {
