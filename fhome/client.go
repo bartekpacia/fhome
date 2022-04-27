@@ -38,8 +38,8 @@ type Client struct {
 	// Second websocket connection that is used for all other actions.
 	conn2 *websocket.Conn
 
-	// add mutex?
-	subs []chan Message
+	// mu   sync.RWMutex
+	subs map[int]chan Message
 }
 
 // NewClient creates a new client and automatically starts connecting to
@@ -60,7 +60,8 @@ func NewClient() (*Client, error) {
 		return nil, fmt.Errorf("wrong first message received")
 	}
 
-	c := Client{conn1: conn}
+	c := Client{conn1: conn, subs: make(map[int]chan Message)}
+
 	return &c, nil
 }
 
@@ -203,6 +204,12 @@ func (c *Client) OpenResourceSession(resourcePassword string) error {
 	return nil
 }
 
+func (c *Client) read() chan Message {
+	ch := make(chan Message, 1)
+	c.subs[id()] = ch
+	return ch
+}
+
 // ReadMessage waits until the client receives message with matching actionName
 // and requestToken.
 //
@@ -211,8 +218,7 @@ func (c *Client) OpenResourceSession(resourcePassword string) error {
 // If its status is not "ok", it returns an error.
 func (c *Client) ReadMessage(actionName string, requestToken string) (*Message, error) {
 	for {
-		ch := make(chan Message)
-		c.subs = append(c.subs, ch)
+		ch := c.read()
 		msg := <-ch
 
 		if msg.Status != nil {
@@ -240,9 +246,7 @@ func (c *Client) ReadMessage(actionName string, requestToken string) (*Message, 
 //
 // If the message has status and it is not ok, it returns an error.
 func (c *Client) ReadAnyMessage() (*Message, error) {
-	ch := make(chan Message)
-	c.subs = append(c.subs, ch)
-	msg := <-ch
+	msg := <-c.read()
 
 	if msg.Status != nil {
 		if *msg.Status != "ok" {
@@ -269,14 +273,23 @@ func (c *Client) msgReader() {
 		}
 		msg.Orig = msgByte
 
-		// asynchronously deliver it to all subscribers
-		for i, sub := range c.subs {
-			go func(ch chan Message, i int) {
-				ch <- msg
-				close(ch)
-				c.subs = append(c.subs[:i], c.subs[i+1:]...)
-			}(sub, i)
+		// deliver it to all subscribers
+		for i, ch := range c.subs {
+			ch <- msg
+			close(ch)
+			delete(c.subs, i)
 		}
+
+		// // asynchronously deliver it to all subscribers
+		// for i, sub := range c.subs {
+		// 	go func(ch chan Message, i int) {
+		// 		ch <- msg
+		// 		c.mu.Lock()
+		// 		defer c.mu.Unlock()
+		// 		close(ch)
+		// 		delete(c.subs, i)
+		// 	}(sub, i)
+		// }
 	}
 }
 
@@ -359,4 +372,10 @@ func generatePasswordHash(password string) *string {
 	hash := pbkdf2.Key([]byte(password), []byte(salt), 1e4, keyLength, sha1.New)
 	stringHash := base64.StdEncoding.EncodeToString(hash)
 	return &stringHash
+}
+
+// id generates a random int
+func id() int {
+	rand.Seed(time.Now().UnixNano())
+	return rand.Intn(100000)
 }
