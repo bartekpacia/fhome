@@ -39,7 +39,7 @@ type Client struct {
 	conn2 *websocket.Conn
 
 	// mu   sync.RWMutex
-	subs map[int]chan Message
+	subs map[int]chan<- Message
 }
 
 // NewClient creates a new client and automatically starts connecting to
@@ -60,7 +60,7 @@ func NewClient() (*Client, error) {
 		return nil, fmt.Errorf("wrong first message received")
 	}
 
-	c := Client{conn1: conn, subs: make(map[int]chan Message)}
+	c := Client{conn1: conn, subs: make(map[int]chan<- Message)}
 
 	return &c, nil
 }
@@ -309,7 +309,7 @@ func (c *Client) SendXEvent(resourceID int, value string) error {
 	return err
 }
 
-func (c *Client) read() chan Message {
+func (c *Client) read() <-chan Message {
 	ch := make(chan Message, 1)
 	c.subs[id()] = ch
 	return ch
