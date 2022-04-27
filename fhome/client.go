@@ -27,15 +27,19 @@ var dialer = websocket.Dialer{
 }
 
 type Client struct {
-	// First websocket connection that is used for open_client_session,
-	// get_my_data and get_my_resources actions.
-	conn1                *websocket.Conn
-	conn2                *websocket.Conn
 	email                *string
 	resourcePasswordHash *string
 	uniqueID             *string
 
-	messages chan Message
+	// First websocket connection that is used for open_client_session,
+	// get_my_data and get_my_resources actions.
+	conn1 *websocket.Conn
+
+	// Second websocket connection that is used for all other actions.
+	conn2 *websocket.Conn
+
+	// add mutex?
+	subs []chan Message
 }
 
 // NewClient creates a new client and automatically starts connecting to
@@ -173,7 +177,6 @@ func (c *Client) OpenResourceSession(resourcePassword string) error {
 	}
 
 	c.conn2 = conn
-	c.messages = make(chan Message)
 
 	actionName := ActionOpenClienToResourceSession
 	token := generateRequestToken()
@@ -208,7 +211,9 @@ func (c *Client) OpenResourceSession(resourcePassword string) error {
 // If its status is not "ok", it returns an error.
 func (c *Client) ReadMessage(actionName string, requestToken string) (*Message, error) {
 	for {
-		msg := <-c.messages
+		ch := make(chan Message)
+		c.subs = append(c.subs, ch)
+		msg := <-ch
 
 		if msg.Status != nil {
 			if *msg.Status != "ok" {
@@ -235,7 +240,9 @@ func (c *Client) ReadMessage(actionName string, requestToken string) (*Message, 
 //
 // If the message has status and it is not ok, it returns an error.
 func (c *Client) ReadAnyMessage() (*Message, error) {
-	msg := <-c.messages
+	ch := make(chan Message)
+	c.subs = append(c.subs, ch)
+	msg := <-ch
 
 	if msg.Status != nil {
 		if *msg.Status != "ok" {
@@ -248,20 +255,28 @@ func (c *Client) ReadAnyMessage() (*Message, error) {
 
 func (c *Client) msgReader() {
 	for {
+		// read new message
 		_, msgByte, err := c.conn2.ReadMessage()
 		if err != nil {
 			log.Fatalln("failed to read json from conn2:", err)
 		}
 
+		// unmarshal it
 		var msg Message
 		err = json.Unmarshal(msgByte, &msg)
 		if err != nil {
 			log.Fatalln("failed to unmarshal message:", err)
 		}
-
 		msg.Orig = msgByte
 
-		c.messages <- msg
+		// asynchronously deliver it to all subscribers
+		for i, sub := range c.subs {
+			go func(ch chan Message, i int) {
+				ch <- msg
+				close(ch)
+				c.subs = append(c.subs[:i], c.subs[i+1:]...)
+			}(sub, i)
+		}
 	}
 }
 
@@ -300,6 +315,8 @@ func (c *Client) GetUserConfig() (*File, error) {
 }
 
 func (c *Client) SendXEvent(resourceID int, value string) error {
+	fmt.Println("sending Xevent to resource with id", resourceID, "with value", value)
+
 	actionName := ActionXEvent
 	token := generateRequestToken()
 
@@ -317,8 +334,8 @@ func (c *Client) SendXEvent(resourceID int, value string) error {
 		return fmt.Errorf("failed to write %s to conn: %v", actionName, err)
 	}
 
-	//_, err = c.ReadMessage(actionName, token)
-	return nil
+	_, err = c.ReadMessage(actionName, token)
+	return err
 }
 
 func generateRequestToken() string {

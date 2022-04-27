@@ -159,18 +159,9 @@ func setUpHap(cfg *config.Config, results chan map[int]*accessory.Switch, errors
 		mapping[cell.ID] = swtch
 
 		swtch.Switch.On.OnValueRemoteUpdate(func(on bool) {
-			var newValue string
-			if on {
-				log.Printf("c %d ON\n", cell.ID)
-				newValue = fhome.Value100
-			} else {
-				log.Printf("Tapped %d OFF\n", cell.ID)
-				newValue = fhome.Value0
-			}
-
-			err := client.SendXEvent(cell.ID, newValue)
+			err := client.SendXEvent(cell.ID, fhome.ValueToggle)
 			if err != nil {
-				log.Fatalf("failed to send event with value %s: %v\n", newValue, err)
+				log.Fatalf("failed to send event to %d: %v\n", cell.ID, err)
 			}
 			log.Println("succeess")
 		})
