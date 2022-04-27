@@ -168,7 +168,7 @@ func setUpHap(cfg *config.Config, results chan map[int]*accessory.Switch, errors
 				newValue = fhome.Value0
 			}
 
-			err := client.XEvent(cell.ID, newValue)
+			err := client.SendXEvent(cell.ID, newValue)
 			if err != nil {
 				log.Fatalf("failed to send event with value %s: %v\n", newValue, err)
 			}

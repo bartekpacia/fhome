@@ -163,7 +163,7 @@ var toggleCommand = cli.Command{
 
 		log.Println("successfully opened client to resource session")
 
-		err = client.XEvent(objectID, fhome.ValueToggle)
+		err = client.SendXEvent(objectID, fhome.ValueToggle)
 		if err != nil {
 			return fmt.Errorf("failed to send xevent to object with id %d: %v", objectID, err)
 		}
@@ -223,7 +223,7 @@ var setCommand = cli.Command{
 
 		log.Println("successfully opened client to resource session")
 
-		err = client.XEvent(objectID, value)
+		err = client.SendXEvent(objectID, value)
 		if err != nil {
 			return fmt.Errorf("failed to send xevent to object with id %d: %v", objectID, err)
 		}

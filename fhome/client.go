@@ -299,7 +299,7 @@ func (c *Client) GetUserConfig() (*File, error) {
 	return &file, nil
 }
 
-func (c *Client) XEvent(resourceID int, value string) error {
+func (c *Client) SendXEvent(resourceID int, value string) error {
 	actionName := ActionXEvent
 	token := generateRequestToken()
 
