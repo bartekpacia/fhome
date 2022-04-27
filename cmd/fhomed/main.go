@@ -59,6 +59,9 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to get user config: %v", err)
 	}
+
+	log.Println("successfully got user config")
+
 	config, err := fileToConfig(file)
 	if err != nil {
 		log.Fatalf("failed to convert file to config: %v", err)
