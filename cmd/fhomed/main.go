@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 
 	"github.com/bartekpacia/fhome/cmd/fhomed/config"
 	"github.com/bartekpacia/fhome/env"
@@ -158,7 +159,7 @@ func setUpHap(cfg *config.Config, results chan map[int]*accessory.Switch, errors
 	mapping := make(map[int]*accessory.Switch)
 	for _, cell := range bartekPanel.Cells {
 		cell := cell
-		swtch := accessory.NewSwitch(accessory.Info{Name: cell.Name})
+		swtch := accessory.NewSwitch(accessory.Info{Name: strings.TrimSpace(cell.Name)})
 		mapping[cell.ID] = swtch
 
 		swtch.Switch.On.OnValueRemoteUpdate(func(on bool) {
