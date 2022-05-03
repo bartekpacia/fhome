@@ -96,6 +96,7 @@ func main() {
 		}
 
 		cellValue := resp.Response.CellValues[0]
+		fmt.Println(cellValue)
 		cellID, err := strconv.Atoi(cellValue.ID)
 		if err != nil {
 			log.Fatalln("failed to convert cell id to int:", err)
@@ -104,7 +105,7 @@ func main() {
 		if cellID == 291 || cellID == 370 || cellID == 380 || cellID == 381 || cellID == 382 {
 			swtch := result[cellID]
 
-			if cellValue.Dvs == "100%" {
+			if cellValue.ValueStr == "100%" {
 				log.Printf("lamp %d enabled through fhome\n", cellID)
 				if swtch != nil {
 					swtch.Switch.On.SetValue(true)
@@ -123,14 +124,15 @@ func main() {
 	}
 }
 
-func fileToConfig(f *fhome.File) (*config.Config, error) {
+func fileToConfig(file *fhome.File) (*config.Config, error) {
 	panels := make([]config.Panel, 0)
-	for _, fPanel := range f.Panels {
-		fCells := f.GetCellsByPanelID(fPanel.ID)
+	for _, fPanel := range file.Panels {
+		fCells := file.GetCellsByPanelID(fPanel.ID)
 		cells := make([]config.Cell, 0)
 		for _, fCell := range fCells {
 			cell := config.Cell{
 				ID:   fCell.ObjectID,
+				Icon: fCell.Icon,
 				Name: fCell.Name,
 			}
 			cells = append(cells, cell)

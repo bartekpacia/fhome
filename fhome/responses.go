@@ -97,9 +97,15 @@ type StatusTouchesChangedResponse struct {
 }
 
 type CellValue struct {
-	ID  string `json:"VOI"`
-	Ii  string `json:"II"`
-	Dt  string `json:"DT"`
-	Dv  string `json:"DV"`
-	Dvs string `json:"DVS"`
+	ID       string `json:"VOI"`
+	Ii       string `json:"II"`
+	DataType string `json:"DT"` // Known values: BIT, PROC
+	Value    string `json:"DV"`
+	ValueStr string `json:"DVS"`
+}
+
+func (cv CellValue) String() string {
+	return fmt.Sprintf("id: %s, ii: %s, dt: %s, dv: %s, dvs: %s",
+		cv.ID, cv.Ii, cv.DataType, cv.Value, cv.ValueStr,
+	)
 }
