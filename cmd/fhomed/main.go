@@ -91,12 +91,12 @@ func main() {
 			log.Fatalln("failed to unmarshal message:", err)
 		}
 
-		if len(resp.Response.Cv) == 0 {
+		if len(resp.Response.CellValues) == 0 {
 			continue
 		}
 
-		cellValue := resp.Response.Cv[0]
-		cellID, err := strconv.Atoi(cellValue.Voi)
+		cellValue := resp.Response.CellValues[0]
+		cellID, err := strconv.Atoi(cellValue.ID)
 		if err != nil {
 			log.Fatalln("failed to convert cell id to int:", err)
 		}

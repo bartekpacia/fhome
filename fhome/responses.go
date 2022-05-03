@@ -1,5 +1,7 @@
 package fhome
 
+import "fmt"
+
 // Response is a websocket message sent from the server to the client in
 // response to the client's previous websocket message to the server.
 
@@ -9,12 +11,8 @@ type Response struct {
 	Status       string `json:"status"`
 	Source       string `json:"source"`
 
-	// Non-nil for "disconnecting" action
-	Details string `json:"details"`
-	Reason  string `json:"reason"`
-
-	// Non-nil for ActionGetUserConfig
-	File string `json:"file"`
+	Details string `json:"details"` // Non-empty for "disconnecting" action
+	Reason  string `json:"reason"`  // Non-empty for "disconnecting" action
 }
 
 type GetUserConfigResponse struct {
@@ -53,45 +51,55 @@ type TouchesResponse struct {
 
 // MobileDisplayCell is a Cell, but returned from "touches" action.
 type MobileDisplayCell struct {
-	// Cell description
-	Cd string `json:"CD"`
+	// Cell description. Note that this is by the configurator app, not by the
+	// user in the mobile or web app.
+	Desc string `json:"CD"`
 	// Object ID
-	Oi string `json:"OI"`
+	ID string `json:"OI"`
 	// Type number. Known values: 706, 707, 708, 709, 710, 711, 717, 718, 719,
 	// 722, 724, 760
-	Tn string `json:"TN"`
+	TypeNumber string `json:"TN"`
 	// Preset. Known values: 0, 1, 4
-	P string `json:"P"`
-	// Style
-	Se  string `json:"Se"`
+	Preset string `json:"P"`
+	// Style. Display Type TEMP always has this set to 2.
+	Style string `json:"Se"`
 	// Minimum value
-	Min string `json:"Min"`
+	MinVal string `json:"Min"`
 	// Maximum value
-	Max string `json:"Max"`
-	// Step (aka current value)
-	Sp string `json:"Sp"`
+	MaxVal string `json:"Max"`
+	// Step (aka current value). Display Type TEMP always has this set to
+	// 0xa005.
+	Step string `json:"Sp"`
 	// Display Type. Known values: BIT, BYTE, TEMP (Temperature), PROC
 	// (Percentage), RGB (Light)
-	Dt string `json:"DT"`
+	DisplayType string `json:"DT"`
 	// Cell permission. Known values: FC (Full Control), RO (Read Only)
-	Cp string `json:"CP"`
+	Permission string `json:"CP"`
+}
+
+func (cell MobileDisplayCell) String() string {
+	return fmt.Sprintf("id: %s, desc: %s, type: %s, preset: %s, style: %s, perm: %s, step/value: %s\n",
+		cell.ID, cell.Desc, cell.DisplayType, cell.Preset, cell.Style, cell.Permission, cell.Step,
+	)
 }
 
 type StatusTouchesChangedResponse struct {
 	ActionName string `json:"action_name"`
 	Response   struct {
-		ProjectVersion string `json:"ProjectVersion"`
-		Status         bool   `json:"Status"`
-		StatusText     string `json:"StatusText"`
-		Cv             []struct {
-			Voi string `json:"VOI"`
-			Ii  string `json:"II"`
-			Dt  string `json:"DT"`
-			Dv  string `json:"DV"`
-			Dvs string `json:"DVS"`
-		} `json:"CV"`
-		ServerTime int `json:"ServerTime"`
+		ProjectVersion string      `json:"ProjectVersion"`
+		Status         bool        `json:"Status"`
+		StatusText     string      `json:"StatusText"`
+		CellValues     []CellValue `json:"CV"`
+		ServerTime     int         `json:"ServerTime"`
 	} `json:"response"`
 	Status string `json:"status"`
 	Source string `json:"source"`
+}
+
+type CellValue struct {
+	ID  string `json:"VOI"`
+	Ii  string `json:"II"`
+	Dt  string `json:"DT"`
+	Dv  string `json:"DV"`
+	Dvs string `json:"DVS"`
 }

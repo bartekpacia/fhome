@@ -178,6 +178,7 @@ func (c *Client) OpenResourceSession(resourcePassword string) error {
 	return nil
 }
 
+// Touches returns additional information about particular cells, e.g their style (icon) and 
 func (c *Client) Touches() (*TouchesResponse, error) {
 	actionName := ActionTouches
 	token := generateRequestToken()
@@ -253,6 +254,9 @@ func (c *Client) ReadAnyMessage() (*Message, error) {
 	return &msg, nil
 }
 
+// GetUserConfig returns user configuration of cells and panels.
+//
+// User configuration is set by the user, from the mobile or web app.
 func (c *Client) GetUserConfig() (*File, error) {
 	token := generateRequestToken()
 

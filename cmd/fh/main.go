@@ -25,6 +25,12 @@ var listCommand = cli.Command{
 			Value:   false,
 			Usage:   "print extensive logs",
 		},
+		&cli.BoolFlag{
+			Name: "touches",
+		},
+		&cli.BoolFlag{
+			Name: "get_user_config",
+		},
 	},
 	Action: func(c *cli.Context) error {
 		err := client.OpenCloudSession(e.Email, e.CloudPassword)
@@ -45,44 +51,47 @@ var listCommand = cli.Command{
 		}
 		log.Println("successfully opened client to resource session")
 
-		file, err := client.GetUserConfig()
-		if err != nil {
-			return fmt.Errorf("failed to get user config: %v", err)
-		}
-		log.Println("successfully got user config")
-
-		touches, err := client.Touches()
-		if err != nil {
-			return fmt.Errorf("failed to get touches: %v", err)
-		}
-		log.Println("successfully got touches")
-
-		fmt.Println("touches go first")
-		cells := touches.Response.MobileDisplayProperties.Cells
-		for _, cell := range cells {
-			fmt.Printf("id: %s %s, dt: %s, preset: %s\n", cell.Oi, cell.Cd, cell.Dt, cell.P)
-		}
-
-		fmt.Println("=== ===")
-
-		panels := map[string]fhome.Panel{}
-		for _, panel := range file.Panels {
-			panels[panel.ID] = panel
-		}
-
-		fmt.Printf("there are %d cells\n", len(file.Cells))
-		for _, cell := range file.Cells {
-			fmt.Printf("id: %3d, name: %s, panels:", cell.ObjectID, cell.Name)
-			for _, pos := range cell.PositionInPanel {
-				fmt.Printf(" %s", panels[pos.PanelID].Name)
+		if c.Bool("touches") {
+			touches, err := client.Touches()
+			if err != nil {
+				return fmt.Errorf("failed to get touches: %v", err)
 			}
-			fmt.Println()
+			log.Println("successfully got touches")
+
+			fmt.Println("touches go first")
+			cells := touches.Response.MobileDisplayProperties.Cells
+			for _, cell := range cells {
+				fmt.Printf("id: %s %s, dt: %s, preset: %s, style: %s, perm: %s, step/value: %s\n", cell.ID, cell.Desc, cell.DisplayType, cell.Preset, cell.Style, cell.Permission, cell.Step)
+			}
 		}
 
-		fmt.Printf("there are %d panels\n", len(file.Panels))
-		for _, panel := range file.Panels {
-			fmt.Printf("id: %s, name: %s\n", panel.ID, panel.Name)
+		if c.Bool("get_user_config") {
+			file, err := client.GetUserConfig()
+			if err != nil {
+				return fmt.Errorf("failed to get user config: %v", err)
+			}
+			log.Println("successfully got user config")
+
+			panels := map[string]fhome.Panel{}
+			for _, panel := range file.Panels {
+				panels[panel.ID] = panel
+			}
+
+			fmt.Printf("there are %d cells\n", len(file.Cells))
+			for _, cell := range file.Cells {
+				fmt.Printf("id: %3d, name: %s, icon: %s panels:", cell.ObjectID, cell.Name, cell.Icon)
+				for _, pos := range cell.PositionInPanel {
+					fmt.Printf(" %s", panels[pos.PanelID].Name)
+				}
+				fmt.Println()
+			}
+
+			fmt.Printf("there are %d panels\n", len(file.Panels))
+			for _, panel := range file.Panels {
+				fmt.Printf("id: %s, name: %s\n", panel.ID, panel.Name)
+			}
 		}
+
 		return nil
 	},
 }
