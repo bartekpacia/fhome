@@ -49,6 +49,16 @@ type TouchesResponse struct {
 	RequestToken string `json:"request_token"`
 }
 
+type DisplayType string
+
+const (
+	Bit         DisplayType = "BIT"
+	Byte        DisplayType = "BYTE"
+	Temperature DisplayType = "TEMP"
+	Percentage  DisplayType = "PROC"
+	RGB         DisplayType = "RGB"
+)
+
 // MobileDisplayCell is a Cell, but returned from "touches" action.
 type MobileDisplayCell struct {
 	// Cell description. Note that this is by the configurator app, not by the
@@ -70,9 +80,8 @@ type MobileDisplayCell struct {
 	// Step (aka current value). Display Type TEMP always has this set to
 	// 0xa005.
 	Step string `json:"Sp"`
-	// Display Type. Known values: BIT, BYTE, TEMP (Temperature), PROC
-	// (Percentage), RGB (Light)
-	DisplayType string `json:"DT"`
+	// Display Type.
+	DisplayType DisplayType `json:"DT"`
 	// Cell permission. Known values: FC (Full Control), RO (Read Only)
 	Permission string `json:"CP"`
 }
@@ -97,11 +106,11 @@ type StatusTouchesChangedResponse struct {
 }
 
 type CellValue struct {
-	ID       string `json:"VOI"`
-	Ii       string `json:"II"`
-	DataType string `json:"DT"` // Known values: BIT, PROC
-	Value    string `json:"DV"`
-	ValueStr string `json:"DVS"`
+	ID       string      `json:"VOI"`
+	Ii       string      `json:"II"`
+	DataType DisplayType `json:"DT"` // Known values: BIT, PROC
+	Value    string      `json:"DV"`
+	ValueStr string      `json:"DVS"`
 }
 
 func (cv CellValue) String() string {
