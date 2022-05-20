@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 	"strconv"
 	"strings"
 
@@ -21,8 +22,6 @@ var (
 )
 
 func init() {
-	log.SetFlags(0)
-
 	var err error
 
 	client, err = fhome.NewClient()
@@ -68,9 +67,14 @@ func main() {
 		log.Fatalf("failed to convert file to config: %v", err)
 	}
 
+	err = dumpConfig(config)
+	if err != nil {
+		log.Fatalf("failed to dump config: %v", err)
+	}
+
 	results := make(chan map[int]*accessory.Switch)
 	errors := make(chan error)
-	go setUpHap(config, results, errors)
+	go setUpHAP(config, results, errors)
 	go func() {
 		err := <-errors
 		log.Fatalln("set up hap failed:", err)
@@ -96,7 +100,7 @@ func main() {
 		}
 
 		cellValue := resp.Response.CellValues[0]
-		fmt.Println(cellValue)
+		richPrint(&cellValue, config)
 		cellID, err := strconv.Atoi(cellValue.ID)
 		if err != nil {
 			log.Fatalln("failed to convert cell id to int:", err)
@@ -122,6 +126,34 @@ func main() {
 			}
 		}
 	}
+}
+
+func dumpConfig(cfg *config.Config) error {
+	file, err := os.Create("config.json")
+	if err != nil {
+		return fmt.Errorf("create config.json: %v", err)
+	}
+
+	data, err := json.Marshal(cfg)
+	if err != nil {
+		return fmt.Errorf("marshal config: %v", err)
+	}
+
+	_, err = file.Write(data)
+	if err != nil {
+		return fmt.Errorf("write config: %v", err)
+	}
+
+	return nil
+}
+
+func richPrint(cellValue *fhome.CellValue, config *config.Config) {
+	cell, err := config.GetCellByID(cellValue.IntID())
+	if err != nil {
+		log.Fatalf("get cell %d by ID %v", cellValue.IntID(), err)
+	}
+
+	log.Printf("%s (%s)\n", cell.Name, cellValue)
 }
 
 func fileToConfig(file *fhome.File) (*config.Config, error) {
@@ -150,7 +182,7 @@ func fileToConfig(file *fhome.File) (*config.Config, error) {
 	return &config.Config{Panels: panels}, nil
 }
 
-func setUpHap(cfg *config.Config, results chan map[int]*accessory.Switch, errors chan error) {
+func setUpHAP(cfg *config.Config, results chan map[int]*accessory.Switch, errors chan error) {
 	var switches []*accessory.A
 	bartekPanel, err := cfg.GetPanelByName("Bartek")
 	if err != nil {

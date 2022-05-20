@@ -179,7 +179,7 @@ func (c *Client) OpenResourceSession(resourcePassword string) error {
 }
 
 // Touches returns additional information about particular cells, e.g their
-// style (icon) and
+// style (icon) and configurator-set name.
 func (c *Client) Touches() (*TouchesResponse, error) {
 	actionName := ActionTouches
 	token := generateRequestToken()

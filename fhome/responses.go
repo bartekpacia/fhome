@@ -1,6 +1,10 @@
 package fhome
 
-import "fmt"
+import (
+	"fmt"
+	"log"
+	"strconv"
+)
 
 // Response is a websocket message sent from the server to the client in
 // response to the client's previous websocket message to the server.
@@ -108,9 +112,18 @@ type StatusTouchesChangedResponse struct {
 type CellValue struct {
 	ID       string      `json:"VOI"`
 	Ii       string      `json:"II"`
-	DataType DisplayType `json:"DT"` // Known values: BIT, PROC
-	Value    string      `json:"DV"`
-	ValueStr string      `json:"DVS"`
+	DataType DisplayType `json:"DT"`  // Known values: BIT, PROC
+	Value    string      `json:"DV"`  // Probably "data value"
+	ValueStr string      `json:"DVS"` // Probably "data value string"
+}
+
+func (cv *CellValue) IntID() int {
+	i, err := strconv.Atoi(cv.ID)
+	if err != nil {
+		log.Fatalln("failed to convert ID to int:", err)
+	}
+
+	return i
 }
 
 func (cv CellValue) String() string {
