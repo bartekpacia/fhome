@@ -178,7 +178,8 @@ func (c *Client) OpenResourceSession(resourcePassword string) error {
 	return nil
 }
 
-// Touches returns additional information about particular cells, e.g their style (icon) and 
+// Touches returns additional information about particular cells, e.g their
+// style (icon) and
 func (c *Client) Touches() (*TouchesResponse, error) {
 	actionName := ActionTouches
 	token := generateRequestToken()
