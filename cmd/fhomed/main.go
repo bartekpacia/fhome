@@ -3,10 +3,10 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/bartekpacia/fhome/cmd/fhomed/config"
@@ -21,7 +21,15 @@ var (
 	e      env.Env
 )
 
+var (
+	PIN  string
+	Name string
+)
+
 func init() {
+	flag.StringVar(&PIN, "pin", "00102003", "accessory PIN")
+	flag.StringVar(&Name, "name", "fhome", "accessory name")
+
 	var err error
 
 	client, err = fhome.NewClient()
@@ -34,6 +42,7 @@ func init() {
 }
 
 func main() {
+	flag.Parse()
 	err := client.OpenCloudSession(e.Email, e.CloudPassword)
 	if err != nil {
 		log.Fatalf("failed to open client session: %v", err)
@@ -72,13 +81,8 @@ func main() {
 		log.Fatalf("failed to dump config: %v", err)
 	}
 
-	results := make(chan map[int]*accessory.Switch)
-	errors := make(chan error)
-	go setUpHAP(config, results, errors)
-	go func() {
-		err := <-errors
-		log.Fatalln("set up hap failed:", err)
-	}()
+	results := make(chan map[int]*accessory.Lightbulb)
+	go setUpHAP(config, results)
 
 	result := <-results
 
@@ -101,28 +105,22 @@ func main() {
 
 		cellValue := resp.Response.CellValues[0]
 		richPrint(&cellValue, config)
-		cellID, err := strconv.Atoi(cellValue.ID)
-		if err != nil {
-			log.Fatalln("failed to convert cell id to int:", err)
-		}
 
-		if cellID == 291 || cellID == 370 || cellID == 380 || cellID == 381 || cellID == 382 {
-			swtch := result[cellID]
+		acc := result[cellValue.IntID()]
 
-			if cellValue.ValueStr == "100%" {
-				log.Printf("lamp %d enabled through fhome\n", cellID)
-				if swtch != nil {
-					swtch.Switch.On.SetValue(true)
-				} else {
-					log.Printf("switch for objectID %d not found\n", cellID)
-				}
+		if cellValue.ValueStr == "100%" {
+			log.Printf("lamp %d enabled through fhome\n", cellValue.IntID())
+			if acc != nil {
+				acc.Lightbulb.On.SetValue(true)
 			} else {
-				log.Printf("lamp %d disabled through fhome\n", cellID)
-				if swtch != nil {
-					swtch.Switch.On.SetValue(false)
-				} else {
-					log.Printf("switch for objectID %d not found\n", cellID)
-				}
+				log.Printf("switch for objectID %d not found\n", cellValue.IntID())
+			}
+		} else if cellValue.ValueStr == "0%" {
+			log.Printf("lamp %d disabled through fhome\n", cellValue.IntID())
+			if acc != nil {
+				acc.Lightbulb.On.SetValue(false)
+			} else {
+				log.Printf("switch for objectID %d not found\n", cellValue.IntID())
 			}
 		}
 	}
@@ -147,8 +145,8 @@ func dumpConfig(cfg *config.Config) error {
 	return nil
 }
 
-func richPrint(cellValue *fhome.CellValue, config *config.Config) {
-	cell, err := config.GetCellByID(cellValue.IntID())
+func richPrint(cellValue *fhome.CellValue, cfg *config.Config) {
+	cell, err := cfg.GetCellByID(cellValue.IntID())
 	if err != nil {
 		log.Fatalf("get cell %d by ID %v", cellValue.IntID(), err)
 	}
@@ -164,7 +162,7 @@ func fileToConfig(file *fhome.File) (*config.Config, error) {
 		for _, fCell := range fCells {
 			cell := config.Cell{
 				ID:   fCell.ObjectID,
-				Icon: fCell.Icon,
+				Icon: config.CreateIcon(fCell.Icon),
 				Name: fCell.Name,
 			}
 			cells = append(cells, cell)
@@ -182,39 +180,38 @@ func fileToConfig(file *fhome.File) (*config.Config, error) {
 	return &config.Config{Panels: panels}, nil
 }
 
-func setUpHAP(cfg *config.Config, results chan map[int]*accessory.Switch, errors chan error) {
-	var switches []*accessory.A
-	bartekPanel, err := cfg.GetPanelByName("Bartek")
-	if err != nil {
-		errors <- fmt.Errorf("failed to get panel by name: %v", err)
-		return
+func setUpHAP(cfg *config.Config, results chan map[int]*accessory.Lightbulb) {
+	var accessories []*accessory.A
+
+	// maps cellID to lightbulbs
+	lightbulbMap := make(map[int]*accessory.Lightbulb)
+	for _, panel := range cfg.Panels {
+		for _, cell := range panel.Cells {
+			cell := cell
+			a := accessory.NewLightbulb(accessory.Info{Name: strings.TrimSpace(cell.Name)})
+			lightbulbMap[cell.ID] = a
+
+			a.Lightbulb.On.OnValueRemoteUpdate(func(on bool) {
+				err := client.SendXEvent(cell.ID, fhome.ValueToggle)
+				if err != nil {
+					log.Fatalf("failed to send event to %d: %v\n", cell.ID, err)
+				}
+				log.Println("succeess")
+			})
+
+			accessories = append(accessories, a.A)
+		}
 	}
 
-	mapping := make(map[int]*accessory.Switch)
-	for _, cell := range bartekPanel.Cells {
-		cell := cell
-		swtch := accessory.NewSwitch(accessory.Info{Name: strings.TrimSpace(cell.Name)})
-		mapping[cell.ID] = swtch
-
-		swtch.Switch.On.OnValueRemoteUpdate(func(on bool) {
-			err := client.SendXEvent(cell.ID, fhome.ValueToggle)
-			if err != nil {
-				log.Fatalf("failed to send event to %d: %v\n", cell.ID, err)
-			}
-			log.Println("succeess")
-		})
-
-		switches = append(switches, swtch.A)
-	}
-
-	bridge := accessory.NewBridge(accessory.Info{Name: "Bartek"})
+	bridge := accessory.NewBridge(accessory.Info{Name: Name})
 
 	fs := hap.NewFsStore("./db")
-	server, err := hap.NewServer(fs, bridge.A, switches...)
+	server, err := hap.NewServer(fs, bridge.A, accessories...)
 	if err != nil {
 		log.Panic(err)
 	}
+	server.Pin = PIN
 
-	results <- mapping
+	results <- lightbulbMap
 	server.ListenAndServe(context.Background())
 }

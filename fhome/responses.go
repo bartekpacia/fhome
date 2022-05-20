@@ -112,7 +112,7 @@ type StatusTouchesChangedResponse struct {
 type CellValue struct {
 	ID       string      `json:"VOI"`
 	Ii       string      `json:"II"`
-	DataType DisplayType `json:"DT"`  // Known values: BIT, PROC
+	DataType DisplayType `json:"DT"`
 	Value    string      `json:"DV"`  // Probably "data value"
 	ValueStr string      `json:"DVS"` // Probably "data value string"
 }

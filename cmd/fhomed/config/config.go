@@ -59,6 +59,6 @@ func (p *Panel) GetCellByID(cellID int) (*Cell, error) {
 
 type Cell struct {
 	ID   int
-	Icon string
+	Icon Icon
 	Name string
 }
