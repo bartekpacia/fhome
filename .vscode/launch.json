@@ -21,7 +21,7 @@
       "cwd": "${workspaceFolder}",
       "envFile": "${workspaceFolder}/.env",
       "program": "${workspaceFolder}/cmd/fhomed",
-      "args": []
+      "args": ["--pin", "69696969", "--name", "Domek"]
     }
   ]
 }

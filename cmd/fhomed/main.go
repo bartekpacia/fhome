@@ -163,7 +163,6 @@ func richPrint(cellValue *fhome.CellValue, cfg *config.Config) {
 // merge create config from "get_user_config" action and "touches" action.
 func merge(file *fhome.File, touchesResp *fhome.TouchesResponse) (*config.Config, error) {
 	panels := make([]config.Panel, 0)
-	cfg := config.Config{Panels: panels}
 
 	for _, fPanel := range file.Panels {
 		fCells := file.GetCellsByPanelID(fPanel.ID)
@@ -186,6 +185,8 @@ func merge(file *fhome.File, touchesResp *fhome.TouchesResponse) (*config.Config
 		panels = append(panels, panel)
 	}
 
+	cfg := config.Config{Panels: panels}
+
 	for _, cell := range touchesResp.Response.MobileDisplayProperties.Cells {
 		cellID, err := strconv.Atoi(cell.ID)
 		if err != nil {
@@ -194,9 +195,11 @@ func merge(file *fhome.File, touchesResp *fhome.TouchesResponse) (*config.Config
 
 		cfgCell, err := cfg.GetCellByID(cellID)
 		if err != nil {
-			return nil, fmt.Errorf("get cell by id: %v", err)
+			log.Printf("get cell by id: %v", err)
+			continue
 		}
 
+		fmt.Printf("cell.Desc (from touches): %s\n", cell.Desc)
 		cfgCell.Desc = cell.Desc
 	}
 
