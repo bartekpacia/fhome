@@ -70,8 +70,9 @@ func (p *Panel) GetCellByID(cellID int) (*Cell, error) {
 }
 
 type Cell struct {
-	ID   int
-	Icon Icon
-	Name string // Name that is set by and visible in client apps
-	Desc string // Name that is set by and visibile in the configurator app
+	ID    int
+	Icon  Icon
+	Name  string // Name that is set by and visible in client apps
+	Desc  string // Name that is set by and visibile in the configurator app
+	Value string
 }

@@ -200,6 +200,7 @@ func merge(file *fhome.File, touchesResp *fhome.TouchesResponse) (*config.Config
 		}
 
 		cfgCell.Desc = cell.Desc
+		cfgCell.Value = cell.Step
 	}
 
 	return &cfg, nil
