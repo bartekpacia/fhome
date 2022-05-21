@@ -78,9 +78,9 @@ type MobileDisplayCell struct {
 	// Style. Display Type TEMP always has this set to 2.
 	Style string `json:"Se"`
 	// Minimum value
-	MinVal string `json:"Min"`
+	MinValue string `json:"Min"`
 	// Maximum value
-	MaxVal string `json:"Max"`
+	MaxValue string `json:"Max"`
 	// Step (aka current value). Display Type TEMP always has this set to
 	// 0xa005.
 	Step string `json:"Sp"`
