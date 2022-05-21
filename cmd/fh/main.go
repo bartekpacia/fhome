@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 
 	"github.com/bartekpacia/fhome/env"
 	"github.com/bartekpacia/fhome/fhome"
@@ -37,26 +38,26 @@ var listCommand = cli.Command{
 		if err != nil {
 			return fmt.Errorf("failed to open client session: %v", err)
 		}
-		log.Println("successfully opened client session")
+		log.Println("opened client session")
 
 		_, err = client.GetMyResources()
 		if err != nil {
 			return fmt.Errorf("failed to get my resources: %v", err)
 		}
-		log.Println("successfully got my resources")
+		log.Println("got my resources")
 
 		err = client.OpenResourceSession(e.ResourcePassword)
 		if err != nil {
 			return fmt.Errorf("failed to open client to resource session: %v", err)
 		}
-		log.Println("successfully opened client to resource session")
+		log.Println("opened client to resource session")
 
 		if c.Bool("touches") {
 			touches, err := client.Touches()
 			if err != nil {
 				return fmt.Errorf("failed to get touches: %v", err)
 			}
-			log.Println("successfully got touches")
+			log.Println("got touches")
 
 			fmt.Println("touches go first")
 			cells := touches.Response.MobileDisplayProperties.Cells
@@ -220,7 +221,7 @@ var setCommand = cli.Command{
 	},
 	Action: func(c *cli.Context) error {
 		objectID := c.Int("object-id")
-		value := fhome.MapToValue(c.Int("value"))
+		value := c.Int("value")
 
 		err := client.OpenCloudSession(e.Email, e.CloudPassword)
 		if err != nil {
@@ -243,7 +244,7 @@ var setCommand = cli.Command{
 
 		log.Println("successfully opened client to resource session")
 
-		err = client.SendXEvent(objectID, value)
+		err = client.SendXEvent(objectID, strconv.Itoa(value))
 		if err != nil {
 			return fmt.Errorf("failed to send xevent to object with id %d: %v", objectID, err)
 		}

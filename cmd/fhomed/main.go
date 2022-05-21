@@ -48,28 +48,28 @@ func main() {
 		log.Fatalf("failed to open client session: %v", err)
 	}
 
-	log.Println("successfully opened client session")
+	log.Println("opened client session")
 
 	_, err = client.GetMyResources()
 	if err != nil {
 		log.Fatalf("failed to get my resources: %v", err)
 	}
 
-	log.Println("successfully got my resources")
+	log.Println("got my resources")
 
 	err = client.OpenResourceSession(e.ResourcePassword)
 	if err != nil {
 		log.Fatalf("failed to open client to resource session: %v", err)
 	}
 
-	log.Println("successfully opened client to resource session")
+	log.Println("opened client to resource session")
 
 	file, err := client.GetUserConfig()
 	if err != nil {
 		log.Fatalf("failed to get user config: %v", err)
 	}
 
-	log.Println("successfully got user config")
+	log.Println("got user config")
 
 	config, err := fileToConfig(file)
 	if err != nil {
