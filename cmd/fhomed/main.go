@@ -195,11 +195,10 @@ func merge(file *fhome.File, touchesResp *fhome.TouchesResponse) (*config.Config
 
 		cfgCell, err := cfg.GetCellByID(cellID)
 		if err != nil {
-			log.Printf("get cell by id: %v", err)
+			log.Printf("could not find cell with id %d in config: %v", cellID, err)
 			continue
 		}
 
-		fmt.Printf("cell.Desc (from touches): %s\n", cell.Desc)
 		cfgCell.Desc = cell.Desc
 	}
 

@@ -16,7 +16,8 @@ func (c *Config) Cells() []Cell {
 }
 
 func (c *Config) GetCellByID(cellID int) (*Cell, error) {
-	for _, panel := range c.Panels {
+	for i := range c.Panels {
+		panel := &c.Panels[i]
 		cell, err := panel.GetCellByID(cellID)
 		if err != nil {
 			// that's fine, maybe the cell is in another panel
@@ -30,9 +31,10 @@ func (c *Config) GetCellByID(cellID int) (*Cell, error) {
 }
 
 func (c *Config) GetPanelByID(id string) (*Panel, error) {
-	for _, panel := range c.Panels {
+	for i := range c.Panels {
+		panel := &c.Panels[i]
 		if panel.ID == id {
-			return &panel, nil
+			return panel, nil
 		}
 	}
 
@@ -40,9 +42,10 @@ func (c *Config) GetPanelByID(id string) (*Panel, error) {
 }
 
 func (c *Config) GetPanelByName(name string) (*Panel, error) {
-	for _, panel := range c.Panels {
+	for i := range c.Panels {
+		panel := &c.Panels[i]
 		if panel.Name == name {
-			return &panel, nil
+			return panel, nil
 		}
 	}
 
@@ -56,9 +59,10 @@ type Panel struct {
 }
 
 func (p *Panel) GetCellByID(cellID int) (*Cell, error) {
-	for _, cell := range p.Cells {
+	for i := range p.Cells {
+		cell := &p.Cells[i]
 		if cell.ID == cellID {
-			return &cell, nil
+			return cell, nil
 		}
 	}
 
