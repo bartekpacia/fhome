@@ -147,7 +147,7 @@ func dumpConfig(cfg *config.Config) error {
 func richPrint(cellValue *fhome.CellValue, cfg *config.Config) {
 	cell, err := cfg.GetCellByID(cellValue.IntID())
 	if err != nil {
-		log.Fatalf("get cell %d by ID %v", cellValue.IntID(), err)
+		log.Printf("failed to get cell with ID %d: %v", cellValue.IntID(), err)
 	}
 
 	log.Printf(",%d, %s, %s, %s, %s, %s\n", cell.ID, cell.Name, cell.Desc, cellValue.DisplayType, cellValue.Value, cellValue.ValueStr)
