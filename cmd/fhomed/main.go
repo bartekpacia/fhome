@@ -42,6 +42,10 @@ func init() {
 	e.Load()
 }
 
+type Acc interface {
+	accessory.Lightbulb | accessory.Thermostat | accessory.GarageDoorOpener
+}
+
 func main() {
 	flag.Parse()
 	err := client.OpenCloudSession(e.Email, e.CloudPassword)
@@ -88,7 +92,7 @@ func main() {
 	}
 
 	results := make(chan map[int]*accessory.Lightbulb)
-	go setUpHAP(config, results)
+	go setUpHAP[accessory.Lightbulb](config, results)
 
 	result := <-results
 
@@ -205,7 +209,7 @@ func merge(file *fhome.File, touchesResp *fhome.TouchesResponse) (*config.Config
 	return &cfg, nil
 }
 
-func setUpHAP(cfg *config.Config, results chan map[int]*accessory.Lightbulb) {
+func setUpHAP[T Acc](cfg *config.Config, results chan map[int]*accessory.Lightbulb) {
 	var accessories []*accessory.A
 
 	// maps cellID to lightbulbs
