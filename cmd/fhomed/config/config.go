@@ -7,8 +7,16 @@ type Config struct {
 	Panels []Panel
 }
 
-func (p *Config) GetCellByID(cellID int) (*Cell, error) {
-	for _, panel := range p.Panels {
+func (c *Config) Cells() []Cell {
+	cells := make([]Cell, 0)
+	for _, panel := range c.Panels {
+		cells = append(cells, panel.Cells...)
+	}
+	return cells
+}
+
+func (c *Config) GetCellByID(cellID int) (*Cell, error) {
+	for _, panel := range c.Panels {
 		cell, err := panel.GetCellByID(cellID)
 		if err != nil {
 			// that's fine, maybe the cell is in another panel
@@ -60,5 +68,6 @@ func (p *Panel) GetCellByID(cellID int) (*Cell, error) {
 type Cell struct {
 	ID   int
 	Icon Icon
-	Name string
+	Name string // Name that is set by and visible in client apps
+	Desc string // Name that is set by and visibile in the configurator app
 }
