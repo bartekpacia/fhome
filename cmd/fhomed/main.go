@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/bartekpacia/fhome/cmd/fhomed/config"
@@ -162,6 +163,8 @@ func richPrint(cellValue *fhome.CellValue, cfg *config.Config) {
 // merge create config from "get_user_config" action and "touches" action.
 func merge(file *fhome.File, touchesResp *fhome.TouchesResponse) (*config.Config, error) {
 	panels := make([]config.Panel, 0)
+	cfg := config.Config{Panels: panels}
+
 	for _, fPanel := range file.Panels {
 		fCells := file.GetCellsByPanelID(fPanel.ID)
 		cells := make([]config.Cell, 0)
@@ -184,10 +187,20 @@ func merge(file *fhome.File, touchesResp *fhome.TouchesResponse) (*config.Config
 	}
 
 	for _, cell := range touchesResp.Response.MobileDisplayProperties.Cells {
-		_ = cell
+		cellID, err := strconv.Atoi(cell.ID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert cell ID %s to int: %v", cell.ID, err)
+		}
+
+		cfgCell, err := cfg.GetCellByID(cellID)
+		if err != nil {
+			return nil, fmt.Errorf("get cell by id: %v", err)
+		}
+
+		cfgCell.Desc = cell.Desc
 	}
 
-	return &config.Config{Panels: panels}, nil
+	return &cfg, nil
 }
 
 func setUpHAP(cfg *config.Config, results chan map[int]*accessory.Lightbulb) {
