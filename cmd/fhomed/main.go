@@ -112,22 +112,15 @@ func main() {
 		cellValue := resp.Response.CellValues[0]
 		richPrint(&cellValue, config)
 
-		acc := result[cellValue.IntID()]
+		accessory := result[cellValue.IntID()]
+		if accessory == nil {
+			log.Printf("switch for objectID %d not found\n", cellValue.IntID())
+		}
 
 		if cellValue.ValueStr == "100%" {
-			log.Printf("lamp %d enabled through fhome\n", cellValue.IntID())
-			if acc != nil {
-				acc.Lightbulb.On.SetValue(true)
-			} else {
-				log.Printf("switch for objectID %d not found\n", cellValue.IntID())
-			}
+			accessory.Lightbulb.On.SetValue(true)
 		} else if cellValue.ValueStr == "0%" {
-			log.Printf("lamp %d disabled through fhome\n", cellValue.IntID())
-			if acc != nil {
-				acc.Lightbulb.On.SetValue(false)
-			} else {
-				log.Printf("switch for objectID %d not found\n", cellValue.IntID())
-			}
+			accessory.Lightbulb.On.SetValue(false)
 		}
 	}
 }
