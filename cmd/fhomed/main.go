@@ -90,7 +90,7 @@ func main() {
 	results := make(chan map[int]*accessory.Lightbulb)
 	go setUpHAP(config, results)
 
-	result := <-results
+	accessories := <-results
 
 	for {
 		msg, err := client.ReadMessage(fhome.ActionStatusTouchesChanged, "")
@@ -112,7 +112,7 @@ func main() {
 		cellValue := resp.Response.CellValues[0]
 		richPrint(&cellValue, config)
 
-		accessory := result[cellValue.IntID()]
+		accessory := accessories[cellValue.IntID()]
 		if accessory == nil {
 			log.Printf("switch for objectID %d not found\n", cellValue.IntID())
 		}
@@ -194,6 +194,11 @@ func merge(file *fhome.File, touchesResp *fhome.TouchesResponse) (*config.Config
 
 		cfgCell.Desc = cell.Desc
 		cfgCell.Value = cell.Step
+		cfgCell.TypeNumber = cell.TypeNumber
+		cfgCell.Preset = cell.Preset
+		cfgCell.Style = cell.Style
+		cfgCell.MinValue = cell.MinValue
+		cfgCell.MaxValue = cell.MaxValue
 	}
 
 	return &cfg, nil
