@@ -110,11 +110,11 @@ type StatusTouchesChangedResponse struct {
 }
 
 type CellValue struct {
-	ID       string      `json:"VOI"`
-	Ii       string      `json:"II"`
-	DataType DisplayType `json:"DT"`
-	Value    string      `json:"DV"`  // Probably "data value"
-	ValueStr string      `json:"DVS"` // Probably "data value string"
+	ID          string      `json:"VOI"`
+	Ii          string      `json:"II"`
+	DisplayType DisplayType `json:"DT"`
+	Value       string      `json:"DV"`  // Probably "data value"
+	ValueStr    string      `json:"DVS"` // Probably "data value string"
 }
 
 func (cv *CellValue) IntID() int {
@@ -128,6 +128,6 @@ func (cv *CellValue) IntID() int {
 
 func (cv CellValue) String() string {
 	return fmt.Sprintf("id: %s, ii: %s, dt: %s, dv: %s, dvs: %s",
-		cv.ID, cv.Ii, cv.DataType, cv.Value, cv.ValueStr,
+		cv.ID, cv.Ii, cv.DisplayType, cv.Value, cv.ValueStr,
 	)
 }

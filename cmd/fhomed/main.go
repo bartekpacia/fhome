@@ -150,7 +150,7 @@ func richPrint(cellValue *fhome.CellValue, cfg *config.Config) {
 		log.Fatalf("get cell %d by ID %v", cellValue.IntID(), err)
 	}
 
-	log.Printf("%s (%s)\n", cell.Name, cellValue)
+	log.Printf(",%d, %s, %s, %s, %s, %s\n", cell.ID, cell.Name, cell.Desc, cellValue.DisplayType, cellValue.Value, cellValue.ValueStr)
 }
 
 // merge create config from "get_user_config" action and "touches" action.
