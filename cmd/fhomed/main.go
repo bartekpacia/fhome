@@ -71,9 +71,14 @@ func main() {
 
 	log.Println("got user config")
 
-	config, err := fileToConfig(file)
+	touchesResp, err := client.Touches()
 	if err != nil {
-		log.Fatalf("failed to convert file to config: %v", err)
+		log.Fatalf("failed to touches: %v", err)
+	}
+
+	config, err := merge(file, touchesResp)
+	if err != nil {
+		log.Fatalf("failed to merge config: %v", err)
 	}
 
 	err = dumpConfig(config)
@@ -154,7 +159,8 @@ func richPrint(cellValue *fhome.CellValue, cfg *config.Config) {
 	log.Printf("%s (%s)\n", cell.Name, cellValue)
 }
 
-func fileToConfig(file *fhome.File) (*config.Config, error) {
+// merge create config from "get_user_config" action and "touches" action.
+func merge(file *fhome.File, touchesResp *fhome.TouchesResponse) (*config.Config, error) {
 	panels := make([]config.Panel, 0)
 	for _, fPanel := range file.Panels {
 		fCells := file.GetCellsByPanelID(fPanel.ID)
@@ -175,6 +181,10 @@ func fileToConfig(file *fhome.File) (*config.Config, error) {
 		}
 
 		panels = append(panels, panel)
+	}
+
+	for _, cell := range touchesResp.Response.MobileDisplayProperties.Cells {
+		_ = cell
 	}
 
 	return &config.Config{Panels: panels}, nil
