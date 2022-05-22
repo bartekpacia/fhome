@@ -12,7 +12,7 @@ import (
 )
 
 func init() {
-	log.SetFlags(0)
+	log.SetOutput(os.Stdout)
 }
 
 var listCommand = cli.Command{

@@ -26,6 +26,8 @@ var (
 )
 
 func init() {
+	log.SetOutput(os.Stdout)
+
 	flag.StringVar(&PIN, "pin", "00102003", "accessory PIN")
 	flag.StringVar(&Name, "name", "fhome", "accessory name")
 
