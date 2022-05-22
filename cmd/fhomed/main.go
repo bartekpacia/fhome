@@ -126,7 +126,8 @@ func main() {
 
 	go homekitClient.SetUp(config, lightbulbs, LEDs, garageDoors, thermostats)
 
-	accessories := <-lightbulbs
+	lightbulbMap := <-lightbulbs
+	coloredLightbulbMap := <-LEDs
 
 	for {
 		msg, err := client.ReadMessage(fhome.ActionStatusTouchesChanged, "")
@@ -148,16 +149,33 @@ func main() {
 		cellValue := resp.Response.CellValues[0]
 		richPrint(&cellValue, config)
 
-		accessory := accessories[cellValue.IntID()]
-		if accessory == nil {
-			log.Printf("switch for objectID %d not found\n", cellValue.IntID())
-			continue
+		// handle lightbulb
+		{
+			accessory := lightbulbMap[cellValue.IntID()]
+			if accessory != nil {
+				if cellValue.ValueStr == "100%" {
+					accessory.Lightbulb.On.SetValue(true)
+				} else if cellValue.ValueStr == "0%" {
+					accessory.Lightbulb.On.SetValue(false)
+				}
+			}
 		}
 
-		if cellValue.ValueStr == "100%" {
-			accessory.Lightbulb.On.SetValue(true)
-		} else if cellValue.ValueStr == "0%" {
-			accessory.Lightbulb.On.SetValue(false)
+		// handle LEDs
+		{
+			accessory := coloredLightbulbMap[cellValue.IntID()]
+			if accessory != nil {
+				newValue, err := fhome.RemapLightning(cellValue.ValueStr)
+				if err != nil {
+					log.Printf("failed to remap lightning: %v\n", err)
+				}
+
+				accessory.Lightbulb.On.SetValue(newValue > 0)
+				err = accessory.Lightbulb.Brightness.SetValue(newValue)
+				if err != nil {
+					log.Printf("failed to set brightness to %d: %v\n", newValue, err)
+				}
+			}
 		}
 	}
 }

@@ -71,6 +71,7 @@ func (c *Client) SetUp(
 
 					a.Lightbulb.On.OnValueRemoteUpdate(func(v bool) {
 						c.OnLightbulbUpdate(cell.ID, v)
+
 					})
 
 					accessories = append(accessories, a.A)
@@ -114,5 +115,6 @@ func (c *Client) SetUp(
 	server.Pin = c.PIN
 
 	lightbulbs <- lightbulbMap
+	LEDs <- coloredLightbulbs
 	server.ListenAndServe(context.Background())
 }

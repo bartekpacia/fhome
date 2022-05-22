@@ -2,6 +2,7 @@ package fhome
 
 import (
 	"strconv"
+	"strings"
 )
 
 // MapLightning maps value to a string that is ready to be passed to Xevent.
@@ -17,6 +18,17 @@ func MapLightning(value int) string {
 	val := 0x6000 + value
 	fval := "0x" + strconv.FormatInt(int64(val), 16)
 	return fval
+}
+
+func RemapLightning(value string) (int, error) {
+	valStr := strings.TrimSuffix(value, "%")
+
+	val, err := strconv.Atoi(valStr)
+	if err != nil {
+		return 0, err
+	}
+
+	return val, nil
 }
 
 // MapTemperature maps val to a string that is ready to be passed to Xevent.
