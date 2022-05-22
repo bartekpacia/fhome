@@ -38,7 +38,6 @@ type Client struct {
 	// Second websocket connection that is used for all other actions.
 	conn2 *websocket.Conn
 
-	// mu   sync.RWMutex
 	subs map[int]chan<- Message
 }
 
