@@ -2,13 +2,13 @@ package fhome
 
 import "fmt"
 
-type File struct {
+type UserConfig struct {
 	Cells  []Cell  `json:"cells"`
 	Panels []Panel `json:"panels"`
 	Server Server  `json:"server"`
 }
 
-func (f *File) GetCellsByPanelID(id string) []Cell {
+func (f *UserConfig) GetCellsByPanelID(id string) []Cell {
 	cells := make([]Cell, 0)
 	for _, cell := range f.Cells {
 		for _, pos := range cell.PositionInPanel {

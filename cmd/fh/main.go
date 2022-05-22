@@ -67,19 +67,19 @@ var listCommand = cli.Command{
 		}
 
 		if c.Bool("get_user_config") {
-			file, err := client.GetUserConfig()
+			userConfig, err := client.GetUserConfig()
 			if err != nil {
 				return fmt.Errorf("failed to get user config: %v", err)
 			}
 			log.Println("successfully got user config")
 
 			panels := map[string]fhome.Panel{}
-			for _, panel := range file.Panels {
+			for _, panel := range userConfig.Panels {
 				panels[panel.ID] = panel
 			}
 
-			log.Printf("there are %d cells\n", len(file.Cells))
-			for _, cell := range file.Cells {
+			log.Printf("there are %d cells\n", len(userConfig.Cells))
+			for _, cell := range userConfig.Cells {
 				log.Printf("id: %3d, name: %s, icon: %s panels:", cell.ObjectID, cell.Name, cell.Icon)
 				for _, pos := range cell.PositionInPanel {
 					log.Printf(" %s", panels[pos.PanelID].Name)
@@ -87,8 +87,8 @@ var listCommand = cli.Command{
 				log.Println()
 			}
 
-			log.Printf("there are %d panels\n", len(file.Panels))
-			for _, panel := range file.Panels {
+			log.Printf("there are %d panels\n", len(userConfig.Panels))
+			for _, panel := range userConfig.Panels {
 				log.Printf("id: %s, name: %s\n", panel.ID, panel.Name)
 			}
 		}

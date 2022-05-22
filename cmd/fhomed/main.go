@@ -66,7 +66,7 @@ func main() {
 
 	log.Println("opened client to resource session")
 
-	file, err := client.GetUserConfig()
+	userConfig, err := client.GetUserConfig()
 	if err != nil {
 		log.Fatalf("failed to get user config: %v", err)
 	}
@@ -78,7 +78,7 @@ func main() {
 		log.Fatalf("failed to touches: %v", err)
 	}
 
-	config, err := merge(file, touchesResp)
+	config, err := merge(userConfig, touchesResp)
 	if err != nil {
 		log.Fatalf("failed to merge config: %v", err)
 	}
@@ -169,11 +169,11 @@ func richPrint(cellValue *fhome.CellValue, cfg *config.Config) error {
 }
 
 // merge create config from "get_user_config" action and "touches" action.
-func merge(file *fhome.File, touchesResp *fhome.TouchesResponse) (*config.Config, error) {
+func merge(userConfig *fhome.UserConfig, touchesResp *fhome.TouchesResponse) (*config.Config, error) {
 	panels := make([]config.Panel, 0)
 
-	for _, fPanel := range file.Panels {
-		fCells := file.GetCellsByPanelID(fPanel.ID)
+	for _, fPanel := range userConfig.Panels {
+		fCells := userConfig.GetCellsByPanelID(fPanel.ID)
 		cells := make([]config.Cell, 0)
 		for _, fCell := range fCells {
 			cell := config.Cell{
