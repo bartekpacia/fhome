@@ -1,35 +1,40 @@
 package fhome
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 )
 
-// MapLightning maps value to a string that is ready to be passed to Xevent.
+var baseLightingValue = 0x6000
+
+// MapLighting maps value to a string that is ready to be passed to Xevent.
 //
 // Clamps if the value is too small or too big.
-func MapLightning(value int) string {
+func MapLighting(value int) string {
 	if value < 0 {
 		return "0x6000"
 	} else if value > 100 {
 		return "0x6064"
 	}
 
-	val := 0x6000 + value
+	val := baseLightingValue + value
 	fval := "0x" + strconv.FormatInt(int64(val), 16)
 	return fval
 }
 
-func RemapLightning(value string) (int, error) {
-	valStr := strings.TrimSuffix(value, "%")
-
-	val, err := strconv.Atoi(valStr)
+func RemapLighting(value string) (int, error) {
+	value = strings.TrimPrefix(value, "0x")
+	parsed, err := strconv.ParseInt(value, 16, 32)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("failed to parse int from %s: %v", value, err)
 	}
 
-	return val, nil
+	parsedValue := int(parsed) - baseLightingValue
+	return parsedValue, nil
 }
+
+var baseTemp float64 = 0xa078 - 12*10.0 // 0°C
 
 // MapTemperature maps val to a string that is ready to be passed to Xevent.
 //
@@ -43,18 +48,13 @@ func RemapLightning(value string) (int, error) {
 //
 // 28°C -> 0xa118 -> 41240
 func MapTemperature(value float64) string {
-	base := 0xa078 - 12*10.0 // minimum value
-
 	if value < 12 {
 		return "0xa078"
 	} else if value > 28 {
 		return "0xa118"
 	}
 
-	v := base + value*10
+	v := baseTemp + value*10
 	fval := "0x" + strconv.FormatInt(int64(v), 16)
 	return fval
-}
-
-func RemapValue(value string) {
 }

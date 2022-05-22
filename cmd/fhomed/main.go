@@ -105,7 +105,7 @@ func main() {
 			}
 		},
 		OnLEDUpdate: func(ID int, brightness int) {
-			err := client.SendXEvent(ID, fhome.MapLightning(brightness))
+			err := client.SendXEvent(ID, fhome.MapLighting(brightness))
 			if err != nil {
 				log.Fatalf("failed to send event to %d: %v\n", ID, err)
 			}
@@ -166,7 +166,7 @@ func main() {
 		{
 			accessory := coloredLightbulbMap[cellValue.IntID()]
 			if accessory != nil {
-				newValue, err := fhome.RemapLightning(cellValue.ValueStr)
+				newValue, err := fhome.RemapLighting(cellValue.Value)
 				if err != nil {
 					log.Printf("failed to remap lightning: %v\n", err)
 				}

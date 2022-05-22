@@ -243,7 +243,7 @@ var setCommand = cli.Command{
 
 		log.Println("successfully opened client to resource session")
 
-		err = client.SendXEvent(objectID, fhome.MapLightning(value))
+		err = client.SendXEvent(objectID, fhome.MapLighting(value))
 		if err != nil {
 			return fmt.Errorf("failed to send xevent to object with id %d: %v", objectID, err)
 		}
