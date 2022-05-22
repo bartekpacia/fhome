@@ -35,19 +35,26 @@ func RemapLightning(value string) (int, error) {
 //
 // Examples:
 //
-// 12°C -> 0xa078
+// 0°C -> 0x6
 //
-// 25°C -> 0xa0fa
+// 12°C -> 0xa078 -> 41080
 //
-// 28°C -> 0xa118
+// 25°C -> 0xa0fa -> 41210
+//
+// 28°C -> 0xa118 -> 41240
 func MapTemperature(value float64) string {
+	base := 0xa078 - 12*10.0 // minimum value
+
 	if value < 12 {
 		return "0xa078"
 	} else if value > 28 {
 		return "0xa118"
 	}
 
-	v := 0xa078 + value*10
+	v := base + value*10
 	fval := "0x" + strconv.FormatInt(int64(v), 16)
 	return fval
+}
+
+func RemapValue(value string) {
 }

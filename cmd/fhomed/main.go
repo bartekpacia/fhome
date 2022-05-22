@@ -128,6 +128,7 @@ func main() {
 
 	lightbulbMap := <-lightbulbs
 	coloredLightbulbMap := <-LEDs
+	thermostatMap := <-thermostats
 
 	for {
 		msg, err := client.ReadMessage(fhome.ActionStatusTouchesChanged, "")
@@ -175,6 +176,14 @@ func main() {
 				if err != nil {
 					log.Printf("failed to set brightness to %d: %v\n", newValue, err)
 				}
+			}
+		}
+
+		// handle thermostats
+		{
+			accessory := thermostatMap[cellValue.IntID()]
+			if accessory != nil {
+				fmt.Println("thermostat changed from fhome")
 			}
 		}
 	}

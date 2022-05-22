@@ -39,7 +39,7 @@ func (c *Client) SetUp(
 	// maps cellID to lightbulbs
 	lightbulbMap := make(map[int]*accessory.Lightbulb)
 	coloredLightbulbs := make(map[int]*accessory.ColoredLightbulb)
-	// thermostatsMap := make(map[int]*accessory.Thermostat)
+	thermostatsMap := make(map[int]*accessory.Thermostat)
 	garageDoorMap := make(map[int]*accessory.GarageDoorOpener)
 	for _, panel := range cfg.Panels {
 		for _, cell := range panel.Cells {
@@ -71,25 +71,23 @@ func (c *Client) SetUp(
 
 					a.Lightbulb.On.OnValueRemoteUpdate(func(v bool) {
 						c.OnLightbulbUpdate(cell.ID, v)
-
 					})
 
 					accessories = append(accessories, a.A)
 				}
 			}
 			if cell.Icon == config.IconTemperature {
-				/* a := accessory.NewThermostat(accessoryInfo)
+				a := accessory.NewThermostat(accessoryInfo)
 				thermostatsMap[cell.ID] = a
 
-				a.Thermostat.TargetTemperature.MinVal = 12
-				a.Thermostat.TargetTemperature.MaxVal = 28
-				a.Thermostat.TemperatureDisplayUnits.Unit = characteristic.UnitCelsius
+				// a.Thermostat.TargetTemperature.MinVal = 12
+				// a.Thermostat.TargetTemperature.MaxVal = 28
 
 				a.Thermostat.TargetTemperature.OnValueRemoteUpdate(func(v float64) {
 					c.OnThermostatUpdate(cell.ID, v)
 				})
 
-				accessories = append(accessories, a.A) */
+				accessories = append(accessories, a.A)
 			}
 
 			if cell.Icon == config.IconGate {
@@ -116,5 +114,6 @@ func (c *Client) SetUp(
 
 	lightbulbs <- lightbulbMap
 	LEDs <- coloredLightbulbs
+	thermostats <- thermostatsMap
 	server.ListenAndServe(context.Background())
 }
