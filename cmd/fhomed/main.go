@@ -183,7 +183,12 @@ func main() {
 		{
 			accessory := thermostatMap[cellValue.IntID()]
 			if accessory != nil {
-				fmt.Println("thermostat changed from fhome")
+				newValue, err := fhome.RemapTemperature(cellValue.Value)
+				if err != nil {
+					log.Printf("failed to remap temperature: %v\n", err)
+				}
+
+				accessory.Thermostat.TargetTemperature.SetValue(newValue)
 			}
 		}
 	}

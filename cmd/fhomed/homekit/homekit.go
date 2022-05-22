@@ -80,6 +80,10 @@ func (c *Client) SetUp(
 				a := accessory.NewThermostat(accessoryInfo)
 				thermostatsMap[cell.ID] = a
 
+				a.Thermostat.TargetTemperature.Val = 12
+				a.Thermostat.TargetTemperature.MinVal = 28
+				a.Thermostat.TargetTemperature.MaxVal = 28
+
 				// a.Thermostat.TargetTemperature.MinVal = 12
 				// a.Thermostat.TargetTemperature.MaxVal = 28
 
