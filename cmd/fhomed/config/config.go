@@ -7,6 +7,28 @@ type Config struct {
 	Panels []Panel
 }
 
+func (c *Config) GetPanelByID(id string) (*Panel, error) {
+	for i := range c.Panels {
+		panel := &c.Panels[i]
+		if panel.ID == id {
+			return panel, nil
+		}
+	}
+
+	return nil, fmt.Errorf("no panel with id %s", id)
+}
+
+func (c *Config) GetPanelByName(name string) (*Panel, error) {
+	for i := range c.Panels {
+		panel := &c.Panels[i]
+		if panel.Name == name {
+			return panel, nil
+		}
+	}
+
+	return nil, fmt.Errorf("no panel with name %s", name)
+}
+
 func (c *Config) Cells() []Cell {
 	cells := make([]Cell, 0)
 	for _, panel := range c.Panels {
@@ -28,28 +50,6 @@ func (c *Config) GetCellByID(cellID int) (*Cell, error) {
 	}
 
 	return nil, fmt.Errorf("no cell with id %d", cellID)
-}
-
-func (c *Config) GetPanelByID(id string) (*Panel, error) {
-	for i := range c.Panels {
-		panel := &c.Panels[i]
-		if panel.ID == id {
-			return panel, nil
-		}
-	}
-
-	return nil, fmt.Errorf("no panel with id %s", id)
-}
-
-func (c *Config) GetPanelByName(name string) (*Panel, error) {
-	for i := range c.Panels {
-		panel := &c.Panels[i]
-		if panel.Name == name {
-			return panel, nil
-		}
-	}
-
-	return nil, fmt.Errorf("no panel with name %s", name)
 }
 
 type Panel struct {
