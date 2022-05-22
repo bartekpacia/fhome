@@ -39,7 +39,10 @@ func init() {
 	}
 
 	e = env.Env{}
-	e.Load()
+	err = e.Load()
+	if err != nil {
+		log.Fatalf("failed to load env variables: %v\n", err)
+	}
 }
 
 func main() {
@@ -144,13 +147,14 @@ func dumpConfig(cfg *config.Config) error {
 	return nil
 }
 
-func richPrint(cellValue *fhome.CellValue, cfg *config.Config) {
+func richPrint(cellValue *fhome.CellValue, cfg *config.Config) error {
 	cell, err := cfg.GetCellByID(cellValue.IntID())
 	if err != nil {
-		log.Printf("failed to get cell with ID %d: %v", cellValue.IntID(), err)
+		return fmt.Errorf("failed to get cell with ID %d: %v", cellValue.IntID(), err)
 	}
 
 	log.Printf(",%d, %s, %s, %s, %s, %s\n", cell.ID, cell.Name, cell.Desc, cellValue.DisplayType, cellValue.Value, cellValue.ValueStr)
+	return nil
 }
 
 // merge create config from "get_user_config" action and "touches" action.
