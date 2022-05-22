@@ -59,10 +59,10 @@ var listCommand = cli.Command{
 			}
 			log.Println("got touches")
 
-			fmt.Println("touches go first")
+			log.Println("touches go first")
 			cells := touches.Response.MobileDisplayProperties.Cells
 			for _, cell := range cells {
-				fmt.Printf("id: %s %s, dt: %s, preset: %s, style: %s, perm: %s, step/value: %s\n", cell.ID, cell.Desc, cell.DisplayType, cell.Preset, cell.Style, cell.Permission, cell.Step)
+				log.Printf("id: %s %s, dt: %s, preset: %s, style: %s, perm: %s, step/value: %s\n", cell.ID, cell.Desc, cell.DisplayType, cell.Preset, cell.Style, cell.Permission, cell.Step)
 			}
 		}
 
@@ -78,18 +78,18 @@ var listCommand = cli.Command{
 				panels[panel.ID] = panel
 			}
 
-			fmt.Printf("there are %d cells\n", len(file.Cells))
+			log.Printf("there are %d cells\n", len(file.Cells))
 			for _, cell := range file.Cells {
-				fmt.Printf("id: %3d, name: %s, icon: %s panels:", cell.ObjectID, cell.Name, cell.Icon)
+				log.Printf("id: %3d, name: %s, icon: %s panels:", cell.ObjectID, cell.Name, cell.Icon)
 				for _, pos := range cell.PositionInPanel {
-					fmt.Printf(" %s", panels[pos.PanelID].Name)
+					log.Printf(" %s", panels[pos.PanelID].Name)
 				}
-				fmt.Println()
+				log.Println()
 			}
 
-			fmt.Printf("there are %d panels\n", len(file.Panels))
+			log.Printf("there are %d panels\n", len(file.Panels))
 			for _, panel := range file.Panels {
-				fmt.Printf("id: %s, name: %s\n", panel.ID, panel.Name)
+				log.Printf("id: %s, name: %s\n", panel.ID, panel.Name)
 			}
 		}
 
@@ -135,7 +135,7 @@ var watchCommand = cli.Command{
 					return fmt.Errorf("failed to unmarshal touches: %v", err)
 				}
 
-				fmt.Printf("%s\n", fhome.Pprint(touches))
+				log.Printf("%s\n", fhome.Pprint(touches))
 			}
 
 		}

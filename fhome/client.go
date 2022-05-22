@@ -292,7 +292,7 @@ func (c *Client) GetUserConfig() (*File, error) {
 }
 
 func (c *Client) SendXEvent(resourceID int, value string) error {
-	fmt.Println("sending Xevent to resource with id", resourceID, "with value", value)
+	log.Println("sending Xevent to resource with id", resourceID, "with value", value)
 
 	actionName := ActionXEvent
 	token := generateRequestToken()

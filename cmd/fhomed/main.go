@@ -1,19 +1,17 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
 	"os"
 	"strconv"
-	"strings"
 
 	"github.com/bartekpacia/fhome/cmd/fhomed/config"
+	"github.com/bartekpacia/fhome/cmd/fhomed/homekit"
 	"github.com/bartekpacia/fhome/env"
 	"github.com/bartekpacia/fhome/fhome"
-	"github.com/brutella/hap"
 	"github.com/brutella/hap/accessory"
 )
 
@@ -91,7 +89,20 @@ func main() {
 	}
 
 	results := make(chan map[int]*accessory.Lightbulb)
-	go setUpHAP(config, results)
+
+	homekitClient := &homekit.Client{
+		PIN:  PIN,
+		Name: Name,
+		OnLightbulbUpdate: func(ID int, on bool) {
+			err := client.SendXEvent(ID, fhome.ValueToggle)
+			if err != nil {
+				log.Fatalf("failed to send event to %d: %v\n", ID, err)
+			}
+			log.Println("succeess")
+		},
+	}
+
+	go homekitClient.SetUp(config, results)
 
 	accessories := <-results
 
@@ -206,40 +217,4 @@ func merge(file *fhome.File, touchesResp *fhome.TouchesResponse) (*config.Config
 	}
 
 	return &cfg, nil
-}
-
-func setUpHAP(cfg *config.Config, results chan map[int]*accessory.Lightbulb) {
-	var accessories []*accessory.A
-
-	// maps cellID to lightbulbs
-	lightbulbMap := make(map[int]*accessory.Lightbulb)
-	for _, panel := range cfg.Panels {
-		for _, cell := range panel.Cells {
-			cell := cell
-			a := accessory.NewLightbulb(accessory.Info{Name: strings.TrimSpace(cell.Name)})
-			lightbulbMap[cell.ID] = a
-
-			a.Lightbulb.On.OnValueRemoteUpdate(func(on bool) {
-				err := client.SendXEvent(cell.ID, fhome.ValueToggle)
-				if err != nil {
-					log.Fatalf("failed to send event to %d: %v\n", cell.ID, err)
-				}
-				log.Println("succeess")
-			})
-
-			accessories = append(accessories, a.A)
-		}
-	}
-
-	bridge := accessory.NewBridge(accessory.Info{Name: Name})
-
-	fs := hap.NewFsStore("./db")
-	server, err := hap.NewServer(fs, bridge.A, accessories...)
-	if err != nil {
-		log.Panic(err)
-	}
-	server.Pin = PIN
-
-	results <- lightbulbMap
-	server.ListenAndServe(context.Background())
 }
