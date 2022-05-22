@@ -88,7 +88,9 @@ func main() {
 		log.Fatalf("failed to dump config: %v", err)
 	}
 
-	results := make(chan map[int]*accessory.Lightbulb)
+	lightbulbs := make(chan map[int]*accessory.Lightbulb)
+	garageDoors := make(chan map[int]*accessory.GarageDoorOpener)
+	thermostats := make(chan map[int]*accessory.Thermostat)
 
 	homekitClient := &homekit.Client{
 		PIN:  PIN,
@@ -98,13 +100,24 @@ func main() {
 			if err != nil {
 				log.Fatalf("failed to send event to %d: %v\n", ID, err)
 			}
-			log.Println("succeess")
+		},
+		OnGarageDoorUpdate: func(ID int) {
+			err := client.SendXEvent(ID, fhome.ValueToggle)
+			if err != nil {
+				log.Fatalf("failed to send event to %d: %v\n", ID, err)
+			}
+		},
+		OnThermostatUpdate: func(ID int, temperature float64) {
+			err = client.SendXEvent(ID, fhome.MapTemperature(temperature))
+			if err != nil {
+				log.Fatalf("failed to send event to %d: %v\n", ID, err)
+			}
 		},
 	}
 
-	go homekitClient.SetUp(config, results)
+	go homekitClient.SetUp(config, lightbulbs, garageDoors, thermostats)
 
-	accessories := <-results
+	accessories := <-lightbulbs
 
 	for {
 		msg, err := client.ReadMessage(fhome.ActionStatusTouchesChanged, "")

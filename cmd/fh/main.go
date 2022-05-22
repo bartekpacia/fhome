@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strconv"
 
 	"github.com/bartekpacia/fhome/env"
 	"github.com/bartekpacia/fhome/fhome"
@@ -244,9 +243,7 @@ var setCommand = cli.Command{
 
 		log.Println("successfully opened client to resource session")
 
-		val := 0x6000 + value
-		fval := "0x" + strconv.FormatInt(int64(val), 16)
-		err = client.SendXEvent(objectID, fval)
+		err = client.SendXEvent(objectID, fhome.MapLightning(value))
 		if err != nil {
 			return fmt.Errorf("failed to send xevent to object with id %d: %v", objectID, err)
 		}
