@@ -23,15 +23,7 @@ const (
 	ActionStatusTouchesChanged       = "statustoucheschanged"
 )
 
-var (
-	ValueToggle = "0x4001"
-	Value0      = "0x6000"
-	Value20     = "0x6014"
-	Value40     = "0x6028"
-	Value60     = "0x603C"
-	Value80     = "0x6050"
-	Value100    = "0x6064"
-)
+var ValueToggle = "0x4001"
 
 type OpenClientSession struct {
 	ActionName   string `json:"action_name"`

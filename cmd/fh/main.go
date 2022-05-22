@@ -244,7 +244,9 @@ var setCommand = cli.Command{
 
 		log.Println("successfully opened client to resource session")
 
-		err = client.SendXEvent(objectID, strconv.Itoa(value))
+		val := 0x6000 + value
+		fval := "0x" + strconv.FormatInt(int64(val), 16)
+		err = client.SendXEvent(objectID, fval)
 		if err != nil {
 			return fmt.Errorf("failed to send xevent to object with id %d: %v", objectID, err)
 		}
