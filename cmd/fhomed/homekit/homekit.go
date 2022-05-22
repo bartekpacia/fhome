@@ -12,7 +12,7 @@ import (
 
 type OnLightbulbUpdated func(ID int, v bool)
 
-type OnLEDUpdate func(ID int, brightness float64)
+type OnLEDUpdate func(ID int, brightness int)
 
 type OnGarageDoorUpdated func(ID int)
 
@@ -30,6 +30,7 @@ type Client struct {
 func (c *Client) SetUp(
 	cfg *config.Config,
 	lightbulbs chan<- map[int]*accessory.Lightbulb,
+	LEDs chan<- map[int]*accessory.ColoredLightbulb,
 	garageDoors chan<- map[int]*accessory.GarageDoorOpener,
 	thermostats chan<- map[int]*accessory.Thermostat,
 ) {
@@ -37,6 +38,7 @@ func (c *Client) SetUp(
 
 	// maps cellID to lightbulbs
 	lightbulbMap := make(map[int]*accessory.Lightbulb)
+	coloredLightbulbs := make(map[int]*accessory.ColoredLightbulb)
 	// thermostatsMap := make(map[int]*accessory.Thermostat)
 	garageDoorMap := make(map[int]*accessory.GarageDoorOpener)
 	for _, panel := range cfg.Panels {
@@ -45,17 +47,35 @@ func (c *Client) SetUp(
 
 			accessoryInfo := accessory.Info{Name: strings.TrimSpace(cell.Name)}
 			if cell.Icon == config.IconLighting {
+				if strings.Contains(cell.Name, "LED") {
+					a := accessory.NewColoredLightbulb(accessoryInfo)
+					coloredLightbulbs[cell.ID] = a
 
-				a := accessory.NewLightbulb(accessoryInfo)
-				lightbulbMap[cell.ID] = a
+					a.Lightbulb.On.OnValueRemoteUpdate(func(on bool) {
+						var val int
+						if on {
+							val = 100
+						}
 
-				a.Lightbulb.On.OnValueRemoteUpdate(func(v bool) {
-					c.OnLightbulbUpdate(cell.ID, v)
-				})
+						c.OnLEDUpdate(cell.ID, val)
+					})
 
-				accessories = append(accessories, a.A)
+					a.Lightbulb.Brightness.OnValueRemoteUpdate(func(v int) {
+						c.OnLEDUpdate(cell.ID, v)
+					})
+
+					accessories = append(accessories, a.A)
+				} else {
+					a := accessory.NewLightbulb(accessoryInfo)
+					lightbulbMap[cell.ID] = a
+
+					a.Lightbulb.On.OnValueRemoteUpdate(func(v bool) {
+						c.OnLightbulbUpdate(cell.ID, v)
+					})
+
+					accessories = append(accessories, a.A)
+				}
 			}
-
 			if cell.Icon == config.IconTemperature {
 				/* a := accessory.NewThermostat(accessoryInfo)
 				thermostatsMap[cell.ID] = a

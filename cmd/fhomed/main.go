@@ -89,6 +89,7 @@ func main() {
 	}
 
 	lightbulbs := make(chan map[int]*accessory.Lightbulb)
+	LEDs := make(chan map[int]*accessory.ColoredLightbulb)
 	garageDoors := make(chan map[int]*accessory.GarageDoorOpener)
 	thermostats := make(chan map[int]*accessory.Thermostat)
 
@@ -101,7 +102,11 @@ func main() {
 				log.Fatalf("failed to send event to %d: %v\n", ID, err)
 			}
 		},
-		OnLEDUpdate: func(ID int, brightness float64) {
+		OnLEDUpdate: func(ID int, brightness int) {
+			err := client.SendXEvent(ID, fhome.MapLightning(brightness))
+			if err != nil {
+				log.Fatalf("failed to send event to %d: %v\n", ID, err)
+			}
 		},
 		OnGarageDoorUpdate: func(ID int) {
 			err := client.SendXEvent(ID, fhome.ValueToggle)
@@ -117,7 +122,7 @@ func main() {
 		},
 	}
 
-	go homekitClient.SetUp(config, lightbulbs, garageDoors, thermostats)
+	go homekitClient.SetUp(config, lightbulbs, LEDs, garageDoors, thermostats)
 
 	accessories := <-lightbulbs
 
@@ -144,6 +149,7 @@ func main() {
 		accessory := accessories[cellValue.IntID()]
 		if accessory == nil {
 			log.Printf("switch for objectID %d not found\n", cellValue.IntID())
+			continue
 		}
 
 		if cellValue.ValueStr == "100%" {
