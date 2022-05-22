@@ -8,9 +8,12 @@ import (
 	"github.com/bartekpacia/fhome/cmd/fhomed/config"
 	"github.com/brutella/hap"
 	"github.com/brutella/hap/accessory"
+	"github.com/brutella/hap/characteristic"
 )
 
 type OnLightbulbUpdated func(ID int, v bool)
+
+type OnLEDUpdate func(ID int, brightness float64)
 
 type OnGarageDoorUpdated func(ID int)
 
@@ -20,6 +23,7 @@ type Client struct {
 	PIN                string
 	Name               string
 	OnLightbulbUpdate  OnLightbulbUpdated
+	OnLEDUpdate        OnLEDUpdate
 	OnGarageDoorUpdate OnGarageDoorUpdated
 	OnThermostatUpdate OnThermostatUpdated
 }
@@ -34,7 +38,7 @@ func (c *Client) SetUp(
 
 	// maps cellID to lightbulbs
 	lightbulbMap := make(map[int]*accessory.Lightbulb)
-	// thermostatsMap := make(map[int]*accessory.Thermostat)
+	thermostatsMap := make(map[int]*accessory.Thermostat)
 	garageDoorMap := make(map[int]*accessory.GarageDoorOpener)
 	for _, panel := range cfg.Panels {
 		for _, cell := range panel.Cells {
@@ -53,19 +57,20 @@ func (c *Client) SetUp(
 				accessories = append(accessories, a.A)
 			}
 
-			// if cell.Icon == config.IconTemperature {
-			// 	a := accessory.NewThermostat(accessoryInfo)
-			// 	thermostatsMap[cell.ID] = a
+			if cell.Icon == config.IconTemperature {
+				a := accessory.NewThermostat(accessoryInfo)
+				thermostatsMap[cell.ID] = a
 
-			// 	a.Thermostat.TargetTemperature.MinVal = 12
-			// 	a.Thermostat.TargetTemperature.MaxVal = 28
+				a.Thermostat.TargetTemperature.MinVal = 12
+				a.Thermostat.TargetTemperature.MaxVal = 28
+				a.Thermostat.TemperatureDisplayUnits.Unit = characteristic.UnitCelsius
 
-			// 	a.Thermostat.TargetTemperature.OnValueRemoteUpdate(func(v float64) {
-			// 		c.OnThermostatUpdate(cell.ID, v)
-			// 	})
+				a.Thermostat.TargetTemperature.OnValueRemoteUpdate(func(v float64) {
+					c.OnThermostatUpdate(cell.ID, v)
+				})
 
-			// 	accessories = append(accessories, a.A)
-			// }
+				accessories = append(accessories, a.A)
+			}
 
 			if cell.Icon == config.IconGate {
 				a := accessory.NewGarageDoorOpener(accessoryInfo)

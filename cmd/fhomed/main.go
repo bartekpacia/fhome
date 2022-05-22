@@ -101,6 +101,8 @@ func main() {
 				log.Fatalf("failed to send event to %d: %v\n", ID, err)
 			}
 		},
+		OnLEDUpdate: func(ID int, brightness float64) {
+		},
 		OnGarageDoorUpdate: func(ID int) {
 			err := client.SendXEvent(ID, fhome.ValueToggle)
 			if err != nil {
