@@ -257,7 +257,7 @@ func (c *Client) ReadAnyMessage() (*Message, error) {
 // GetUserConfig returns user configuration of cells and panels.
 //
 // User configuration is set by the user, from the mobile or web app.
-func (c *Client) GetUserConfig() (*File, error) {
+func (c *Client) GetUserConfig() (*UserConfig, error) {
 	token := generateRequestToken()
 
 	actionName := ActionGetUserConfig
@@ -282,17 +282,17 @@ func (c *Client) GetUserConfig() (*File, error) {
 		return nil, fmt.Errorf("unmarshal user config response to json: %v", err)
 	}
 
-	var file File
-	err = json.Unmarshal([]byte(userConfigResponse.File), &file)
+	var userConfig UserConfig
+	err = json.Unmarshal([]byte(userConfigResponse.File), &userConfig)
 	if err != nil {
 		return nil, fmt.Errorf("unmarshal file to json: %v", err)
 	}
 
-	return &file, nil
+	return &userConfig, nil
 }
 
 func (c *Client) SendXEvent(resourceID int, value string) error {
-	fmt.Println("sending Xevent to resource with id", resourceID, "with value", value)
+	log.Println("sending Xevent to resource with id", resourceID, "with value", value)
 
 	actionName := ActionXEvent
 	token := generateRequestToken()

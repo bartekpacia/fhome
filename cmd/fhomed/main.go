@@ -1,19 +1,17 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
 	"os"
 	"strconv"
-	"strings"
 
 	"github.com/bartekpacia/fhome/cmd/fhomed/config"
+	"github.com/bartekpacia/fhome/cmd/fhomed/homekit"
 	"github.com/bartekpacia/fhome/env"
 	"github.com/bartekpacia/fhome/fhome"
-	"github.com/brutella/hap"
 	"github.com/brutella/hap/accessory"
 )
 
@@ -28,6 +26,8 @@ var (
 )
 
 func init() {
+	log.SetOutput(os.Stdout)
+
 	flag.StringVar(&PIN, "pin", "00102003", "accessory PIN")
 	flag.StringVar(&Name, "name", "fhome", "accessory name")
 
@@ -68,7 +68,7 @@ func main() {
 
 	log.Println("opened client to resource session")
 
-	file, err := client.GetUserConfig()
+	userConfig, err := client.GetUserConfig()
 	if err != nil {
 		log.Fatalf("failed to get user config: %v", err)
 	}
@@ -80,7 +80,7 @@ func main() {
 		log.Fatalf("failed to touches: %v", err)
 	}
 
-	config, err := merge(file, touchesResp)
+	config, err := merge(userConfig, touchesResp)
 	if err != nil {
 		log.Fatalf("failed to merge config: %v", err)
 	}
@@ -90,10 +90,45 @@ func main() {
 		log.Fatalf("failed to dump config: %v", err)
 	}
 
-	results := make(chan map[int]*accessory.Lightbulb)
-	go setUpHAP(config, results)
+	lightbulbs := make(chan map[int]*accessory.Lightbulb)
+	LEDs := make(chan map[int]*accessory.ColoredLightbulb)
+	garageDoors := make(chan map[int]*accessory.GarageDoorOpener)
+	thermostats := make(chan map[int]*accessory.Thermostat)
 
-	accessories := <-results
+	homekitClient := &homekit.Client{
+		PIN:  PIN,
+		Name: Name,
+		OnLightbulbUpdate: func(ID int, on bool) {
+			err := client.SendXEvent(ID, fhome.ValueToggle)
+			if err != nil {
+				log.Fatalf("failed to send event to %d: %v\n", ID, err)
+			}
+		},
+		OnLEDUpdate: func(ID int, brightness int) {
+			err := client.SendXEvent(ID, fhome.MapLighting(brightness))
+			if err != nil {
+				log.Fatalf("failed to send event to %d: %v\n", ID, err)
+			}
+		},
+		OnGarageDoorUpdate: func(ID int) {
+			err := client.SendXEvent(ID, fhome.ValueToggle)
+			if err != nil {
+				log.Fatalf("failed to send event to %d: %v\n", ID, err)
+			}
+		},
+		OnThermostatUpdate: func(ID int, temperature float64) {
+			err = client.SendXEvent(ID, fhome.MapTemperature(temperature))
+			if err != nil {
+				log.Fatalf("failed to send event to %d: %v\n", ID, err)
+			}
+		},
+	}
+
+	go homekitClient.SetUp(config, lightbulbs, LEDs, garageDoors, thermostats)
+
+	lightbulbMap := <-lightbulbs
+	coloredLightbulbMap := <-LEDs
+	thermostatMap := <-thermostats
 
 	for {
 		msg, err := client.ReadMessage(fhome.ActionStatusTouchesChanged, "")
@@ -115,15 +150,46 @@ func main() {
 		cellValue := resp.Response.CellValues[0]
 		richPrint(&cellValue, config)
 
-		accessory := accessories[cellValue.IntID()]
-		if accessory == nil {
-			log.Printf("switch for objectID %d not found\n", cellValue.IntID())
+		// handle lightbulb
+		{
+			accessory := lightbulbMap[cellValue.IntID()]
+			if accessory != nil {
+				if cellValue.ValueStr == "100%" {
+					accessory.Lightbulb.On.SetValue(true)
+				} else if cellValue.ValueStr == "0%" {
+					accessory.Lightbulb.On.SetValue(false)
+				}
+			}
 		}
 
-		if cellValue.ValueStr == "100%" {
-			accessory.Lightbulb.On.SetValue(true)
-		} else if cellValue.ValueStr == "0%" {
-			accessory.Lightbulb.On.SetValue(false)
+		// handle LEDs
+		{
+			accessory := coloredLightbulbMap[cellValue.IntID()]
+			if accessory != nil {
+				newValue, err := fhome.RemapLighting(cellValue.Value)
+				if err != nil {
+					log.Printf("failed to remap lightning: %v\n", err)
+				}
+
+				accessory.Lightbulb.On.SetValue(newValue > 0)
+				err = accessory.Lightbulb.Brightness.SetValue(newValue)
+				if err != nil {
+					log.Printf("failed to set brightness to %d: %v\n", newValue, err)
+				}
+			}
+		}
+
+		// handle thermostats
+		{
+			accessory := thermostatMap[cellValue.IntID()]
+			if accessory != nil {
+				newValue, err := fhome.RemapTemperature(cellValue.Value)
+				if err != nil {
+					log.Printf("failed to remap temperature: %v\n", err)
+				}
+
+				accessory.Thermostat.TargetTemperature.SetValue(newValue)
+			}
 		}
 	}
 }
@@ -158,11 +224,11 @@ func richPrint(cellValue *fhome.CellValue, cfg *config.Config) error {
 }
 
 // merge create config from "get_user_config" action and "touches" action.
-func merge(file *fhome.File, touchesResp *fhome.TouchesResponse) (*config.Config, error) {
+func merge(userConfig *fhome.UserConfig, touchesResp *fhome.TouchesResponse) (*config.Config, error) {
 	panels := make([]config.Panel, 0)
 
-	for _, fPanel := range file.Panels {
-		fCells := file.GetCellsByPanelID(fPanel.ID)
+	for _, fPanel := range userConfig.Panels {
+		fCells := userConfig.GetCellsByPanelID(fPanel.ID)
 		cells := make([]config.Cell, 0)
 		for _, fCell := range fCells {
 			cell := config.Cell{
@@ -206,40 +272,4 @@ func merge(file *fhome.File, touchesResp *fhome.TouchesResponse) (*config.Config
 	}
 
 	return &cfg, nil
-}
-
-func setUpHAP(cfg *config.Config, results chan map[int]*accessory.Lightbulb) {
-	var accessories []*accessory.A
-
-	// maps cellID to lightbulbs
-	lightbulbMap := make(map[int]*accessory.Lightbulb)
-	for _, panel := range cfg.Panels {
-		for _, cell := range panel.Cells {
-			cell := cell
-			a := accessory.NewLightbulb(accessory.Info{Name: strings.TrimSpace(cell.Name)})
-			lightbulbMap[cell.ID] = a
-
-			a.Lightbulb.On.OnValueRemoteUpdate(func(on bool) {
-				err := client.SendXEvent(cell.ID, fhome.ValueToggle)
-				if err != nil {
-					log.Fatalf("failed to send event to %d: %v\n", cell.ID, err)
-				}
-				log.Println("succeess")
-			})
-
-			accessories = append(accessories, a.A)
-		}
-	}
-
-	bridge := accessory.NewBridge(accessory.Info{Name: Name})
-
-	fs := hap.NewFsStore("./db")
-	server, err := hap.NewServer(fs, bridge.A, accessories...)
-	if err != nil {
-		log.Panic(err)
-	}
-	server.Pin = PIN
-
-	results <- lightbulbMap
-	server.ListenAndServe(context.Background())
 }

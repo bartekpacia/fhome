@@ -2,7 +2,7 @@ package config
 
 import "fmt"
 
-// Config is a better, simpler representation of fhome.File.
+// Config is a better, simpler representation of fhome.UserConfig.
 type Config struct {
 	Panels []Panel
 }

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strconv"
 
 	"github.com/bartekpacia/fhome/env"
 	"github.com/bartekpacia/fhome/fhome"
@@ -13,7 +12,7 @@ import (
 )
 
 func init() {
-	log.SetFlags(0)
+	log.SetOutput(os.Stdout)
 }
 
 var listCommand = cli.Command{
@@ -59,37 +58,37 @@ var listCommand = cli.Command{
 			}
 			log.Println("got touches")
 
-			fmt.Println("touches go first")
+			log.Println("touches go first")
 			cells := touches.Response.MobileDisplayProperties.Cells
 			for _, cell := range cells {
-				fmt.Printf("id: %s %s, dt: %s, preset: %s, style: %s, perm: %s, step/value: %s\n", cell.ID, cell.Desc, cell.DisplayType, cell.Preset, cell.Style, cell.Permission, cell.Step)
+				log.Printf("id: %s %s, dt: %s, preset: %s, style: %s, perm: %s, step/value: %s\n", cell.ID, cell.Desc, cell.DisplayType, cell.Preset, cell.Style, cell.Permission, cell.Step)
 			}
 		}
 
 		if c.Bool("get_user_config") {
-			file, err := client.GetUserConfig()
+			userConfig, err := client.GetUserConfig()
 			if err != nil {
 				return fmt.Errorf("failed to get user config: %v", err)
 			}
 			log.Println("successfully got user config")
 
 			panels := map[string]fhome.Panel{}
-			for _, panel := range file.Panels {
+			for _, panel := range userConfig.Panels {
 				panels[panel.ID] = panel
 			}
 
-			fmt.Printf("there are %d cells\n", len(file.Cells))
-			for _, cell := range file.Cells {
-				fmt.Printf("id: %3d, name: %s, icon: %s panels:", cell.ObjectID, cell.Name, cell.Icon)
+			log.Printf("there are %d cells\n", len(userConfig.Cells))
+			for _, cell := range userConfig.Cells {
+				log.Printf("id: %3d, name: %s, icon: %s panels:", cell.ObjectID, cell.Name, cell.Icon)
 				for _, pos := range cell.PositionInPanel {
-					fmt.Printf(" %s", panels[pos.PanelID].Name)
+					log.Printf(" %s", panels[pos.PanelID].Name)
 				}
-				fmt.Println()
+				log.Println()
 			}
 
-			fmt.Printf("there are %d panels\n", len(file.Panels))
-			for _, panel := range file.Panels {
-				fmt.Printf("id: %s, name: %s\n", panel.ID, panel.Name)
+			log.Printf("there are %d panels\n", len(userConfig.Panels))
+			for _, panel := range userConfig.Panels {
+				log.Printf("id: %s, name: %s\n", panel.ID, panel.Name)
 			}
 		}
 
@@ -135,7 +134,7 @@ var watchCommand = cli.Command{
 					return fmt.Errorf("failed to unmarshal touches: %v", err)
 				}
 
-				fmt.Printf("%s\n", fhome.Pprint(touches))
+				log.Printf("%s\n", fhome.Pprint(touches))
 			}
 
 		}
@@ -244,7 +243,7 @@ var setCommand = cli.Command{
 
 		log.Println("successfully opened client to resource session")
 
-		err = client.SendXEvent(objectID, strconv.Itoa(value))
+		err = client.SendXEvent(objectID, fhome.MapLighting(value))
 		if err != nil {
 			return fmt.Errorf("failed to send xevent to object with id %d: %v", objectID, err)
 		}
