@@ -70,14 +70,13 @@ func EncodeTemperature(value float64) string {
 // "0xa118" -> 28.0
 //
 func DecodeTemperatureValue(value string) (float64, error) {
-	value = strings.TrimPrefix(value, "0x")
-	parsed, err := strconv.ParseInt(value, 16, 64)
+	v := strings.TrimPrefix(value, "0x")
+	parsed, err := strconv.ParseInt(v, 16, 64)
 	if err != nil {
 		return 0, fmt.Errorf("failed to parse int from %s: %v", value, err)
 	}
 
 	parsedValue := (float64(parsed) - baseTemperatureValue) / 10
-	fmt.Println("remapped", value, "parsed as", parsed, "to", parsedValue)
 	return parsedValue, nil
 }
 
@@ -91,9 +90,8 @@ func DecodeTemperatureValueStr(value string) (float64, error) {
 	v = strings.ReplaceAll(v, ",", ".")
 	parsed, err := strconv.ParseFloat(v, 64)
 	if err != nil {
-		return 0, fmt.Errorf("failed to parse float from %s: %v", v, err)
+		return 0, fmt.Errorf("failed to parse float from %s: %v", value, err)
 	}
 
-	fmt.Println("remapped", v, "to", parsed)
 	return parsed, nil
 }
