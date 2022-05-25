@@ -78,21 +78,18 @@ func (c *Client) SetUp(cfg *config.Config) *Home {
 				}
 			}
 			if cell.Icon == config.IconTemperature {
-				/* a := accessory.NewThermostat(accessoryInfo)
+				a := accessory.NewThermostat(accessoryInfo)
 				thermostatsMap[cell.ID] = a
 
 				a.Thermostat.TargetTemperature.Val = 12
-				a.Thermostat.TargetTemperature.MinVal = 28
+				a.Thermostat.TargetTemperature.MinVal = 12
 				a.Thermostat.TargetTemperature.MaxVal = 28
-
-				// a.Thermostat.TargetTemperature.MinVal = 12
-				// a.Thermostat.TargetTemperature.MaxVal = 28
 
 				a.Thermostat.TargetTemperature.OnValueRemoteUpdate(func(v float64) {
 					c.OnThermostatUpdate(cell.ID, v)
 				})
 
-				accessories = append(accessories, a.A) */
+				accessories = append(accessories, a.A)
 			}
 
 			if cell.Icon == config.IconGate {
