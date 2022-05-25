@@ -111,14 +111,17 @@ func main() {
 			}
 		},
 		OnThermostatUpdate: func(ID int, temperature float64) {
-			err = client.SendXEvent(ID, fhome.MapTemperature(temperature))
+			err = client.SendXEvent(ID, fhome.EncodeTemperature(temperature))
 			if err != nil {
 				log.Fatalf("failed to send event to %d: %v\n", ID, err)
 			}
 		},
 	}
 
-	home := homekitClient.SetUp(config)
+	home, err := homekitClient.SetUp(config)
+	if err != nil {
+		log.Fatalf("failed to set up homekit: %v", err)
+	}
 
 	for {
 		msg, err := client.ReadMessage(fhome.ActionStatusTouchesChanged, "")
@@ -173,7 +176,7 @@ func main() {
 		{
 			accessory := home.Thermostats[cellValue.IntID()]
 			if accessory != nil {
-				newValue, err := fhome.RemapTemperature(cellValue.Value)
+				newValue, err := fhome.DecodeTemperatureValue(cellValue.Value)
 				if err != nil {
 					log.Printf("failed to remap temperature: %v\n", err)
 				}
@@ -253,7 +256,7 @@ func merge(userConfig *fhome.UserConfig, touchesResp *fhome.TouchesResponse) (*c
 		}
 
 		cfgCell.Desc = cell.Desc
-		cfgCell.Value = cell.Step
+		cfgCell.Value = cell.Step // FIXME: this is wrong; for thermo-setters this is 0.5, for thermo-getters this is actual value
 		cfgCell.TypeNumber = cell.TypeNumber
 		cfgCell.Preset = cell.Preset
 		cfgCell.Style = cell.Style

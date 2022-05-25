@@ -36,18 +36,17 @@ func RemapLighting(value string) (int, error) {
 
 var baseTemperatureValue float64 = 0xa078 - 12*10.0 // 0°C
 
-// MapTemperature maps val to a string that is ready to be passed to Xevent.
+// EncodeTemperature encodes value to represent temperature that  is ready to be
+// passed to Xevent.
 //
-// Examples:
+// Examples of the process:
 //
-// 0°C -> 0x6
+// 12 -> 41080 + 12 * 10 -> 41080 -> "0xa078"
 //
-// 12°C -> 0xa078 -> 41080
+// 25 -> 41080 + 25 * 10 -> 41210 -> "0xa0fa"
 //
-// 25°C -> 0xa0fa -> 41210
-//
-// 28°C -> 0xa118 -> 41240
-func MapTemperature(value float64) string {
+// 28 -> 41080 + 28 * 10 -> 41240 -> "0xa118"
+func EncodeTemperature(value float64) string {
 	if value < 12 {
 		return "0xa078"
 	} else if value > 28 {
@@ -59,14 +58,42 @@ func MapTemperature(value float64) string {
 	return fval
 }
 
-func RemapTemperature(value string) (float64, error) {
+// DecodeTemperatureValue converts hex string to float64 representing
+// temperature in °C.
+//
+// Examples:
+//
+// "0xa005" -> 0.5
+//
+// "0xa078" -> 12.0
+//
+// "0xa118" -> 28.0
+//
+func DecodeTemperatureValue(value string) (float64, error) {
 	value = strings.TrimPrefix(value, "0x")
 	parsed, err := strconv.ParseInt(value, 16, 64)
 	if err != nil {
 		return 0, fmt.Errorf("failed to parse int from %s: %v", value, err)
 	}
 
-	parsedValue := float64(parsed)/10 - baseTemperatureValue
+	parsedValue := (float64(parsed) - baseTemperatureValue) / 10
 	fmt.Println("remapped", value, "parsed as", parsed, "to", parsedValue)
 	return parsedValue, nil
+}
+
+// DecodeTemperatureValueStr converts °C in string to float64.
+//
+// Example:
+//
+// "24,0°C" -> 24
+func DecodeTemperatureValueStr(value string) (float64, error) {
+	v := strings.TrimSuffix(value, "°C")
+	v = strings.ReplaceAll(v, ",", ".")
+	parsed, err := strconv.ParseFloat(v, 64)
+	if err != nil {
+		return 0, fmt.Errorf("failed to parse float from %s: %v", v, err)
+	}
+
+	fmt.Println("remapped", v, "to", parsed)
+	return parsed, nil
 }

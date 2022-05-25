@@ -2,10 +2,12 @@ package homekit
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"strings"
 
 	"github.com/bartekpacia/fhome/cmd/fhomed/config"
+	"github.com/bartekpacia/fhome/fhome"
 	"github.com/brutella/hap"
 	"github.com/brutella/hap/accessory"
 )
@@ -34,7 +36,7 @@ type Home struct {
 	Thermostats       map[int]*accessory.Thermostat
 }
 
-func (c *Client) SetUp(cfg *config.Config) *Home {
+func (c *Client) SetUp(cfg *config.Config) (*Home, error) {
 	var accessories []*accessory.A
 
 	// maps cellID to lightbulbs
@@ -85,6 +87,13 @@ func (c *Client) SetUp(cfg *config.Config) *Home {
 				a.Thermostat.TargetTemperature.MinVal = 12
 				a.Thermostat.TargetTemperature.MaxVal = 28
 
+				currentTemp, err := fhome.DecodeTemperatureValue(cell.Value)
+				if err != nil {
+					return nil, fmt.Errorf("failed to remap temperature: %v", err)
+				}
+
+				a.Thermostat.CurrentTemperature.Val = currentTemp
+
 				a.Thermostat.TargetTemperature.OnValueRemoteUpdate(func(v float64) {
 					c.OnThermostatUpdate(cell.ID, v)
 				})
@@ -121,5 +130,5 @@ func (c *Client) SetUp(cfg *config.Config) *Home {
 		ColoredLightbulbs: coloredLightbulbs,
 		GarageDoors:       garageDoorMap,
 		Thermostats:       thermostatsMap,
-	}
+	}, nil
 }
