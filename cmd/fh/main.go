@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"text/tabwriter"
 
 	"github.com/bartekpacia/fhome/env"
 	"github.com/bartekpacia/fhome/fhome"
@@ -58,10 +59,15 @@ var listCommand = cli.Command{
 			}
 			log.Println("got touches")
 
-			log.Println("touches go first")
+			w := tabwriter.NewWriter(os.Stdout, 8, 8, 0, '\t', 0)
+			defer w.Flush()
+
+			fmt.Fprintf(w, "id\tdt\tpreset\tstyle\tperm\tstep\tdesc\n")
+			fmt.Fprintf(w, "___\t___\t___\t___\t___\t___\t___\n")
+
 			cells := touches.Response.MobileDisplayProperties.Cells
 			for _, cell := range cells {
-				log.Printf("id: %s %s, dt: %s, preset: %s, style: %s, perm: %s, step/value: %s\n", cell.ID, cell.Desc, cell.DisplayType, cell.Preset, cell.Style, cell.Permission, cell.Step)
+				fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s\n", cell.ID, cell.DisplayType, cell.Preset, cell.Style, cell.Permission, cell.Step, cell.Desc)
 			}
 		}
 
