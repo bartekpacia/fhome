@@ -27,13 +27,14 @@ type Client struct {
 	OnThermostatUpdate OnThermostatUpdated
 }
 
-func (c *Client) SetUp(
-	cfg *config.Config,
-	lightbulbs chan<- map[int]*accessory.Lightbulb,
-	LEDs chan<- map[int]*accessory.ColoredLightbulb,
-	garageDoors chan<- map[int]*accessory.GarageDoorOpener,
-	thermostats chan<- map[int]*accessory.Thermostat,
-) {
+type Home struct {
+	Lightbulbs        map[int]*accessory.Lightbulb
+	ColoredLightbulbs map[int]*accessory.ColoredLightbulb
+	GarageDoors       map[int]*accessory.GarageDoorOpener
+	Thermostats       map[int]*accessory.Thermostat
+}
+
+func (c *Client) SetUp(cfg *config.Config) *Home {
 	var accessories []*accessory.A
 
 	// maps cellID to lightbulbs
@@ -77,7 +78,7 @@ func (c *Client) SetUp(
 				}
 			}
 			if cell.Icon == config.IconTemperature {
-				a := accessory.NewThermostat(accessoryInfo)
+				/* a := accessory.NewThermostat(accessoryInfo)
 				thermostatsMap[cell.ID] = a
 
 				a.Thermostat.TargetTemperature.Val = 12
@@ -91,7 +92,7 @@ func (c *Client) SetUp(
 					c.OnThermostatUpdate(cell.ID, v)
 				})
 
-				accessories = append(accessories, a.A)
+				accessories = append(accessories, a.A) */
 			}
 
 			if cell.Icon == config.IconGate {
@@ -116,8 +117,12 @@ func (c *Client) SetUp(
 	}
 	server.Pin = c.PIN
 
-	lightbulbs <- lightbulbMap
-	LEDs <- coloredLightbulbs
-	thermostats <- thermostatsMap
-	server.ListenAndServe(context.Background())
+	go server.ListenAndServe(context.Background())
+
+	return &Home{
+		Lightbulbs:        lightbulbMap,
+		ColoredLightbulbs: coloredLightbulbs,
+		GarageDoors:       garageDoorMap,
+		Thermostats:       thermostatsMap,
+	}
 }

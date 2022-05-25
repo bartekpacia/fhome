@@ -12,7 +12,6 @@ import (
 	"github.com/bartekpacia/fhome/cmd/fhomed/homekit"
 	"github.com/bartekpacia/fhome/env"
 	"github.com/bartekpacia/fhome/fhome"
-	"github.com/brutella/hap/accessory"
 )
 
 var (
@@ -90,11 +89,6 @@ func main() {
 		log.Fatalf("failed to dump config: %v", err)
 	}
 
-	lightbulbs := make(chan map[int]*accessory.Lightbulb)
-	LEDs := make(chan map[int]*accessory.ColoredLightbulb)
-	garageDoors := make(chan map[int]*accessory.GarageDoorOpener)
-	thermostats := make(chan map[int]*accessory.Thermostat)
-
 	homekitClient := &homekit.Client{
 		PIN:  PIN,
 		Name: Name,
@@ -124,11 +118,7 @@ func main() {
 		},
 	}
 
-	go homekitClient.SetUp(config, lightbulbs, LEDs, garageDoors, thermostats)
-
-	lightbulbMap := <-lightbulbs
-	coloredLightbulbMap := <-LEDs
-	thermostatMap := <-thermostats
+	home := homekitClient.SetUp(config)
 
 	for {
 		msg, err := client.ReadMessage(fhome.ActionStatusTouchesChanged, "")
@@ -152,7 +142,7 @@ func main() {
 
 		// handle lightbulb
 		{
-			accessory := lightbulbMap[cellValue.IntID()]
+			accessory := home.Lightbulbs[cellValue.IntID()]
 			if accessory != nil {
 				if cellValue.ValueStr == "100%" {
 					accessory.Lightbulb.On.SetValue(true)
@@ -164,7 +154,7 @@ func main() {
 
 		// handle LEDs
 		{
-			accessory := coloredLightbulbMap[cellValue.IntID()]
+			accessory := home.ColoredLightbulbs[cellValue.IntID()]
 			if accessory != nil {
 				newValue, err := fhome.RemapLighting(cellValue.Value)
 				if err != nil {
@@ -181,7 +171,7 @@ func main() {
 
 		// handle thermostats
 		{
-			accessory := thermostatMap[cellValue.IntID()]
+			accessory := home.Thermostats[cellValue.IntID()]
 			if accessory != nil {
 				newValue, err := fhome.RemapTemperature(cellValue.Value)
 				if err != nil {
