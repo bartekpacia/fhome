@@ -275,7 +275,10 @@ func init() {
 	}
 
 	e = env.Env{}
-	e.Load()
+	err = e.Load()
+	if err != nil {
+		log.Fatalf("failed to load env: %v\n", err)
+	}
 }
 
 func main() {
