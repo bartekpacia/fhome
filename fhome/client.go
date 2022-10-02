@@ -31,14 +31,16 @@ type Client struct {
 	resourcePasswordHash *string
 	uniqueID             *string
 
-	// First websocket connection that is used for open_client_session,
-	// get_my_data and get_my_resources actions.
-	conn1 *websocket.Conn
+	// The first websocket connection that is used for the following actions:
+	// 	- open_client_session
+	// 	- get_my_data
+	// 	- get_my_resources actions.
+	setupConn *websocket.Conn
 
-	// Second websocket connection that is used for all other actions.
-	conn2 *websocket.Conn
+	// The second connection that is used for all other actions.
+	mainConn *websocket.Conn
 
-	subs map[int]chan<- Message
+	msgStreams map[int]chan<- Message
 }
 
 // NewClient creates a new client and automatically starts connecting to
@@ -59,7 +61,7 @@ func NewClient() (*Client, error) {
 		return nil, fmt.Errorf("wrong first message received")
 	}
 
-	c := Client{conn1: conn, subs: make(map[int]chan<- Message)}
+	c := Client{setupConn: conn, msgStreams: make(map[int]chan<- Message)}
 
 	return &c, nil
 }
@@ -69,7 +71,7 @@ func (c *Client) OpenCloudSession(email, password string) error {
 	token := generateRequestToken()
 
 	actionName := ActionOpenClientSession
-	err := c.conn1.WriteJSON(OpenClientSession{
+	err := c.setupConn.WriteJSON(OpenClientSession{
 		ActionName:   actionName,
 		Email:        email,
 		Password:     password,
@@ -81,7 +83,7 @@ func (c *Client) OpenCloudSession(email, password string) error {
 
 	for {
 		var response Response
-		err = c.conn1.ReadJSON(&response)
+		err = c.setupConn.ReadJSON(&response)
 		if err != nil {
 			return fmt.Errorf("failed to read response: %v", err)
 		}
@@ -109,7 +111,7 @@ func (c *Client) GetMyResources() (*GetMyResourcesResponse, error) {
 	token := generateRequestToken()
 
 	actionName := ActionGetMyResources
-	err := c.conn1.WriteJSON(GetMyResources{
+	err := c.setupConn.WriteJSON(GetMyResources{
 		ActionName:   actionName,
 		Email:        *c.email,
 		RequestToken: token,
@@ -120,7 +122,7 @@ func (c *Client) GetMyResources() (*GetMyResourcesResponse, error) {
 
 	for {
 		var response GetMyResourcesResponse
-		err = c.conn1.ReadJSON(&response)
+		err = c.setupConn.ReadJSON(&response)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read response: %v", err)
 		}
@@ -150,12 +152,12 @@ func (c *Client) OpenResourceSession(resourcePassword string) error {
 		return fmt.Errorf("reconnect: %v", err)
 	}
 
-	c.conn2 = conn
+	c.mainConn = conn
 
 	actionName := ActionOpenClienToResourceSession
 	token := generateRequestToken()
 
-	err = c.conn2.WriteJSON(OpenClientToResourceSession{
+	err = c.mainConn.WriteJSON(OpenClientToResourceSession{
 		ActionName:   actionName,
 		Email:        *c.email,
 		UniqueID:     *c.uniqueID,
@@ -183,7 +185,7 @@ func (c *Client) Touches() (*TouchesResponse, error) {
 	actionName := ActionTouches
 	token := generateRequestToken()
 
-	err := c.conn2.WriteJSON(Action{
+	err := c.mainConn.WriteJSON(Action{
 		ActionName:   actionName,
 		Login:        *c.email,
 		PasswordHash: *c.resourcePasswordHash,
@@ -261,7 +263,7 @@ func (c *Client) GetUserConfig() (*UserConfig, error) {
 	token := generateRequestToken()
 
 	actionName := ActionGetUserConfig
-	err := c.conn2.WriteJSON(Action{
+	err := c.mainConn.WriteJSON(Action{
 		ActionName:   actionName,
 		Login:        *c.email,
 		PasswordHash: *c.resourcePasswordHash,
@@ -306,7 +308,7 @@ func (c *Client) SendXEvent(resourceID int, value string) error {
 		Value:        value,
 		Type:         "HEX",
 	}
-	err := c.conn2.WriteJSON(xevent)
+	err := c.mainConn.WriteJSON(xevent)
 	if err != nil {
 		return fmt.Errorf("failed to write %s to conn: %v", actionName, err)
 	}
@@ -316,11 +318,11 @@ func (c *Client) SendXEvent(resourceID int, value string) error {
 }
 
 func (c *Client) Close() error {
-	if err := c.conn1.Close(); err != nil {
+	if err := c.setupConn.Close(); err != nil {
 		return fmt.Errorf("failed to close connection 1: %v", err)
 	}
 
-	if err := c.conn2.Close(); err != nil {
+	if err := c.mainConn.Close(); err != nil {
 		return fmt.Errorf("failed to close connection 2: %v", err)
 	}
 
@@ -328,33 +330,34 @@ func (c *Client) Close() error {
 }
 
 func (c *Client) read() <-chan Message {
-	ch := make(chan Message, 1)
-	c.subs[id()] = ch
-	return ch
+	msgStream := make(chan Message, 1)
+	c.msgStreams[id()] = msgStream
+	return msgStream
 }
 
-/// reader starts a goroutine that reads messages from c.conn2.
+// reader infinitely reads messages from c.conn2 and sends them to all
+// subscribers.
 func (c *Client) reader() {
 	for {
 		// read new message
-		_, msgByte, err := c.conn2.ReadMessage()
+		_, data, err := c.mainConn.ReadMessage()
 		if err != nil {
 			log.Fatalln("failed to read json from conn2:", err)
 		}
 
 		// unmarshal it
 		var msg Message
-		err = json.Unmarshal(msgByte, &msg)
+		err = json.Unmarshal(data, &msg)
 		if err != nil {
 			log.Fatalln("failed to unmarshal message:", err)
 		}
-		msg.Orig = msgByte
+		msg.Orig = data
 
 		// deliver it to all subscribers
-		for i, ch := range c.subs {
-			ch <- msg
-			close(ch)
-			delete(c.subs, i)
+		for id, msgStream := range c.msgStreams {
+			msgStream <- msg
+			close(msgStream)
+			delete(c.msgStreams, id)
 		}
 	}
 }
