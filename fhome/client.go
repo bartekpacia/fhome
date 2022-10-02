@@ -201,7 +201,7 @@ func (c *Client) Touches() (*TouchesResponse, error) {
 	}
 
 	var response TouchesResponse
-	err = json.Unmarshal(msg.Orig, &response)
+	err = json.Unmarshal(msg.Raw, &response)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal: %v", err)
 	}
@@ -279,7 +279,7 @@ func (c *Client) GetUserConfig() (*UserConfig, error) {
 	}
 
 	var userConfigResponse GetUserConfigResponse
-	err = json.Unmarshal(msg.Orig, &userConfigResponse)
+	err = json.Unmarshal(msg.Raw, &userConfigResponse)
 	if err != nil {
 		return nil, fmt.Errorf("unmarshal user config response to json: %v", err)
 	}
@@ -351,7 +351,7 @@ func (c *Client) reader() {
 		if err != nil {
 			log.Fatalln("failed to unmarshal message:", err)
 		}
-		msg.Orig = data
+		msg.Raw = data
 
 		// deliver it to all subscribers
 		for id, msgStream := range c.msgStreams {

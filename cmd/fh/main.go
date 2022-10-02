@@ -135,7 +135,7 @@ var watchCommand = cli.Command{
 
 			if msg.ActionName == fhome.ActionStatusTouchesChanged {
 				var touches fhome.StatusTouchesChangedResponse
-				err = json.Unmarshal(msg.Orig, &touches)
+				err = json.Unmarshal(msg.Raw, &touches)
 				if err != nil {
 					return fmt.Errorf("failed to unmarshal touches: %v", err)
 				}

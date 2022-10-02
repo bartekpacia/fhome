@@ -131,7 +131,7 @@ func main() {
 
 		var resp fhome.StatusTouchesChangedResponse
 
-		err = json.Unmarshal(msg.Orig, &resp)
+		err = json.Unmarshal(msg.Raw, &resp)
 		if err != nil {
 			log.Fatalln("failed to unmarshal message:", err)
 		}

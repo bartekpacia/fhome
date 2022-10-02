@@ -9,7 +9,7 @@ type Message struct {
 	ActionName   string  `json:"action_name"`
 	RequestToken *string `json:"request_token"`
 	Status       *string `json:"status"`
-	Orig         []byte
+	Raw          []byte
 }
 
 const (
