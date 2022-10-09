@@ -40,7 +40,7 @@ func init() {
 	e = env.Env{}
 	err = e.Load()
 	if err != nil {
-		log.Fatalf("failed to load env variables: %v\n", err)
+		log.Fatalf("failed to load env: %v\n", err)
 	}
 }
 

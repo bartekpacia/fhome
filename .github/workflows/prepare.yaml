@@ -1,0 +1,34 @@
+name: prepare
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  main:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v3
+
+      - name: Install Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: "1.19"
+          cache: true
+
+      - name: Verify code formatting
+        run: |
+          go install mvdan.cc/gofumpt@latest
+          test -z $(gofumpt -l .)
+
+      - name: Run linter
+        run: |
+          go install honnef.co/go/tools/cmd/staticcheck@latest
+          staticcheck ./...
+
+      - name: Run tests with coverage
+        run: go test -cover ./...
