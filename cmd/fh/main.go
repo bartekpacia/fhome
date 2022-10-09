@@ -18,7 +18,7 @@ func init() {
 
 var listCommand = cli.Command{
 	Name:  "list",
-	Usage: "list all available objects",
+	Usage: "List all available objects",
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
 			Name:    "verbose",
@@ -104,7 +104,7 @@ var listCommand = cli.Command{
 
 var watchCommand = cli.Command{
 	Name:  "watch",
-	Usage: "watch incoming messages on websockets",
+	Usage: "Print all incoming messages",
 	Action: func(c *cli.Context) error {
 		err := client.OpenCloudSession(e.Email, e.CloudPassword)
 		if err != nil {
@@ -149,7 +149,7 @@ var watchCommand = cli.Command{
 
 var toggleCommand = cli.Command{
 	Name:  "toggle",
-	Usage: "toggle an object on/off",
+	Usage: "Toggle object's state (on/off)",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:     "object-id",
@@ -202,7 +202,7 @@ var toggleCommand = cli.Command{
 
 var setCommand = cli.Command{
 	Name:  "set",
-	Usage: "set value of an object (0-100)",
+	Usage: "Set object's value (0-100)",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:     "object-id",
@@ -284,7 +284,7 @@ func init() {
 func main() {
 	app := &cli.App{
 		Name:  "fh",
-		Usage: "interact with smart devices connected to F&Home system",
+		Usage: "CLI for interact with smart devices connected to F&Home system",
 		Commands: []*cli.Command{
 			&listCommand,
 			&watchCommand,
