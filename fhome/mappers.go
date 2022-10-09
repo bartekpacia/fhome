@@ -68,7 +68,6 @@ func EncodeTemperature(value float64) string {
 // "0xa078" -> 12.0
 //
 // "0xa118" -> 28.0
-//
 func DecodeTemperatureValue(value string) (float64, error) {
 	v := strings.TrimPrefix(value, "0x")
 	parsed, err := strconv.ParseInt(v, 16, 64)
