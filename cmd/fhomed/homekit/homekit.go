@@ -1,3 +1,4 @@
+// Package homekit bridges F&Home Cloud with HomeKit.
 package homekit
 
 import (
