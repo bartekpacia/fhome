@@ -6,11 +6,10 @@ import (
 	"log"
 	"os"
 
-	"github.com/bartekpacia/fhome/cmd/fhomed/config"
 	"github.com/bartekpacia/fhome/fhome"
 )
 
-func dumpConfig(cfg *config.Config) error {
+func dumpConfig(cfg *fhome.FullConfig) error {
 	file, err := os.Create("config.json")
 	if err != nil {
 		return fmt.Errorf("create config.json: %v", err)
@@ -29,7 +28,7 @@ func dumpConfig(cfg *config.Config) error {
 	return nil
 }
 
-func richPrint(cellValue *fhome.CellValue, cfg *config.Config) error {
+func richPrint(cellValue *fhome.CellValue, cfg *fhome.FullConfig) error {
 	cell, err := cfg.GetCellByID(cellValue.IntID())
 	if err != nil {
 		return fmt.Errorf("failed to get cell with ID %d: %v", cellValue.IntID(), err)

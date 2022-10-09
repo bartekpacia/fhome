@@ -78,7 +78,7 @@ var listCommand = cli.Command{
 			}
 			log.Println("successfully got user config")
 
-			panels := map[string]fhome.Panel{}
+			panels := map[string]fhome.UserPanel{}
 			for _, panel := range userConfig.Panels {
 				panels[panel.ID] = panel
 			}
