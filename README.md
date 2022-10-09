@@ -27,14 +27,14 @@ Depends on the `fhome` package.
 
 **Build**
 
-```
-make fh
+```console
+$ make fh
 ```
 
 **Help**
 
-```
-fh help
+```console
+$ fh help
 ```
 
 ### fhomed
@@ -46,8 +46,8 @@ Depends on the `fhome` package.
 
 **Build**
 
-```
-make fhomed
+```console
+$ make fhomed
 ```
 
 [go-reference-badge]: https://pkg.go.dev/badge/github.com/bartekpacia/fhome.svg
