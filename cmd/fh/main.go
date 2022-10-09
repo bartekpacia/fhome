@@ -284,7 +284,7 @@ func init() {
 func main() {
 	app := &cli.App{
 		Name:  "fh",
-		Usage: "CLI for interact with smart devices connected to F&Home system",
+		Usage: "Interact with smart home devices connected to F&Home",
 		Commands: []*cli.Command{
 			&listCommand,
 			&watchCommand,
