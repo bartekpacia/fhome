@@ -1,7 +1,7 @@
 # fhome
 
-[![Go Reference][go-reference-badge]][go-reference-link]
-[![Go Report][go-report-badge]][go-report-link]
+[![Go Reference][go-reference-badge]][go-reference-link] [![Go
+Report][go-report-badge]][go-report-link]
 
 Package and CLI to communicate with [F&Home – a smart home system][fhome].
 
@@ -28,7 +28,13 @@ Depends on the `fhome` package.
 **Build**
 
 ```console
-$ make fh
+$ go build -o fh ./cmd/fh/*.go
+```
+
+**Install**
+
+```console
+$ go install ./cmd/fh
 ```
 
 **Help**
@@ -47,7 +53,13 @@ Depends on the `fhome` package.
 **Build**
 
 ```console
-$ make fhomed
+$ go build -o fhomed ./cmd/fhomed/*.go
+```
+
+**Install**
+
+```console
+$ go install ./cmd/fhomed
 ```
 
 [go-reference-badge]: https://pkg.go.dev/badge/github.com/bartekpacia/fhome.svg

@@ -3,13 +3,15 @@ package fhome
 import "fmt"
 
 type UserConfig struct {
-	Cells  []Cell  `json:"cells"`
-	Panels []Panel `json:"panels"`
-	Server Server  `json:"server"`
+	Cells  []UserCell  `json:"cells"`
+	Panels []UserPanel `json:"panels"`
+	Server struct {
+		ProjectVersion string `json:"projectVersion"`
+	} `json:"server"`
 }
 
-func (f *UserConfig) GetCellsByPanelID(id string) []Cell {
-	cells := make([]Cell, 0)
+func (f *UserConfig) GetCellsByPanelID(id string) []UserCell {
+	cells := make([]UserCell, 0)
 	for _, cell := range f.Cells {
 		for _, pos := range cell.PositionInPanel {
 			if pos.PanelID == id {
@@ -21,11 +23,7 @@ func (f *UserConfig) GetCellsByPanelID(id string) []Cell {
 	return cells
 }
 
-type Server struct {
-	ProjectVersion string `json:"projectVersion"`
-}
-
-type Cell struct {
+type UserCell struct {
 	ObjectID        int               `json:"objectId"`
 	Icon            string            `json:"icon"`
 	Name            string            `json:"name"`
@@ -43,7 +41,7 @@ func (p PositionInPanel) String() string {
 	return fmt.Sprintf("X: %d, Y: %d", p.X, p.Y)
 }
 
-type Panel struct {
+type UserPanel struct {
 	ID                   string      `json:"id"`
 	Name                 string      `json:"name"`
 	X                    int         `json:"x"`

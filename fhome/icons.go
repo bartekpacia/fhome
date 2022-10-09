@@ -1,4 +1,4 @@
-package config
+package fhome
 
 type Icon string
 

@@ -32,9 +32,9 @@ type Client struct {
 	uniqueID             *string
 
 	// The first websocket connection that is used for the following actions:
-	// 	- open_client_session
-	// 	- get_my_data
-	// 	- get_my_resources actions.
+	//  - open_client_session
+	//  - get_my_data
+	//  - get_my_resources actions
 	setupConn *websocket.Conn
 
 	// The second connection that is used for all other actions.
@@ -181,6 +181,8 @@ func (c *Client) OpenResourceSession(resourcePassword string) error {
 
 // Touches returns additional information about particular cells, e.g their
 // style (icon) and configurator-set name.
+//
+// Configuration returned by this method is set in the desktop configurator app.
 func (c *Client) Touches() (*TouchesResponse, error) {
 	actionName := ActionTouches
 	token := generateRequestToken()
@@ -256,9 +258,9 @@ func (c *Client) ReadAnyMessage() (*Message, error) {
 	return &msg, nil
 }
 
-// GetUserConfig returns user configuration of cells and panels.
+// GetUserConfig returns configuration of cells and panels.
 //
-// User configuration is set by the user, from the mobile or web app.
+// Configuration returned by this method is set in the web or mobile app.
 func (c *Client) GetUserConfig() (*UserConfig, error) {
 	token := generateRequestToken()
 

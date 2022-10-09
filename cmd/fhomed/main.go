@@ -8,7 +8,6 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/bartekpacia/fhome/cmd/fhomed/config"
 	"github.com/bartekpacia/fhome/cmd/fhomed/homekit"
 	"github.com/bartekpacia/fhome/env"
 	"github.com/bartekpacia/fhome/fhome"
@@ -188,22 +187,25 @@ func main() {
 }
 
 // merge create config from "get_user_config" action and "touches" action.
-func merge(userConfig *fhome.UserConfig, touchesResp *fhome.TouchesResponse) (*config.Config, error) {
-	panels := make([]config.Panel, 0)
+func merge(
+	userConfig *fhome.UserConfig,
+	touchesResp *fhome.TouchesResponse,
+) (*fhome.FullConfig, error) {
+	panels := make([]fhome.Panel, 0)
 
 	for _, fPanel := range userConfig.Panels {
 		fCells := userConfig.GetCellsByPanelID(fPanel.ID)
-		cells := make([]config.Cell, 0)
+		cells := make([]fhome.Cell, 0)
 		for _, fCell := range fCells {
-			cell := config.Cell{
+			cell := fhome.Cell{
 				ID:   fCell.ObjectID,
-				Icon: config.CreateIcon(fCell.Icon),
+				Icon: fhome.CreateIcon(fCell.Icon),
 				Name: fCell.Name,
 			}
 			cells = append(cells, cell)
 		}
 
-		panel := config.Panel{
+		panel := fhome.Panel{
 			ID:    fPanel.ID,
 			Name:  fPanel.Name,
 			Cells: cells,
@@ -212,7 +214,7 @@ func merge(userConfig *fhome.UserConfig, touchesResp *fhome.TouchesResponse) (*c
 		panels = append(panels, panel)
 	}
 
-	cfg := config.Config{Panels: panels}
+	cfg := fhome.FullConfig{Panels: panels}
 
 	for _, cell := range touchesResp.Response.MobileDisplayProperties.Cells {
 		cellID, err := strconv.Atoi(cell.ID)
