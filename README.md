@@ -1,28 +1,57 @@
 # fhome
 
-Package and CLI to communicate with [F&Home – a smart home
-system](https://www.fhome.pl).
+[![Go Reference][go-reference-badge]][go-reference-link]
+[![Go Report][go-report-badge]][go-report-link]
+
+Package and CLI to communicate with [F&Home – a smart home system][fhome].
 
 F&Home doesn't provide any kind of API, but I managed to figure out how it works
 using Chrome Devtools and by looking at the messages it sends over websockets.
 
 Then I started putting together this project.
 
-## Using CLI
+## Packages
 
-First, you have to build it:
+This project consists of several packages.
+
+### fhome
+
+Core package implementing the F&Home API. Use it if you want make your own
+program interacting with it.
+
+### fh
+
+Command-line program to easily interact with your F&Home-enabled devices.
+
+Depends on the `fhome` package.
+
+**Build**
 
 ```
-$ make
+make fh
 ```
 
-Then just see help:
+**Help**
 
 ```
-./fh --help
+fh help
 ```
 
-## Using package
+### fhomed
 
-There is `fhome` package that the CLI (in `cmd`) is using. It is independent
-from the CLI.
+Provides integration between F&Home and HomeKit. Intended to be used as a
+background daemon.
+
+Depends on the `fhome` package.
+
+**Build**
+
+```
+make fhomed
+```
+
+[go-reference-badge]: https://pkg.go.dev/badge/github.com/bartekpacia/fhome.svg
+[go-reference-link]: https://pkg.go.dev/github.com/bartekpacia/fhome
+[go-report-badge]: https://goreportcard.com/badge/github.com/bartekpacia/fhome
+[go-report-link]: https://goreportcard.com/report/github.com/bartekpacia/fhome
+[fhome]: https://www.fhome.pl
