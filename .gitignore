@@ -6,3 +6,4 @@
 *.js
 config.json
 nohup.out
+.idea/

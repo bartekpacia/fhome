@@ -2,12 +2,12 @@ package fhome
 
 import "fmt"
 
-// FullConfig merges [UserConfig] and [TouchesResponse].
-type FullConfig struct {
+// Config merges [UserConfig] and [TouchesResponse].
+type Config struct {
 	Panels []Panel
 }
 
-func (c *FullConfig) GetPanelByID(id string) (*Panel, error) {
+func (c *Config) GetPanelByID(id string) (*Panel, error) {
 	for i := range c.Panels {
 		panel := &c.Panels[i]
 		if panel.ID == id {
@@ -18,7 +18,7 @@ func (c *FullConfig) GetPanelByID(id string) (*Panel, error) {
 	return nil, fmt.Errorf("no panel with id %s", id)
 }
 
-func (c *FullConfig) GetPanelByName(name string) (*Panel, error) {
+func (c *Config) GetPanelByName(name string) (*Panel, error) {
 	for i := range c.Panels {
 		panel := &c.Panels[i]
 		if panel.Name == name {
@@ -29,7 +29,7 @@ func (c *FullConfig) GetPanelByName(name string) (*Panel, error) {
 	return nil, fmt.Errorf("no panel with name %s", name)
 }
 
-func (c *FullConfig) Cells() []Cell {
+func (c *Config) Cells() []Cell {
 	cells := make([]Cell, 0)
 	for _, panel := range c.Panels {
 		cells = append(cells, panel.Cells...)
@@ -37,7 +37,7 @@ func (c *FullConfig) Cells() []Cell {
 	return cells
 }
 
-func (c *FullConfig) GetCellByID(cellID int) (*Cell, error) {
+func (c *Config) GetCellByID(cellID int) (*Cell, error) {
 	for i := range c.Panels {
 		panel := &c.Panels[i]
 		cell, err := panel.GetCellByID(cellID)

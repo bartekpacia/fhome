@@ -29,7 +29,6 @@ var configCommand = cli.Command{
 					Usage: "Print config set by the configurator app",
 				},
 			},
-			// TODO: add --configurator and --user flags
 			Action: func(c *cli.Context) error {
 				if c.Bool("system") && c.Bool("user") {
 					return fmt.Errorf("cannot use both --system and --user")
@@ -53,30 +52,30 @@ var configCommand = cli.Command{
 				}
 				log.Println("opened client to resource session")
 
-				if c.Bool("system") {
-					touches, err := client.Touches()
-					if err != nil {
-						return fmt.Errorf("failed to get touches: %v", err)
-					}
-					log.Println("got touches")
+				sysConfig, err := client.GetSystemConfig()
+				if err != nil {
+					return fmt.Errorf("failed to get sysConfig: %v", err)
+				}
+				log.Println("got system config")
 
+				userConfig, err := client.GetUserConfig()
+				if err != nil {
+					return fmt.Errorf("failed to get user config: %v", err)
+				}
+				log.Println("got user config")
+
+				if c.Bool("system") {
 					w := tabwriter.NewWriter(os.Stdout, 8, 8, 0, '\t', 0)
 					defer w.Flush()
 
 					fmt.Fprintf(w, "id\tdt\tpreset\tstyle\tperm\tstep\tdesc\n")
 					fmt.Fprintf(w, "___\t___\t___\t___\t___\t___\t___\n")
 
-					cells := touches.Response.MobileDisplayProperties.Cells
+					cells := sysConfig.Response.MobileDisplayProperties.Cells
 					for _, cell := range cells {
 						fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s\n", cell.ID, cell.DisplayType, cell.Preset, cell.Style, cell.Permission, cell.Step, cell.Desc)
 					}
 				} else if c.Bool("user") {
-					userConfig, err := client.GetUserConfig()
-					if err != nil {
-						return fmt.Errorf("failed to get user config: %v", err)
-					}
-					log.Println("successfully got user config")
-
 					panels := map[string]fhome.UserPanel{}
 					for _, panel := range userConfig.Panels {
 						panels[panel.ID] = panel
@@ -96,7 +95,19 @@ var configCommand = cli.Command{
 						log.Printf("id: %s, name: %s\n", panel.ID, panel.Name)
 					}
 				} else {
-					// TODO: get full config
+					config, err := fhome.MergeConfigs(userConfig, sysConfig)
+					if err != nil {
+						return fmt.Errorf("failed to merge configs: %v\n", err)
+					}
+
+					log.Printf("there are %d panels and %d cells\n", len(config.Panels), len(config.Cells()))
+					for _, panel := range config.Panels {
+						log.Printf("panel id: %s, name: %s", panel.ID, panel.Name)
+						for _, cell := range panel.Cells {
+							log.Printf("\tid: %d, name: %s", cell.ID, cell.Name)
+						}
+						log.Println()
+					}
 				}
 
 				return nil
@@ -186,7 +197,7 @@ var toggleCommand = cli.Command{
 
 		log.Println("successfully opened client to resource session")
 
-		err = client.SendXEvent(objectID, fhome.ValueToggle)
+		err = client.SendEvent(objectID, fhome.ValueToggle)
 		if err != nil {
 			return fmt.Errorf("failed to send xevent to object with id %d: %v", objectID, err)
 		}
@@ -240,7 +251,7 @@ var setCommand = cli.Command{
 
 		log.Println("successfully opened client to resource session")
 
-		err = client.SendXEvent(objectID, fhome.MapLighting(value))
+		err = client.SendEvent(objectID, fhome.MapLighting(value))
 		if err != nil {
 			return fmt.Errorf("failed to send xevent to object with id %d: %v", objectID, err)
 		}

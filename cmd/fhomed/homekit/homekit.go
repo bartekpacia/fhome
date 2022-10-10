@@ -36,7 +36,7 @@ type Home struct {
 	Thermostats       map[int]*accessory.Thermostat
 }
 
-func (c *Client) SetUp(cfg *fhome.FullConfig) (*Home, error) {
+func (c *Client) SetUp(cfg *fhome.Config) (*Home, error) {
 	var accessories []*accessory.A
 
 	// maps cellID to lightbulbs

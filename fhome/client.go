@@ -179,11 +179,13 @@ func (c *Client) OpenResourceSession(resourcePassword string) error {
 	return nil
 }
 
-// Touches returns additional information about particular cells, e.g their
-// style (icon) and configurator-set name.
+// GetSystemConfig returns additional information about particular cells, e.g
+// their style (icon) and configurator-set name.
 //
 // Configuration returned by this method is set in the desktop configurator app.
-func (c *Client) Touches() (*TouchesResponse, error) {
+//
+// This action is named "Touches" in F&Home's terminology.
+func (c *Client) GetSystemConfig() (*TouchesResponse, error) {
 	actionName := ActionTouches
 	token := generateRequestToken()
 
@@ -209,6 +211,43 @@ func (c *Client) Touches() (*TouchesResponse, error) {
 	}
 
 	return &response, nil
+}
+
+// GetUserConfig returns configuration of cells and panels.
+//
+// Configuration returned by this method is set in the web or mobile app.
+func (c *Client) GetUserConfig() (*UserConfig, error) {
+	token := generateRequestToken()
+
+	actionName := ActionGetUserConfig
+	err := c.mainConn.WriteJSON(Action{
+		ActionName:   actionName,
+		Login:        *c.email,
+		PasswordHash: *c.resourcePasswordHash,
+		RequestToken: token,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to write %s to conn: %v", actionName, err)
+	}
+
+	msg, err := c.ReadMessage(actionName, token)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read messagee: %v", err)
+	}
+
+	var userConfigResponse GetUserConfigResponse
+	err = json.Unmarshal(msg.Raw, &userConfigResponse)
+	if err != nil {
+		return nil, fmt.Errorf("unmarshal user config response to json: %v", err)
+	}
+
+	var userConfig UserConfig
+	err = json.Unmarshal([]byte(userConfigResponse.File), &userConfig)
+	if err != nil {
+		return nil, fmt.Errorf("unmarshal file to json: %v", err)
+	}
+
+	return &userConfig, nil
 }
 
 // ReadMessage waits until the client receives message with matching actionName
@@ -258,45 +297,11 @@ func (c *Client) ReadAnyMessage() (*Message, error) {
 	return &msg, nil
 }
 
-// GetUserConfig returns configuration of cells and panels.
+// SendEvent sends an event containing value to the cell.
 //
-// Configuration returned by this method is set in the web or mobile app.
-func (c *Client) GetUserConfig() (*UserConfig, error) {
-	token := generateRequestToken()
-
-	actionName := ActionGetUserConfig
-	err := c.mainConn.WriteJSON(Action{
-		ActionName:   actionName,
-		Login:        *c.email,
-		PasswordHash: *c.resourcePasswordHash,
-		RequestToken: token,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to write %s to conn: %v", actionName, err)
-	}
-
-	msg, err := c.ReadMessage(actionName, token)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read messagee: %v", err)
-	}
-
-	var userConfigResponse GetUserConfigResponse
-	err = json.Unmarshal(msg.Raw, &userConfigResponse)
-	if err != nil {
-		return nil, fmt.Errorf("unmarshal user config response to json: %v", err)
-	}
-
-	var userConfig UserConfig
-	err = json.Unmarshal([]byte(userConfigResponse.File), &userConfig)
-	if err != nil {
-		return nil, fmt.Errorf("unmarshal file to json: %v", err)
-	}
-
-	return &userConfig, nil
-}
-
-func (c *Client) SendXEvent(resourceID int, value string) error {
-	log.Println("sending Xevent to resource with id", resourceID, "with value", value)
+// Events are named "Xevents" in F&Home's terminology.
+func (c *Client) SendEvent(cellID int, value string) error {
+	log.Println("sending event to cell with id", cellID, "with value", value)
 
 	actionName := ActionXEvent
 	token := generateRequestToken()
@@ -306,7 +311,7 @@ func (c *Client) SendXEvent(resourceID int, value string) error {
 		Login:        *c.email,
 		PasswordHash: *c.resourcePasswordHash,
 		RequestToken: token,
-		CellID:       strconv.Itoa(resourceID),
+		CellID:       strconv.Itoa(cellID),
 		Value:        value,
 		Type:         "HEX",
 	}
@@ -376,6 +381,60 @@ func connect() (*websocket.Conn, error) {
 	}
 
 	return conn, nil
+}
+
+// MergeConfigs creates [Config] config from "get_user_config" action and "touches" action.
+func MergeConfigs(
+	userConfig *UserConfig,
+	touchesResp *TouchesResponse,
+) (*Config, error) {
+	panels := make([]Panel, 0)
+
+	for _, fPanel := range userConfig.Panels {
+		uCells := userConfig.GetCellsByPanelID(fPanel.ID)
+		cells := make([]Cell, 0)
+		for _, fCell := range uCells {
+			cell := Cell{
+				ID:   fCell.ObjectID,
+				Icon: CreateIcon(fCell.Icon),
+				Name: fCell.Name,
+			}
+			cells = append(cells, cell)
+		}
+
+		panel := Panel{
+			ID:    fPanel.ID,
+			Name:  fPanel.Name,
+			Cells: cells,
+		}
+
+		panels = append(panels, panel)
+	}
+
+	cfg := Config{Panels: panels}
+
+	for _, cell := range touchesResp.Response.MobileDisplayProperties.Cells {
+		cellID, err := strconv.Atoi(cell.ID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert cell ID %s to int: %v", cell.ID, err)
+		}
+
+		cfgCell, err := cfg.GetCellByID(cellID)
+		if err != nil {
+			log.Printf("could not find cell with id %d in config: %v", cellID, err)
+			continue
+		}
+
+		cfgCell.Desc = cell.Desc
+		cfgCell.Value = cell.Step // FIXME: this is wrong; for thermo-setters this is 0.5, for thermo-getters this is actual value
+		cfgCell.TypeNumber = cell.TypeNumber
+		cfgCell.Preset = cell.Preset
+		cfgCell.Style = cell.Style
+		cfgCell.MinValue = cell.MinValue
+		cfgCell.MaxValue = cell.MaxValue
+	}
+
+	return &cfg, nil
 }
 
 func generateRequestToken() string {
