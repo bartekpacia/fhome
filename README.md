@@ -10,20 +10,18 @@ using Chrome Devtools and by looking at the messages it sends over websockets.
 
 Then I started putting together this project.
 
-## Packages
+## Package
 
-This project consists of several packages.
-
-### fhome
-
-Core package implementing the F&Home API. Use it if you want make your own
+The `api` package implements the F&Home API. Use it if you want make your own
 program interacting with it.
+
+### CLI apps
 
 ### fh
 
 Command-line program to easily interact with your F&Home-enabled devices.
 
-Depends on the `fhome` package.
+Depends on the `api` package.
 
 **Build**
 
@@ -48,7 +46,7 @@ $ fh help
 Provides integration between F&Home and HomeKit. Intended to be used as a
 background daemon.
 
-Depends on the `fhome` package.
+Depends on the `api` package.
 
 **Build**
 

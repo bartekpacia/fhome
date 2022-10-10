@@ -7,7 +7,7 @@ import (
 	"log"
 	"strings"
 
-	"github.com/bartekpacia/fhome/fhome"
+	"github.com/bartekpacia/fhome/api"
 	"github.com/brutella/hap"
 	"github.com/brutella/hap/accessory"
 )
@@ -36,7 +36,7 @@ type Home struct {
 	Thermostats       map[int]*accessory.Thermostat
 }
 
-func (c *Client) SetUp(cfg *fhome.FullConfig) (*Home, error) {
+func (c *Client) SetUp(cfg *api.Config) (*Home, error) {
 	var accessories []*accessory.A
 
 	// maps cellID to lightbulbs
@@ -49,7 +49,7 @@ func (c *Client) SetUp(cfg *fhome.FullConfig) (*Home, error) {
 			cell := cell
 
 			accessoryInfo := accessory.Info{Name: strings.TrimSpace(cell.Name)}
-			if cell.Icon == fhome.IconLighting {
+			if cell.Icon == api.IconLighting {
 				if strings.Contains(cell.Name, "LED") {
 					a := accessory.NewColoredLightbulb(accessoryInfo)
 					coloredLightbulbs[cell.ID] = a
@@ -79,7 +79,7 @@ func (c *Client) SetUp(cfg *fhome.FullConfig) (*Home, error) {
 					accessories = append(accessories, a.A)
 				}
 			}
-			if cell.Icon == fhome.IconTemperature {
+			if cell.Icon == api.IconTemperature {
 				a := accessory.NewThermostat(accessoryInfo)
 				thermostatsMap[cell.ID] = a
 
@@ -87,7 +87,7 @@ func (c *Client) SetUp(cfg *fhome.FullConfig) (*Home, error) {
 				a.Thermostat.TargetTemperature.MinVal = 12
 				a.Thermostat.TargetTemperature.MaxVal = 28
 
-				currentTemp, err := fhome.DecodeTemperatureValue(cell.Value)
+				currentTemp, err := api.DecodeTemperatureValue(cell.Value)
 				if err != nil {
 					return nil, fmt.Errorf("failed to remap temperature: %v", err)
 				}
@@ -102,7 +102,7 @@ func (c *Client) SetUp(cfg *fhome.FullConfig) (*Home, error) {
 				accessories = append(accessories, a.A)
 			}
 
-			if cell.Icon == fhome.IconGate {
+			if cell.Icon == api.IconGate {
 				a := accessory.NewGarageDoorOpener(accessoryInfo)
 				garageDoorMap[cell.ID] = a
 

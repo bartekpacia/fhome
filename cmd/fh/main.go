@@ -7,98 +7,112 @@ import (
 	"os"
 	"text/tabwriter"
 
+	"github.com/bartekpacia/fhome/api"
 	"github.com/bartekpacia/fhome/env"
-	"github.com/bartekpacia/fhome/fhome"
 	"github.com/urfave/cli/v2"
 )
 
-func init() {
-	log.SetOutput(os.Stdout)
-}
-
-var listCommand = cli.Command{
-	Name:  "list",
-	Usage: "List all available objects",
-	Flags: []cli.Flag{
-		&cli.BoolFlag{
-			Name:    "verbose",
-			Aliases: []string{"v"},
-			Value:   false,
-			Usage:   "print extensive logs",
-		},
-		&cli.BoolFlag{
-			Name: "touches",
-		},
-		&cli.BoolFlag{
-			Name: "get_user_config",
-		},
-	},
-	Action: func(c *cli.Context) error {
-		err := client.OpenCloudSession(e.Email, e.CloudPassword)
-		if err != nil {
-			return fmt.Errorf("failed to open client session: %v", err)
-		}
-		log.Println("opened client session")
-
-		_, err = client.GetMyResources()
-		if err != nil {
-			return fmt.Errorf("failed to get my resources: %v", err)
-		}
-		log.Println("got my resources")
-
-		err = client.OpenResourceSession(e.ResourcePassword)
-		if err != nil {
-			return fmt.Errorf("failed to open client to resource session: %v", err)
-		}
-		log.Println("opened client to resource session")
-
-		if c.Bool("touches") {
-			touches, err := client.Touches()
-			if err != nil {
-				return fmt.Errorf("failed to get touches: %v", err)
-			}
-			log.Println("got touches")
-
-			w := tabwriter.NewWriter(os.Stdout, 8, 8, 0, '\t', 0)
-			defer w.Flush()
-
-			fmt.Fprintf(w, "id\tdt\tpreset\tstyle\tperm\tstep\tdesc\n")
-			fmt.Fprintf(w, "___\t___\t___\t___\t___\t___\t___\n")
-
-			cells := touches.Response.MobileDisplayProperties.Cells
-			for _, cell := range cells {
-				fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s\n", cell.ID, cell.DisplayType, cell.Preset, cell.Style, cell.Permission, cell.Step, cell.Desc)
-			}
-		}
-
-		if c.Bool("get_user_config") {
-			userConfig, err := client.GetUserConfig()
-			if err != nil {
-				return fmt.Errorf("failed to get user config: %v", err)
-			}
-			log.Println("successfully got user config")
-
-			panels := map[string]fhome.UserPanel{}
-			for _, panel := range userConfig.Panels {
-				panels[panel.ID] = panel
-			}
-
-			log.Printf("there are %d cells\n", len(userConfig.Cells))
-			for _, cell := range userConfig.Cells {
-				log.Printf("id: %3d, name: %s, icon: %s panels:", cell.ObjectID, cell.Name, cell.Icon)
-				for _, pos := range cell.PositionInPanel {
-					log.Printf(" %s", panels[pos.PanelID].Name)
+var configCommand = cli.Command{
+	Name:  "config",
+	Usage: "Manage system configuration",
+	Subcommands: []*cli.Command{
+		{
+			Name:  "list",
+			Usage: "List all available objects",
+			Flags: []cli.Flag{
+				&cli.BoolFlag{
+					Name:  "system",
+					Usage: "Print obj set by the configurator app",
+				},
+				&cli.BoolFlag{
+					Name:  "user",
+					Usage: "Print config set by the configurator app",
+				},
+			},
+			Action: func(c *cli.Context) error {
+				if c.Bool("system") && c.Bool("user") {
+					return fmt.Errorf("cannot use both --system and --user")
 				}
-				log.Println()
-			}
 
-			log.Printf("there are %d panels\n", len(userConfig.Panels))
-			for _, panel := range userConfig.Panels {
-				log.Printf("id: %s, name: %s\n", panel.ID, panel.Name)
-			}
-		}
+				err := client.OpenCloudSession(e.Email, e.CloudPassword)
+				if err != nil {
+					return fmt.Errorf("failed to open client session: %v", err)
+				}
+				log.Println("opened client session")
 
-		return nil
+				_, err = client.GetMyResources()
+				if err != nil {
+					return fmt.Errorf("failed to get my resources: %v", err)
+				}
+				log.Println("got my resources")
+
+				err = client.OpenResourceSession(e.ResourcePassword)
+				if err != nil {
+					return fmt.Errorf("failed to open client to resource session: %v", err)
+				}
+				log.Println("opened client to resource session")
+
+				sysConfig, err := client.GetSystemConfig()
+				if err != nil {
+					return fmt.Errorf("failed to get sysConfig: %v", err)
+				}
+				log.Println("got system config")
+
+				userConfig, err := client.GetUserConfig()
+				if err != nil {
+					return fmt.Errorf("failed to get user config: %v", err)
+				}
+				log.Println("got user config")
+
+				if c.Bool("system") {
+					w := tabwriter.NewWriter(os.Stdout, 8, 8, 0, '\t', 0)
+					defer w.Flush()
+
+					fmt.Fprintf(w, "id\tdt\tpreset\tstyle\tperm\tstep\tdesc\n")
+					fmt.Fprintf(w, "___\t___\t___\t___\t___\t___\t___\n")
+
+					cells := sysConfig.Response.MobileDisplayProperties.Cells
+					for _, cell := range cells {
+						fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s\n", cell.ID, cell.DisplayType, cell.Preset, cell.Style, cell.Permission, cell.Step, cell.Desc)
+					}
+				} else if c.Bool("user") {
+					panels := map[string]api.UserPanel{}
+					for _, panel := range userConfig.Panels {
+						panels[panel.ID] = panel
+					}
+
+					log.Printf("there are %d cells\n", len(userConfig.Cells))
+					for _, cell := range userConfig.Cells {
+						log.Printf("id: %3d, name: %s, icon: %s panels:", cell.ObjectID, cell.Name, cell.Icon)
+						for _, pos := range cell.PositionInPanel {
+							log.Printf(" %s", panels[pos.PanelID].Name)
+						}
+						log.Println()
+					}
+
+					log.Printf("there are %d panels\n", len(userConfig.Panels))
+					for _, panel := range userConfig.Panels {
+						log.Printf("id: %s, name: %s\n", panel.ID, panel.Name)
+					}
+				} else {
+					config, err := api.MergeConfigs(userConfig, sysConfig)
+					if err != nil {
+						return fmt.Errorf("failed to merge configs: %v", err)
+					}
+
+					log.Printf("there are %d panels and %d cells\n", len(config.Panels), len(config.Cells()))
+					for _, panel := range config.Panels {
+						log.Printf("panel id: %s, name: %s", panel.ID, panel.Name)
+						for _, cell := range panel.Cells {
+							log.Printf("\tid: %d, name: %s", cell.ID, cell.Name)
+						}
+						log.Println()
+					}
+				}
+
+				return nil
+			},
+		},
 	},
 }
 
@@ -133,14 +147,14 @@ var watchCommand = cli.Command{
 				return fmt.Errorf("failed to listen: %v", err)
 			}
 
-			if msg.ActionName == fhome.ActionStatusTouchesChanged {
-				var touches fhome.StatusTouchesChangedResponse
+			if msg.ActionName == api.ActionStatusTouchesChanged {
+				var touches api.StatusTouchesChangedResponse
 				err = json.Unmarshal(msg.Raw, &touches)
 				if err != nil {
 					return fmt.Errorf("failed to unmarshal touches: %v", err)
 				}
 
-				log.Printf("%s\n", fhome.Pprint(touches))
+				log.Printf("%s\n", api.Pprint(touches))
 			}
 
 		}
@@ -157,12 +171,6 @@ var toggleCommand = cli.Command{
 			Value:    "",
 			Usage:    "id of object to toggle",
 			Required: true,
-		},
-		&cli.BoolFlag{
-			Name:    "verbose",
-			Aliases: []string{"v"},
-			Value:   false,
-			Usage:   "print extensive logs",
 		},
 	},
 	Action: func(c *cli.Context) error {
@@ -189,7 +197,7 @@ var toggleCommand = cli.Command{
 
 		log.Println("successfully opened client to resource session")
 
-		err = client.SendXEvent(objectID, fhome.ValueToggle)
+		err = client.SendEvent(objectID, api.ValueToggle)
 		if err != nil {
 			return fmt.Errorf("failed to send xevent to object with id %d: %v", objectID, err)
 		}
@@ -217,12 +225,6 @@ var setCommand = cli.Command{
 			Usage:    "value (0-100)",
 			Required: true,
 		},
-		&cli.BoolFlag{
-			Name:    "verbose",
-			Aliases: []string{"v"},
-			Value:   false,
-			Usage:   "print extensive logs",
-		},
 	},
 	Action: func(c *cli.Context) error {
 		objectID := c.Int("object-id")
@@ -249,7 +251,7 @@ var setCommand = cli.Command{
 
 		log.Println("successfully opened client to resource session")
 
-		err = client.SendXEvent(objectID, fhome.MapLighting(value))
+		err = client.SendEvent(objectID, api.MapLighting(value))
 		if err != nil {
 			return fmt.Errorf("failed to send xevent to object with id %d: %v", objectID, err)
 		}
@@ -261,7 +263,7 @@ var setCommand = cli.Command{
 }
 
 var (
-	client *fhome.Client
+	client *api.Client
 	e      env.Env
 )
 
@@ -269,9 +271,9 @@ func init() {
 	log.SetFlags(0)
 	var err error
 
-	client, err = fhome.NewClient()
+	client, err = api.NewClient()
 	if err != nil {
-		log.Fatalf("failed to create fhome client: %v\n", err)
+		log.Fatalf("failed to create api api client: %v\n", err)
 	}
 
 	e = env.Env{}
@@ -286,7 +288,7 @@ func main() {
 		Name:  "fh",
 		Usage: "Interact with smart home devices connected to F&Home",
 		Commands: []*cli.Command{
-			&listCommand,
+			&configCommand,
 			&watchCommand,
 			&toggleCommand,
 			&setCommand,

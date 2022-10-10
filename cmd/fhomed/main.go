@@ -3,18 +3,16 @@ package main
 import (
 	"encoding/json"
 	"flag"
-	"fmt"
 	"log"
 	"os"
-	"strconv"
 
+	"github.com/bartekpacia/fhome/api"
 	"github.com/bartekpacia/fhome/cmd/fhomed/homekit"
 	"github.com/bartekpacia/fhome/env"
-	"github.com/bartekpacia/fhome/fhome"
 )
 
 var (
-	client *fhome.Client
+	client *api.Client
 	e      env.Env
 )
 
@@ -27,13 +25,13 @@ func init() {
 	log.SetOutput(os.Stdout)
 
 	flag.StringVar(&PIN, "pin", "00102003", "accessory PIN")
-	flag.StringVar(&Name, "name", "fhome", "accessory name")
+	flag.StringVar(&Name, "name", "api", "accessory name")
 
 	var err error
 
-	client, err = fhome.NewClient()
+	client, err = api.NewClient()
 	if err != nil {
-		log.Fatalf("failed to create fhome client: %v\n", err)
+		log.Fatalf("failed to create api api client: %v\n", err)
 	}
 
 	e = env.Env{}
@@ -73,12 +71,12 @@ func main() {
 
 	log.Println("got user config")
 
-	touchesResp, err := client.Touches()
+	touchesResp, err := client.GetSystemConfig()
 	if err != nil {
 		log.Fatalf("failed to touches: %v", err)
 	}
 
-	config, err := merge(userConfig, touchesResp)
+	config, err := api.MergeConfigs(userConfig, touchesResp)
 	if err != nil {
 		log.Fatalf("failed to merge config: %v", err)
 	}
@@ -92,25 +90,25 @@ func main() {
 		PIN:  PIN,
 		Name: Name,
 		OnLightbulbUpdate: func(ID int, on bool) {
-			err := client.SendXEvent(ID, fhome.ValueToggle)
+			err := client.SendEvent(ID, api.ValueToggle)
 			if err != nil {
 				log.Fatalf("failed to send event to %d: %v\n", ID, err)
 			}
 		},
 		OnLEDUpdate: func(ID int, brightness int) {
-			err := client.SendXEvent(ID, fhome.MapLighting(brightness))
+			err := client.SendEvent(ID, api.MapLighting(brightness))
 			if err != nil {
 				log.Fatalf("failed to send event to %d: %v\n", ID, err)
 			}
 		},
 		OnGarageDoorUpdate: func(ID int) {
-			err := client.SendXEvent(ID, fhome.ValueToggle)
+			err := client.SendEvent(ID, api.ValueToggle)
 			if err != nil {
 				log.Fatalf("failed to send event to %d: %v\n", ID, err)
 			}
 		},
 		OnThermostatUpdate: func(ID int, temperature float64) {
-			err = client.SendXEvent(ID, fhome.EncodeTemperature(temperature))
+			err = client.SendEvent(ID, api.EncodeTemperature(temperature))
 			if err != nil {
 				log.Fatalf("failed to send event to %d: %v\n", ID, err)
 			}
@@ -123,12 +121,12 @@ func main() {
 	}
 
 	for {
-		msg, err := client.ReadMessage(fhome.ActionStatusTouchesChanged, "")
+		msg, err := client.ReadMessage(api.ActionStatusTouchesChanged, "")
 		if err != nil {
 			log.Fatalln("failed to read message:", err)
 		}
 
-		var resp fhome.StatusTouchesChangedResponse
+		var resp api.StatusTouchesChangedResponse
 
 		err = json.Unmarshal(msg.Raw, &resp)
 		if err != nil {
@@ -158,7 +156,7 @@ func main() {
 		{
 			accessory := home.ColoredLightbulbs[cellValue.IntID()]
 			if accessory != nil {
-				newValue, err := fhome.RemapLighting(cellValue.Value)
+				newValue, err := api.RemapLighting(cellValue.Value)
 				if err != nil {
 					log.Printf("failed to remap lightning: %v\n", err)
 				}
@@ -175,7 +173,7 @@ func main() {
 		{
 			accessory := home.Thermostats[cellValue.IntID()]
 			if accessory != nil {
-				newValue, err := fhome.DecodeTemperatureValue(cellValue.Value)
+				newValue, err := api.DecodeTemperatureValue(cellValue.Value)
 				if err != nil {
 					log.Printf("failed to remap temperature: %v\n", err)
 				}
@@ -184,58 +182,4 @@ func main() {
 			}
 		}
 	}
-}
-
-// merge create config from "get_user_config" action and "touches" action.
-func merge(
-	userConfig *fhome.UserConfig,
-	touchesResp *fhome.TouchesResponse,
-) (*fhome.FullConfig, error) {
-	panels := make([]fhome.Panel, 0)
-
-	for _, fPanel := range userConfig.Panels {
-		fCells := userConfig.GetCellsByPanelID(fPanel.ID)
-		cells := make([]fhome.Cell, 0)
-		for _, fCell := range fCells {
-			cell := fhome.Cell{
-				ID:   fCell.ObjectID,
-				Icon: fhome.CreateIcon(fCell.Icon),
-				Name: fCell.Name,
-			}
-			cells = append(cells, cell)
-		}
-
-		panel := fhome.Panel{
-			ID:    fPanel.ID,
-			Name:  fPanel.Name,
-			Cells: cells,
-		}
-
-		panels = append(panels, panel)
-	}
-
-	cfg := fhome.FullConfig{Panels: panels}
-
-	for _, cell := range touchesResp.Response.MobileDisplayProperties.Cells {
-		cellID, err := strconv.Atoi(cell.ID)
-		if err != nil {
-			return nil, fmt.Errorf("failed to convert cell ID %s to int: %v", cell.ID, err)
-		}
-
-		cfgCell, err := cfg.GetCellByID(cellID)
-		if err != nil {
-			log.Printf("could not find cell with id %d in config: %v", cellID, err)
-			continue
-		}
-
-		cfgCell.Desc = cell.Desc
-		cfgCell.Value = cell.Step // FIXME: this is wrong; for thermo-setters this is 0.5, for thermo-getters this is actual value
-		cfgCell.TypeNumber = cell.TypeNumber
-		cfgCell.Preset = cell.Preset
-		cfgCell.Style = cell.Style
-		cfgCell.MinValue = cell.MinValue
-		cfgCell.MaxValue = cell.MaxValue
-	}
-
-	return &cfg, nil
 }

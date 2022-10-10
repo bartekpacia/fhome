@@ -1,4 +1,4 @@
-package fhome
+package api
 
 type Icon string
 
