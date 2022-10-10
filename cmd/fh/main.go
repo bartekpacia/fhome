@@ -12,93 +12,96 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-func init() {
-	log.SetOutput(os.Stdout)
-}
-
-var listCommand = cli.Command{
-	Name:  "list",
-	Usage: "List all available objects",
-	Flags: []cli.Flag{
-		&cli.BoolFlag{
-			Name:    "verbose",
-			Aliases: []string{"v"},
-			Value:   false,
-			Usage:   "print extensive logs",
-		},
-		&cli.BoolFlag{
-			Name: "touches",
-		},
-		&cli.BoolFlag{
-			Name: "get_user_config",
-		},
-	},
-	Action: func(c *cli.Context) error {
-		err := client.OpenCloudSession(e.Email, e.CloudPassword)
-		if err != nil {
-			return fmt.Errorf("failed to open client session: %v", err)
-		}
-		log.Println("opened client session")
-
-		_, err = client.GetMyResources()
-		if err != nil {
-			return fmt.Errorf("failed to get my resources: %v", err)
-		}
-		log.Println("got my resources")
-
-		err = client.OpenResourceSession(e.ResourcePassword)
-		if err != nil {
-			return fmt.Errorf("failed to open client to resource session: %v", err)
-		}
-		log.Println("opened client to resource session")
-
-		if c.Bool("touches") {
-			touches, err := client.Touches()
-			if err != nil {
-				return fmt.Errorf("failed to get touches: %v", err)
-			}
-			log.Println("got touches")
-
-			w := tabwriter.NewWriter(os.Stdout, 8, 8, 0, '\t', 0)
-			defer w.Flush()
-
-			fmt.Fprintf(w, "id\tdt\tpreset\tstyle\tperm\tstep\tdesc\n")
-			fmt.Fprintf(w, "___\t___\t___\t___\t___\t___\t___\n")
-
-			cells := touches.Response.MobileDisplayProperties.Cells
-			for _, cell := range cells {
-				fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s\n", cell.ID, cell.DisplayType, cell.Preset, cell.Style, cell.Permission, cell.Step, cell.Desc)
-			}
-		}
-
-		if c.Bool("get_user_config") {
-			userConfig, err := client.GetUserConfig()
-			if err != nil {
-				return fmt.Errorf("failed to get user config: %v", err)
-			}
-			log.Println("successfully got user config")
-
-			panels := map[string]fhome.UserPanel{}
-			for _, panel := range userConfig.Panels {
-				panels[panel.ID] = panel
-			}
-
-			log.Printf("there are %d cells\n", len(userConfig.Cells))
-			for _, cell := range userConfig.Cells {
-				log.Printf("id: %3d, name: %s, icon: %s panels:", cell.ObjectID, cell.Name, cell.Icon)
-				for _, pos := range cell.PositionInPanel {
-					log.Printf(" %s", panels[pos.PanelID].Name)
+var configCommand = cli.Command{
+	Name:  "config",
+	Usage: "Manage system configuration",
+	Subcommands: []*cli.Command{
+		{
+			Name:  "list",
+			Usage: "List all available objects",
+			Flags: []cli.Flag{
+				&cli.BoolFlag{
+					Name:  "system",
+					Usage: "Print obj set by the configurator app",
+				},
+				&cli.BoolFlag{
+					Name:  "user",
+					Usage: "Print config set by the configurator app",
+				},
+			},
+			// TODO: add --configurator and --user flags
+			Action: func(c *cli.Context) error {
+				if c.Bool("system") && c.Bool("user") {
+					return fmt.Errorf("cannot use both --system and --user")
 				}
-				log.Println()
-			}
 
-			log.Printf("there are %d panels\n", len(userConfig.Panels))
-			for _, panel := range userConfig.Panels {
-				log.Printf("id: %s, name: %s\n", panel.ID, panel.Name)
-			}
-		}
+				err := client.OpenCloudSession(e.Email, e.CloudPassword)
+				if err != nil {
+					return fmt.Errorf("failed to open client session: %v", err)
+				}
+				log.Println("opened client session")
 
-		return nil
+				_, err = client.GetMyResources()
+				if err != nil {
+					return fmt.Errorf("failed to get my resources: %v", err)
+				}
+				log.Println("got my resources")
+
+				err = client.OpenResourceSession(e.ResourcePassword)
+				if err != nil {
+					return fmt.Errorf("failed to open client to resource session: %v", err)
+				}
+				log.Println("opened client to resource session")
+
+				if c.Bool("system") {
+					touches, err := client.Touches()
+					if err != nil {
+						return fmt.Errorf("failed to get touches: %v", err)
+					}
+					log.Println("got touches")
+
+					w := tabwriter.NewWriter(os.Stdout, 8, 8, 0, '\t', 0)
+					defer w.Flush()
+
+					fmt.Fprintf(w, "id\tdt\tpreset\tstyle\tperm\tstep\tdesc\n")
+					fmt.Fprintf(w, "___\t___\t___\t___\t___\t___\t___\n")
+
+					cells := touches.Response.MobileDisplayProperties.Cells
+					for _, cell := range cells {
+						fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s\n", cell.ID, cell.DisplayType, cell.Preset, cell.Style, cell.Permission, cell.Step, cell.Desc)
+					}
+				} else if c.Bool("user") {
+					userConfig, err := client.GetUserConfig()
+					if err != nil {
+						return fmt.Errorf("failed to get user config: %v", err)
+					}
+					log.Println("successfully got user config")
+
+					panels := map[string]fhome.UserPanel{}
+					for _, panel := range userConfig.Panels {
+						panels[panel.ID] = panel
+					}
+
+					log.Printf("there are %d cells\n", len(userConfig.Cells))
+					for _, cell := range userConfig.Cells {
+						log.Printf("id: %3d, name: %s, icon: %s panels:", cell.ObjectID, cell.Name, cell.Icon)
+						for _, pos := range cell.PositionInPanel {
+							log.Printf(" %s", panels[pos.PanelID].Name)
+						}
+						log.Println()
+					}
+
+					log.Printf("there are %d panels\n", len(userConfig.Panels))
+					for _, panel := range userConfig.Panels {
+						log.Printf("id: %s, name: %s\n", panel.ID, panel.Name)
+					}
+				} else {
+					// TODO: get full config
+				}
+
+				return nil
+			},
+		},
 	},
 }
 
@@ -158,12 +161,6 @@ var toggleCommand = cli.Command{
 			Usage:    "id of object to toggle",
 			Required: true,
 		},
-		&cli.BoolFlag{
-			Name:    "verbose",
-			Aliases: []string{"v"},
-			Value:   false,
-			Usage:   "print extensive logs",
-		},
 	},
 	Action: func(c *cli.Context) error {
 		objectID := c.Int("object-id")
@@ -216,12 +213,6 @@ var setCommand = cli.Command{
 			Aliases:  []string{"val"},
 			Usage:    "value (0-100)",
 			Required: true,
-		},
-		&cli.BoolFlag{
-			Name:    "verbose",
-			Aliases: []string{"v"},
-			Value:   false,
-			Usage:   "print extensive logs",
 		},
 	},
 	Action: func(c *cli.Context) error {
@@ -286,7 +277,7 @@ func main() {
 		Name:  "fh",
 		Usage: "Interact with smart home devices connected to F&Home",
 		Commands: []*cli.Command{
-			&listCommand,
+			&configCommand,
 			&watchCommand,
 			&toggleCommand,
 			&setCommand,
