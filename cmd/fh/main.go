@@ -7,8 +7,8 @@ import (
 	"os"
 	"text/tabwriter"
 
+	"github.com/bartekpacia/fhome/api"
 	"github.com/bartekpacia/fhome/env"
-	"github.com/bartekpacia/fhome/fhome"
 	"github.com/urfave/cli/v2"
 )
 
@@ -76,7 +76,7 @@ var configCommand = cli.Command{
 						fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s\n", cell.ID, cell.DisplayType, cell.Preset, cell.Style, cell.Permission, cell.Step, cell.Desc)
 					}
 				} else if c.Bool("user") {
-					panels := map[string]fhome.UserPanel{}
+					panels := map[string]api.UserPanel{}
 					for _, panel := range userConfig.Panels {
 						panels[panel.ID] = panel
 					}
@@ -95,9 +95,9 @@ var configCommand = cli.Command{
 						log.Printf("id: %s, name: %s\n", panel.ID, panel.Name)
 					}
 				} else {
-					config, err := fhome.MergeConfigs(userConfig, sysConfig)
+					config, err := api.MergeConfigs(userConfig, sysConfig)
 					if err != nil {
-						return fmt.Errorf("failed to merge configs: %v\n", err)
+						return fmt.Errorf("failed to merge configs: %v", err)
 					}
 
 					log.Printf("there are %d panels and %d cells\n", len(config.Panels), len(config.Cells()))
@@ -147,14 +147,14 @@ var watchCommand = cli.Command{
 				return fmt.Errorf("failed to listen: %v", err)
 			}
 
-			if msg.ActionName == fhome.ActionStatusTouchesChanged {
-				var touches fhome.StatusTouchesChangedResponse
+			if msg.ActionName == api.ActionStatusTouchesChanged {
+				var touches api.StatusTouchesChangedResponse
 				err = json.Unmarshal(msg.Raw, &touches)
 				if err != nil {
 					return fmt.Errorf("failed to unmarshal touches: %v", err)
 				}
 
-				log.Printf("%s\n", fhome.Pprint(touches))
+				log.Printf("%s\n", api.Pprint(touches))
 			}
 
 		}
@@ -197,7 +197,7 @@ var toggleCommand = cli.Command{
 
 		log.Println("successfully opened client to resource session")
 
-		err = client.SendEvent(objectID, fhome.ValueToggle)
+		err = client.SendEvent(objectID, api.ValueToggle)
 		if err != nil {
 			return fmt.Errorf("failed to send xevent to object with id %d: %v", objectID, err)
 		}
@@ -251,7 +251,7 @@ var setCommand = cli.Command{
 
 		log.Println("successfully opened client to resource session")
 
-		err = client.SendEvent(objectID, fhome.MapLighting(value))
+		err = client.SendEvent(objectID, api.MapLighting(value))
 		if err != nil {
 			return fmt.Errorf("failed to send xevent to object with id %d: %v", objectID, err)
 		}
@@ -263,7 +263,7 @@ var setCommand = cli.Command{
 }
 
 var (
-	client *fhome.Client
+	client *api.Client
 	e      env.Env
 )
 
@@ -271,9 +271,9 @@ func init() {
 	log.SetFlags(0)
 	var err error
 
-	client, err = fhome.NewClient()
+	client, err = api.NewClient()
 	if err != nil {
-		log.Fatalf("failed to create fhome client: %v\n", err)
+		log.Fatalf("failed to create api api client: %v\n", err)
 	}
 
 	e = env.Env{}

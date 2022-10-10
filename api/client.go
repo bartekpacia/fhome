@@ -1,6 +1,6 @@
-// Package fhome provides functionality to interact with smart home devices
+// Package api provides functionality to interact with smart home devices
 // connected to F&Home system.
-package fhome
+package api
 
 import (
 	"crypto/sha1"
@@ -383,7 +383,8 @@ func connect() (*websocket.Conn, error) {
 	return conn, nil
 }
 
-// MergeConfigs creates [Config] config from "get_user_config" action and "touches" action.
+// MergeConfigs creates [Config] config from "get_user_config" action and
+// "touches" action.
 func MergeConfigs(
 	userConfig *UserConfig,
 	touchesResp *TouchesResponse,
