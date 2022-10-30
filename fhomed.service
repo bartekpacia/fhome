@@ -1,0 +1,10 @@
+[Unit]
+Description=Dameon for F&Home smart home system
+
+[Service]
+Type=simple
+EnvironmentFile=/home/pi/dev/fhome/.env
+ExecStart=/usr/local/bin/fhomed
+
+[Install]
+WantedBy=multi-user.target
