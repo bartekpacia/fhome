@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"flag"
 	"log"
-	"os"
 
 	"github.com/bartekpacia/fhome/api"
 	"github.com/bartekpacia/fhome/cmd/fhomed/homekit"
@@ -22,7 +21,7 @@ var (
 )
 
 func init() {
-	log.SetOutput(os.Stdout)
+	log.SetFlags(0)
 
 	flag.StringVar(&PIN, "pin", "00102003", "accessory PIN")
 	flag.StringVar(&Name, "name", "api", "accessory name")
