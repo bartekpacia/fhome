@@ -3,10 +3,10 @@ Description=Dameon for F&Home smart home system
 
 [Service]
 Type=simple
-EnvironmentFile=/home/pi/dev/fhome/.env
+EnvironmentFile=/etc/fhomed/env
 ExecStart=/usr/local/bin/fhomed
-StandardOutput=append:/home/pi/fhomed_stdout.log
-StandardError=append:/home/pi/fhomed_stderr.log
+# StandardOutput=append:/home/pi/fhomed_stdout.log
+# StandardError=append:/home/pi/fhomed_stderr.log
 
 [Install]
 WantedBy=multi-user.target
