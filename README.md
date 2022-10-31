@@ -48,6 +48,44 @@ background daemon.
 
 Depends on the `api` package.
 
+**Registering with systemd**
+
+1. Copy the binary to a common location
+
+```console
+$ sudo cp ./fhomed /usr/local/bin
+```
+
+2. Create a service file
+
+```console
+$ sudo cp ./fhomed.service /etc/systemd/system
+```
+
+3. Reload changes
+
+```console
+$ sudo systemctl daemon-reload
+```
+
+**Extracing status logs from journald**
+
+```console
+$ journalctl \
+  _SYSTEMD_UNIT=fhomed.service \
+  --no-pager \
+  --output json-pretty \
+  | jq --slurp \
+    --compact-output \
+     '.[] | {timestamp: .__REALTIME_TIMESTAMP, msg: .MESSAGE}'
+```
+
+Or in a single line:
+
+```console
+$ journalctl _SYSTEMD_UNIT=fhomed.service --no-pager -o json-pretty | jq -s -c  '.[] | {timestamp: .__REALTIME_TIMESTAMP, msg: .MESSAGE}'
+```
+
 **Build**
 
 ```console
