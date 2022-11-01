@@ -67,11 +67,10 @@ var configCommand = cli.Command{
 				log.Println("got user config")
 
 				if c.Bool("system") {
-					w := tabwriter.NewWriter(os.Stdout, 8, 8, 0, '\t', 0)
+					w := tabwriter.NewWriter(os.Stdout, 8, 8, 0, ' ', 0)
 					defer w.Flush()
 
 					fmt.Fprintf(w, "id\tdt\tpreset\tstyle\tperm\tstep\tdesc\n")
-					fmt.Fprintf(w, "___\t___\t___\t___\t___\t___\t___\n")
 
 					cells := sysConfig.Response.MobileDisplayProperties.Cells
 					for _, cell := range cells {
