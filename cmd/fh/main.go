@@ -173,25 +173,16 @@ var objectCommand = cli.Command{
 	Usage: "Manage objects",
 	Subcommands: []*cli.Command{
 		{
-			Name:  "toggle",
-			Usage: "Toggle object's state (on/off)",
-			// Flags: []cli.Flag{
-			// 	&cli.StringFlag{
-			// 		Name:     "object-id",
-			// 		Aliases:  []string{"id"},
-			// 		Value:    "",
-			// 		Usage:    "id of object to toggle",
-			// 		Required: true,
-			// 	},
-			// },
+			Name:      "toggle",
+			Usage:     "Toggle object's state (on/off)",
 			ArgsUsage: "<object>",
 			Action: func(c *cli.Context) error {
-				objectID, err := strconv.Atoi(c.Args().First())
-				if err != nil {
-					return fmt.Errorf("wrong object: %v", err)
+				object := c.Args().First()
+				if object == "" {
+					return fmt.Errorf("object not specified")
 				}
 
-				err = client.OpenCloudSession(e.Email, e.CloudPassword)
+				err := client.OpenCloudSession(e.Email, e.CloudPassword)
 				if err != nil {
 					return fmt.Errorf("failed to open client session: %v", err)
 				}
@@ -212,12 +203,49 @@ var objectCommand = cli.Command{
 
 				log.Println("successfully opened client to resource session")
 
-				err = client.SendEvent(objectID, api.ValueToggle)
+				objectID, err := strconv.Atoi(object)
 				if err != nil {
-					return fmt.Errorf("failed to send xevent to object with id %d: %v", objectID, err)
-				}
+					// string
+					log.Println("looking for object with name", object)
 
-				log.Println("successfully sent xevent to object with id", objectID)
+					userConfig, err := client.GetUserConfig()
+					if err != nil {
+						return fmt.Errorf("failed to get user config: %v", err)
+					}
+
+					sysConfig, err := client.GetSystemConfig()
+					if err != nil {
+						return fmt.Errorf("failed to get system config: %v", err)
+					}
+
+					config, err := api.MergeConfigs(userConfig, sysConfig)
+					if err != nil {
+						return fmt.Errorf("failed to merge configs: %v", err)
+					}
+
+					for _, cell := range config.Cells() {
+						if cell.Name == object {
+							err = client.SendEvent(cell.ID, api.ValueToggle)
+							if err != nil {
+								return fmt.Errorf("failed to send event to object %s with id %d", object, cell.ID)
+							} else {
+								log.Printf("successfully toggled object %s with id %d\n", object, cell.ID)
+								return nil
+							}
+						}
+					}
+
+					return fmt.Errorf("no object with name %#v", object)
+				} else {
+					// int
+
+					err = client.SendEvent(objectID, api.ValueToggle)
+					if err != nil {
+						return fmt.Errorf("failed to send xevent to object with id %d: %v", objectID, err)
+					}
+
+					log.Println("successfully sent xevent to object with id", objectID)
+				}
 
 				return nil
 			},

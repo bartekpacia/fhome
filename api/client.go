@@ -384,11 +384,8 @@ func connect() (*websocket.Conn, error) {
 }
 
 // MergeConfigs creates [Config] config from "get_user_config" action and
-// "touches" action.
-func MergeConfigs(
-	userConfig *UserConfig,
-	touchesResp *TouchesResponse,
-) (*Config, error) {
+// "get_system_config" action.
+func MergeConfigs(userConfig *UserConfig, touchesResp *TouchesResponse) (*Config, error) {
 	panels := make([]Panel, 0)
 
 	for _, fPanel := range userConfig.Panels {
