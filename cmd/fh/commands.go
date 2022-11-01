@@ -237,10 +237,10 @@ var objectCommand = cli.Command{
 
 					err = client.SendEvent(bestObject.ID, api.ValueToggle)
 					if err != nil {
-						return fmt.Errorf("failed to send event to object %s with id %d", bestObject.Name, bestObject.ID)
+						return fmt.Errorf("failed to send event to object %#v with id %d", bestObject.Name, bestObject.ID)
 					}
 
-					log.Printf("sent event to object %s with id %d\n", bestObject.Name, bestObject.ID)
+					log.Printf("sent event to object %#v with id %d\n", bestObject.Name, bestObject.ID)
 					return nil
 				} else {
 					// int
@@ -317,9 +317,9 @@ var objectCommand = cli.Command{
 
 					err = client.SendEvent(bestObject.ID, api.MapLighting(value))
 					if err != nil {
-						return fmt.Errorf("failed to send event to object %s with id %d", bestObject.Name, bestObject.ID)
+						return fmt.Errorf("failed to send event to object %#v with id %d", bestObject.Name, bestObject.ID)
 					} else {
-						log.Printf("sent event to object %s with id %d\n", bestObject.Name, bestObject.ID)
+						log.Printf("sent event to object %#v with id %d\n", bestObject.Name, bestObject.ID)
 						return nil
 					}
 				} else {

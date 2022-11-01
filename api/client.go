@@ -419,7 +419,7 @@ func MergeConfigs(userConfig *UserConfig, touchesResp *TouchesResponse) (*Config
 
 		cell, err := cfg.GetCellByID(cellID)
 		if err != nil {
-			log.Printf("could not find cell with id %d in config: %v", cellID, err)
+			// cellID doesn't belong to any panels, ignore this case
 			continue
 		}
 
