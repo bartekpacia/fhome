@@ -75,10 +75,11 @@ type Cell struct {
 	Name string // Name that is set by and visible in client apps
 	Desc string // Name that is set by and visibile in the configurator app
 
-	Value      string
-	TypeNumber string
-	Preset     string
-	Style      string
-	MinValue   string
-	MaxValue   string
+	Value       string
+	TypeNumber  string
+	DisplayType string
+	Preset      string
+	Style       string
+	MinValue    string
+	MaxValue    string
 }

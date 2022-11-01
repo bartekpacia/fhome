@@ -1,6 +1,9 @@
 package api
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 type UserConfig struct {
 	Cells  []UserCell  `json:"cells"`
@@ -28,6 +31,13 @@ type UserCell struct {
 	Icon            string            `json:"icon"`
 	Name            string            `json:"name"`
 	PositionInPanel []PositionInPanel `json:"positionInPanel"`
+}
+
+func (cell *UserCell) IconName() string {
+	iconName := cell.Icon
+	iconName = strings.TrimPrefix(iconName, "icon_cell_")
+	iconName = strings.TrimSuffix(iconName, "_white")
+	return iconName
 }
 
 type PositionInPanel struct {

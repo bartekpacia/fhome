@@ -8,7 +8,7 @@ import (
 
 var baseLightingValue = 0x6000
 
-// MapLighting maps value to a string that is ready to be passed to Xevent.
+// MapLighting maps value to a string that is ready to be passed to [SendEvent].
 //
 // Clamps if the value is too small or too big.
 func MapLighting(value int) string {
@@ -37,15 +37,15 @@ func RemapLighting(value string) (int, error) {
 var baseTemperatureValue float64 = 0xa078 - 12*10.0 // 0°C
 
 // EncodeTemperature encodes value to represent temperature that  is ready to be
-// passed to Xevent.
+// passed to [SendEvent].
 //
 // Examples of the process:
 //
-// 12 -> 41080 + 12 * 10 -> 41080 -> "0xa078"
+// * 12 -> 41080 + 12 * 10 -> 41080 -> "0xa078"
 //
-// 25 -> 41080 + 25 * 10 -> 41210 -> "0xa0fa"
+// * 25 -> 41080 + 25 * 10 -> 41210 -> "0xa0fa"
 //
-// 28 -> 41080 + 28 * 10 -> 41240 -> "0xa118"
+// * 28 -> 41080 + 28 * 10 -> 41240 -> "0xa118"
 func EncodeTemperature(value float64) string {
 	if value < 12 {
 		return "0xa078"
@@ -63,11 +63,11 @@ func EncodeTemperature(value float64) string {
 //
 // Examples:
 //
-// "0xa005" -> 0.5
+// * "0xa005" -> 0.5
 //
-// "0xa078" -> 12.0
+// * "0xa078" -> 12.0
 //
-// "0xa118" -> 28.0
+// * "0xa118" -> 28.0
 func DecodeTemperatureValue(value string) (float64, error) {
 	v := strings.TrimPrefix(value, "0x")
 	parsed, err := strconv.ParseInt(v, 16, 64)
