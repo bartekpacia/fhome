@@ -13,6 +13,26 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+func bestObjectMatch(object string, config *api.Config) (*api.Cell, float64) {
+	var bestScore float64
+	var bestObject *api.Cell = nil
+	for _, cell := range config.Cells() {
+		cell := cell
+
+		if cell.DisplayType != string(api.Percentage) {
+			continue
+		}
+
+		score := dice.CompareString(object, cell.Name)
+		if score > bestScore {
+			bestScore = score
+			bestObject = &cell
+		}
+	}
+
+	return bestObject, bestScore
+}
+
 var configCommand = cli.Command{
 	Name:  "config",
 	Usage: "Manage system configuration",
@@ -131,21 +151,15 @@ var eventCommand = cli.Command{
 					return fmt.Errorf("failed to open client session: %v", err)
 				}
 
-				log.Println("successfully opened client session")
-
 				_, err = client.GetMyResources()
 				if err != nil {
 					return fmt.Errorf("failed to get my resources: %v", err)
 				}
 
-				log.Println("successfully got my resources")
-
 				err = client.OpenResourceSession(e.ResourcePassword)
 				if err != nil {
 					return fmt.Errorf("failed to open client to resource session: %v", err)
 				}
-
-				log.Println("successfully opened client to resource session")
 
 				for {
 					msg, err := client.ReadAnyMessage()
@@ -162,7 +176,6 @@ var eventCommand = cli.Command{
 
 						log.Printf("%s\n", api.Pprint(touches))
 					}
-
 				}
 			},
 		},
@@ -188,21 +201,15 @@ var objectCommand = cli.Command{
 					return fmt.Errorf("failed to open client session: %v", err)
 				}
 
-				log.Println("successfully opened client session")
-
 				_, err = client.GetMyResources()
 				if err != nil {
 					return fmt.Errorf("failed to get my resources: %v", err)
 				}
 
-				log.Println("successfully got my resources")
-
 				err = client.OpenResourceSession(e.ResourcePassword)
 				if err != nil {
 					return fmt.Errorf("failed to open client to resource session: %v", err)
 				}
-
-				log.Println("successfully opened client to resource session")
 
 				objectID, err := strconv.Atoi(object)
 				if err != nil {
@@ -224,44 +231,28 @@ var objectCommand = cli.Command{
 						return fmt.Errorf("failed to merge configs: %v", err)
 					}
 
-					var bestScore float64
-					var bestObject *api.Cell = nil
-					for _, cell := range config.Cells() {
-						cell := cell
-
-						if cell.DisplayType != string(api.Percentage) {
-							continue
-						}
-
-						score := dice.CompareString(object, cell.Name)
-						if score > bestScore {
-							bestScore = score
-							bestObject = &cell
-						}
-					}
+					bestObject, bestScore := bestObjectMatch(object, config)
 
 					log.Printf("selected object %#v with id %d with %d%% confidence\n", bestObject.Name, bestObject.ID, int(bestScore*100))
 
 					err = client.SendEvent(bestObject.ID, api.ValueToggle)
 					if err != nil {
 						return fmt.Errorf("failed to send event to object %s with id %d", bestObject.Name, bestObject.ID)
-					} else {
-						log.Printf("successfully toggled object %s with id %d\n", bestObject.Name, bestObject.ID)
-						return nil
 					}
 
+					log.Printf("sent event to object %s with id %d\n", bestObject.Name, bestObject.ID)
+					return nil
 				} else {
 					// int
 
 					err = client.SendEvent(objectID, api.ValueToggle)
 					if err != nil {
-						return fmt.Errorf("failed to send xevent to object with id %d: %v", objectID, err)
+						return fmt.Errorf("failed to send event to object with id %d: %v", objectID, err)
 					}
 
-					log.Println("successfully sent xevent to object with id", objectID)
+					log.Println("sent event to object with id", objectID)
+					return nil
 				}
-
-				return nil
 			},
 		},
 		{
@@ -284,21 +275,21 @@ var objectCommand = cli.Command{
 					return fmt.Errorf("failed to open client session: %v", err)
 				}
 
-				log.Println("successfully opened client session")
+				log.Println("opened client session")
 
 				_, err = client.GetMyResources()
 				if err != nil {
 					return fmt.Errorf("failed to get my resources: %v", err)
 				}
 
-				log.Println("successfully got my resources")
+				log.Println("got my resources")
 
 				err = client.OpenResourceSession(e.ResourcePassword)
 				if err != nil {
 					return fmt.Errorf("failed to open client to resource session: %v", err)
 				}
 
-				log.Println("successfully opened client to resource session")
+				log.Println("opened client to resource session")
 
 				objectID, err := strconv.Atoi(object)
 				if err != nil {
@@ -320,21 +311,7 @@ var objectCommand = cli.Command{
 						return fmt.Errorf("failed to merge configs: %v", err)
 					}
 
-					var bestScore float64
-					var bestObject *api.Cell = nil
-					for _, cell := range config.Cells() {
-						cell := cell
-
-						if cell.DisplayType != string(api.Percentage) {
-							continue
-						}
-
-						score := dice.CompareString(object, cell.Name)
-						if score > bestScore {
-							bestScore = score
-							bestObject = &cell
-						}
-					}
+					bestObject, bestScore := bestObjectMatch(object, config)
 
 					log.Printf("selected object %#v with id %d with %d%% confidence\n", bestObject.Name, bestObject.ID, int(bestScore*100))
 
@@ -342,19 +319,18 @@ var objectCommand = cli.Command{
 					if err != nil {
 						return fmt.Errorf("failed to send event to object %s with id %d", bestObject.Name, bestObject.ID)
 					} else {
-						log.Printf("successfully toggled object %s with id %d\n", bestObject.Name, bestObject.ID)
+						log.Printf("sent event to object %s with id %d\n", bestObject.Name, bestObject.ID)
 						return nil
 					}
 				} else {
 					err = client.SendEvent(objectID, api.MapLighting(value))
 					if err != nil {
-						return fmt.Errorf("failed to send event to object with id %d: %v", objectID, err)
+						return fmt.Errorf("sent event to object with id %d: %v", objectID, err)
 					}
 
-					log.Println("successfully sent event to object with id", objectID)
+					log.Println("sent event to object with id", objectID)
+					return nil
 				}
-
-				return nil
 			},
 		},
 	},
