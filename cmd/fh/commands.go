@@ -14,10 +14,14 @@ import (
 )
 
 func bestObjectMatch(object string, config *api.Config) (*api.Cell, float64) {
+	var names []string
+
 	var bestScore float64
 	var bestObject *api.Cell = nil
 	for _, cell := range config.Cells() {
 		cell := cell
+
+		names = append(names, cell.Name)
 
 		if cell.DisplayType != string(api.Percentage) {
 			continue
@@ -29,6 +33,9 @@ func bestObjectMatch(object string, config *api.Config) (*api.Cell, float64) {
 			bestObject = &cell
 		}
 	}
+
+	matches, _ := dice.CompareStrings(object, names)
+	fmt.Printf("%+v\n", matches)
 
 	return bestObject, bestScore
 }
