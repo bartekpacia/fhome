@@ -10,6 +10,7 @@ import (
 
 	"github.com/bartekpacia/fhome/api"
 	"github.com/bartekpacia/fhome/env"
+	"github.com/imjasonmiller/godice"
 	"github.com/urfave/cli/v2"
 )
 
@@ -223,19 +224,27 @@ var objectCommand = cli.Command{
 						return fmt.Errorf("failed to merge configs: %v", err)
 					}
 
+					var bestScore float64
+					var bestObject *api.Cell = nil
 					for _, cell := range config.Cells() {
-						if cell.Name == object {
-							err = client.SendEvent(cell.ID, api.ValueToggle)
-							if err != nil {
-								return fmt.Errorf("failed to send event to object %s with id %d", object, cell.ID)
-							} else {
-								log.Printf("successfully toggled object %s with id %d\n", object, cell.ID)
-								return nil
-							}
+						cell := cell
+						score := godice.CompareString(object, cell.Name)
+						if score > bestScore {
+							bestScore = score
+							bestObject = &cell
 						}
 					}
 
-					return fmt.Errorf("no object with name %#v", object)
+					log.Printf("selected object %#v with id %d with %d%% confidence\n", bestObject.Name, bestObject.ID, int(bestScore*100))
+
+					err = client.SendEvent(bestObject.ID, api.ValueToggle)
+					if err != nil {
+						return fmt.Errorf("failed to send event to object %s with id %d", bestObject.Name, bestObject.ID)
+					} else {
+						log.Printf("successfully toggled object %s with id %d\n", bestObject.Name, bestObject.ID)
+						return nil
+					}
+
 				} else {
 					// int
 
