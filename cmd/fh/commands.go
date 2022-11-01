@@ -23,11 +23,11 @@ var configCommand = cli.Command{
 			Flags: []cli.Flag{
 				&cli.BoolFlag{
 					Name:  "system",
-					Usage: "Print obj set by the configurator app",
+					Usage: "Print config set in the configurator app",
 				},
 				&cli.BoolFlag{
 					Name:  "user",
-					Usage: "Print config set by the configurator app",
+					Usage: "Print config set in the client apps",
 				},
 			},
 			Action: func(c *cli.Context) error {
@@ -69,11 +69,11 @@ var configCommand = cli.Command{
 					w := tabwriter.NewWriter(os.Stdout, 8, 8, 0, ' ', 0)
 					defer w.Flush()
 
-					fmt.Fprintf(w, "id\tdt\tpreset\tstyle\tperm\tstep\tdesc\n")
+					fmt.Fprintf(w, "id\tdt\tpreset\tstyle\tperm\tmin\tmax\tstep\tdesc\n")
 
 					cells := sysConfig.Response.MobileDisplayProperties.Cells
 					for _, cell := range cells {
-						fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s\n", cell.ID, cell.DisplayType, cell.Preset, cell.Style, cell.Permission, cell.Step, cell.Desc)
+						fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", cell.ID, cell.DisplayType, cell.Preset, cell.Style, cell.Permission, cell.MinValue, cell.MaxValue, cell.Step, cell.Desc)
 					}
 				} else if c.Bool("user") {
 					panels := map[string]api.UserPanel{}
@@ -81,18 +81,20 @@ var configCommand = cli.Command{
 						panels[panel.ID] = panel
 					}
 
-					log.Printf("there are %d cells\n", len(userConfig.Cells))
-					for _, cell := range userConfig.Cells {
-						log.Printf("id: %3d, name: %s, icon: %s panels:", cell.ObjectID, cell.Name, cell.Icon)
-						for _, pos := range cell.PositionInPanel {
-							log.Printf(" %s", panels[pos.PanelID].Name)
-						}
-						log.Println()
-					}
+					w := tabwriter.NewWriter(os.Stdout, 8, 8, 0, ' ', 0)
+					defer w.Flush()
 
-					log.Printf("there are %d panels\n", len(userConfig.Panels))
-					for _, panel := range userConfig.Panels {
-						log.Printf("id: %s, name: %s\n", panel.ID, panel.Name)
+					log.Printf("there are %d cells in %d panels\n", len(userConfig.Cells), len(userConfig.Panels))
+
+					fmt.Fprintf(w, "id\ticon\tname\tpanels\n")
+
+					for _, cell := range userConfig.Cells {
+						var p []string
+						for _, pos := range cell.PositionInPanel {
+							p = append(p, panels[pos.PanelID].Name)
+						}
+
+						fmt.Fprintf(w, "%3d\t%s\t%s\t%s\n", cell.ObjectID, cell.IconName(), cell.Name, p)
 					}
 				} else {
 					config, err := api.MergeConfigs(userConfig, sysConfig)
