@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"text/tabwriter"
 
 	"github.com/bartekpacia/fhome/api"
@@ -116,149 +117,164 @@ var configCommand = cli.Command{
 	},
 }
 
-var watchCommand = cli.Command{
-	Name:  "watch",
-	Usage: "Print all incoming messages",
-	Action: func(c *cli.Context) error {
-		err := client.OpenCloudSession(e.Email, e.CloudPassword)
-		if err != nil {
-			return fmt.Errorf("failed to open client session: %v", err)
-		}
-
-		log.Println("successfully opened client session")
-
-		_, err = client.GetMyResources()
-		if err != nil {
-			return fmt.Errorf("failed to get my resources: %v", err)
-		}
-
-		log.Println("successfully got my resources")
-
-		err = client.OpenResourceSession(e.ResourcePassword)
-		if err != nil {
-			return fmt.Errorf("failed to open client to resource session: %v", err)
-		}
-
-		log.Println("successfully opened client to resource session")
-
-		for {
-			msg, err := client.ReadAnyMessage()
-			if err != nil {
-				return fmt.Errorf("failed to listen: %v", err)
-			}
-
-			if msg.ActionName == api.ActionStatusTouchesChanged {
-				var touches api.StatusTouchesChangedResponse
-				err = json.Unmarshal(msg.Raw, &touches)
+var eventCommand = cli.Command{
+	Name:  "event",
+	Usage: "Manage events",
+	Subcommands: []*cli.Command{
+		{
+			Name:  "watch",
+			Usage: "Print all incoming messages",
+			Action: func(c *cli.Context) error {
+				err := client.OpenCloudSession(e.Email, e.CloudPassword)
 				if err != nil {
-					return fmt.Errorf("failed to unmarshal touches: %v", err)
+					return fmt.Errorf("failed to open client session: %v", err)
 				}
 
-				log.Printf("%s\n", api.Pprint(touches))
-			}
+				log.Println("successfully opened client session")
 
-		}
+				_, err = client.GetMyResources()
+				if err != nil {
+					return fmt.Errorf("failed to get my resources: %v", err)
+				}
+
+				log.Println("successfully got my resources")
+
+				err = client.OpenResourceSession(e.ResourcePassword)
+				if err != nil {
+					return fmt.Errorf("failed to open client to resource session: %v", err)
+				}
+
+				log.Println("successfully opened client to resource session")
+
+				for {
+					msg, err := client.ReadAnyMessage()
+					if err != nil {
+						return fmt.Errorf("failed to listen: %v", err)
+					}
+
+					if msg.ActionName == api.ActionStatusTouchesChanged {
+						var touches api.StatusTouchesChangedResponse
+						err = json.Unmarshal(msg.Raw, &touches)
+						if err != nil {
+							return fmt.Errorf("failed to unmarshal touches: %v", err)
+						}
+
+						log.Printf("%s\n", api.Pprint(touches))
+					}
+
+				}
+			},
+		},
 	},
 }
 
-var toggleCommand = cli.Command{
-	Name:  "toggle",
-	Usage: "Toggle object's state (on/off)",
-	Flags: []cli.Flag{
-		&cli.StringFlag{
-			Name:     "object-id",
-			Aliases:  []string{"id"},
-			Value:    "",
-			Usage:    "id of object to toggle",
-			Required: true,
+var objectCommand = cli.Command{
+	Name:  "object",
+	Usage: "Manage objects",
+	Subcommands: []*cli.Command{
+		{
+			Name:  "toggle",
+			Usage: "Toggle object's state (on/off)",
+			// Flags: []cli.Flag{
+			// 	&cli.StringFlag{
+			// 		Name:     "object-id",
+			// 		Aliases:  []string{"id"},
+			// 		Value:    "",
+			// 		Usage:    "id of object to toggle",
+			// 		Required: true,
+			// 	},
+			// },
+			ArgsUsage: "<object>",
+			Action: func(c *cli.Context) error {
+				objectID, err := strconv.Atoi(c.Args().First())
+				if err != nil {
+					return fmt.Errorf("wrong object: %v", err)
+				}
+
+				err = client.OpenCloudSession(e.Email, e.CloudPassword)
+				if err != nil {
+					return fmt.Errorf("failed to open client session: %v", err)
+				}
+
+				log.Println("successfully opened client session")
+
+				_, err = client.GetMyResources()
+				if err != nil {
+					return fmt.Errorf("failed to get my resources: %v", err)
+				}
+
+				log.Println("successfully got my resources")
+
+				err = client.OpenResourceSession(e.ResourcePassword)
+				if err != nil {
+					return fmt.Errorf("failed to open client to resource session: %v", err)
+				}
+
+				log.Println("successfully opened client to resource session")
+
+				err = client.SendEvent(objectID, api.ValueToggle)
+				if err != nil {
+					return fmt.Errorf("failed to send xevent to object with id %d: %v", objectID, err)
+				}
+
+				log.Println("successfully sent xevent to object with id", objectID)
+
+				return nil
+			},
 		},
-	},
-	Action: func(c *cli.Context) error {
-		objectID := c.Int("object-id")
+		{
+			Name:  "set",
+			Usage: "Set object's value (0-100)",
+			Flags: []cli.Flag{
+				&cli.StringFlag{
+					Name:     "object-id",
+					Aliases:  []string{"id"},
+					Value:    "",
+					Usage:    "id of object to toggle",
+					Required: true,
+				},
+				&cli.IntFlag{
+					Name:     "value",
+					Aliases:  []string{"val"},
+					Usage:    "value (0-100)",
+					Required: true,
+				},
+			},
+			Action: func(c *cli.Context) error {
+				objectID := c.Int("object-id")
+				value := c.Int("value")
 
-		err := client.OpenCloudSession(e.Email, e.CloudPassword)
-		if err != nil {
-			return fmt.Errorf("failed to open client session: %v", err)
-		}
+				err := client.OpenCloudSession(e.Email, e.CloudPassword)
+				if err != nil {
+					return fmt.Errorf("failed to open client session: %v", err)
+				}
 
-		log.Println("successfully opened client session")
+				log.Println("successfully opened client session")
 
-		_, err = client.GetMyResources()
-		if err != nil {
-			return fmt.Errorf("failed to get my resources: %v", err)
-		}
+				_, err = client.GetMyResources()
+				if err != nil {
+					return fmt.Errorf("failed to get my resources: %v", err)
+				}
 
-		log.Println("successfully got my resources")
+				log.Println("successfully got my resources")
 
-		err = client.OpenResourceSession(e.ResourcePassword)
-		if err != nil {
-			return fmt.Errorf("failed to open client to resource session: %v", err)
-		}
+				err = client.OpenResourceSession(e.ResourcePassword)
+				if err != nil {
+					return fmt.Errorf("failed to open client to resource session: %v", err)
+				}
 
-		log.Println("successfully opened client to resource session")
+				log.Println("successfully opened client to resource session")
 
-		err = client.SendEvent(objectID, api.ValueToggle)
-		if err != nil {
-			return fmt.Errorf("failed to send xevent to object with id %d: %v", objectID, err)
-		}
+				err = client.SendEvent(objectID, api.MapLighting(value))
+				if err != nil {
+					return fmt.Errorf("failed to send xevent to object with id %d: %v", objectID, err)
+				}
 
-		log.Println("successfully sent xevent to object with id", objectID)
+				log.Println("successfully sent xevent to object with id", objectID)
 
-		return nil
-	},
-}
-
-var setCommand = cli.Command{
-	Name:  "set",
-	Usage: "Set object's value (0-100)",
-	Flags: []cli.Flag{
-		&cli.StringFlag{
-			Name:     "object-id",
-			Aliases:  []string{"id"},
-			Value:    "",
-			Usage:    "id of object to toggle",
-			Required: true,
+				return nil
+			},
 		},
-		&cli.IntFlag{
-			Name:     "value",
-			Aliases:  []string{"val"},
-			Usage:    "value (0-100)",
-			Required: true,
-		},
-	},
-	Action: func(c *cli.Context) error {
-		objectID := c.Int("object-id")
-		value := c.Int("value")
-
-		err := client.OpenCloudSession(e.Email, e.CloudPassword)
-		if err != nil {
-			return fmt.Errorf("failed to open client session: %v", err)
-		}
-
-		log.Println("successfully opened client session")
-
-		_, err = client.GetMyResources()
-		if err != nil {
-			return fmt.Errorf("failed to get my resources: %v", err)
-		}
-
-		log.Println("successfully got my resources")
-
-		err = client.OpenResourceSession(e.ResourcePassword)
-		if err != nil {
-			return fmt.Errorf("failed to open client to resource session: %v", err)
-		}
-
-		log.Println("successfully opened client to resource session")
-
-		err = client.SendEvent(objectID, api.MapLighting(value))
-		if err != nil {
-			return fmt.Errorf("failed to send xevent to object with id %d: %v", objectID, err)
-		}
-
-		log.Println("successfully sent xevent to object with id", objectID)
-
-		return nil
 	},
 }
 
@@ -289,9 +305,8 @@ func main() {
 		Usage: "Interact with smart home devices connected to F&Home",
 		Commands: []*cli.Command{
 			&configCommand,
-			&watchCommand,
-			&toggleCommand,
-			&setCommand,
+			&eventCommand,
+			&objectCommand,
 		},
 		CommandNotFound: func(c *cli.Context, command string) {
 			log.Printf("invalid command '%s'. See 'fh --help'\n", command)
