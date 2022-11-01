@@ -411,25 +411,26 @@ func MergeConfigs(userConfig *UserConfig, touchesResp *TouchesResponse) (*Config
 
 	cfg := Config{Panels: panels}
 
-	for _, cell := range touchesResp.Response.MobileDisplayProperties.Cells {
-		cellID, err := strconv.Atoi(cell.ID)
+	for _, mdcell := range touchesResp.Response.MobileDisplayProperties.Cells {
+		cellID, err := strconv.Atoi(mdcell.ID)
 		if err != nil {
-			return nil, fmt.Errorf("failed to convert cell ID %s to int: %v", cell.ID, err)
+			return nil, fmt.Errorf("failed to convert cell ID %s to int: %v", mdcell.ID, err)
 		}
 
-		cfgCell, err := cfg.GetCellByID(cellID)
+		cell, err := cfg.GetCellByID(cellID)
 		if err != nil {
 			log.Printf("could not find cell with id %d in config: %v", cellID, err)
 			continue
 		}
 
-		cfgCell.Desc = cell.Desc
-		cfgCell.Value = cell.Step // FIXME: this is wrong; for thermo-setters this is 0.5, for thermo-getters this is actual value
-		cfgCell.TypeNumber = cell.TypeNumber
-		cfgCell.Preset = cell.Preset
-		cfgCell.Style = cell.Style
-		cfgCell.MinValue = cell.MinValue
-		cfgCell.MaxValue = cell.MaxValue
+		cell.Desc = mdcell.Desc
+		cell.Value = mdcell.Step // FIXME: this is wrong; for thermo-setters this is 0.5, for thermo-getters this is actual value
+		cell.TypeNumber = mdcell.TypeNumber
+		cell.DisplayType = string(mdcell.DisplayType)
+		cell.Preset = mdcell.Preset
+		cell.Style = mdcell.Style
+		cell.MinValue = mdcell.MinValue
+		cell.MaxValue = mdcell.MaxValue
 	}
 
 	return &cfg, nil

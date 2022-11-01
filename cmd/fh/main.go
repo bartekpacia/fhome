@@ -227,6 +227,11 @@ var objectCommand = cli.Command{
 					var bestObject *api.Cell = nil
 					for _, cell := range config.Cells() {
 						cell := cell
+
+						if cell.DisplayType != string(api.Percentage) {
+							continue
+						}
+
 						score := godice.CompareString(object, cell.Name)
 						if score > bestScore {
 							bestScore = score
