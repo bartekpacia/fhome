@@ -16,9 +16,9 @@ const (
 	ActionGetMyData                  = "get_my_data"
 	ActionGetMyResources             = "get_my_resources"
 	ActionOpenClienToResourceSession = "open_client_to_resource_session"
-	ActionTouches                    = "touches"
+	ActionGetSystemConfig            = "touches"
 	ActionGetUserConfig              = "get_user_config"
-	ActionXEvent                     = "xevent"
+	ActionEvent                      = "xevent"
 	ActionStatusTouchesChanged       = "statustoucheschanged"
 )
 
@@ -51,7 +51,7 @@ type Action struct {
 	RequestToken string `json:"request_token"`
 }
 
-type XEvent struct {
+type Event struct {
 	ActionName   string `json:"action_name"`
 	Login        string `json:"login"`
 	PasswordHash string `json:"password"`

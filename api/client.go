@@ -16,12 +16,13 @@ import (
 	"golang.org/x/crypto/pbkdf2"
 )
 
-// URL at which F&Home API lives.
+// APIURL is a URL at which F&Home API lives.
 //
 // It has to end with a trailing slash, otherwise handshake fails.
-const apiURL = "wss://fhome.cloud/webapp-interface/"
+const APIURL = "wss://fhome.cloud/webapp-interface/"
 
-var dialer = websocket.Dialer{
+// Dialer is used to create a websocket connection.
+var Dialer = websocket.Dialer{
 	EnableCompression: true,
 	HandshakeTimeout:  5 * time.Second,
 }
@@ -186,7 +187,7 @@ func (c *Client) OpenResourceSession(resourcePassword string) error {
 //
 // This action is named "Touches" in F&Home's terminology.
 func (c *Client) GetSystemConfig() (*TouchesResponse, error) {
-	actionName := ActionTouches
+	actionName := ActionGetSystemConfig
 	token := generateRequestToken()
 
 	err := c.mainConn.WriteJSON(Action{
@@ -303,10 +304,10 @@ func (c *Client) ReadAnyMessage() (*Message, error) {
 func (c *Client) SendEvent(cellID int, value string) error {
 	log.Println("sending event to cell with id", cellID, "with value", value)
 
-	actionName := ActionXEvent
+	actionName := ActionEvent
 	token := generateRequestToken()
 
-	xevent := XEvent{
+	event := Event{
 		ActionName:   actionName,
 		Login:        *c.email,
 		PasswordHash: *c.resourcePasswordHash,
@@ -315,7 +316,7 @@ func (c *Client) SendEvent(cellID int, value string) error {
 		Value:        value,
 		Type:         "HEX",
 	}
-	err := c.mainConn.WriteJSON(xevent)
+	err := c.mainConn.WriteJSON(event)
 	if err != nil {
 		return fmt.Errorf("failed to write %s to conn: %v", actionName, err)
 	}
@@ -370,7 +371,7 @@ func (c *Client) reader() {
 }
 
 func connect() (*websocket.Conn, error) {
-	conn, resp, err := dialer.Dial(apiURL, nil)
+	conn, resp, err := Dialer.Dial(APIURL, nil)
 	if err != nil {
 		log.Printf("status: %s\n", resp.Status)
 		for name, value := range resp.Header {
