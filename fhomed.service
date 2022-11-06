@@ -1,10 +1,14 @@
 [Unit]
 Description=Dameon for F&Home smart home system
+After=network-online.target
+Wants=network-online.target
 
 [Service]
 Type=simple
 EnvironmentFile=/etc/fhomed/env
 ExecStart=/usr/local/bin/fhomed
+Restart=on-failure
+RestartSec=10s
 # StandardOutput=append:/home/pi/fhomed_stdout.log
 # StandardError=append:/home/pi/fhomed_stderr.log
 
