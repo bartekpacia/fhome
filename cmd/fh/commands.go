@@ -8,8 +8,9 @@ import (
 	"strconv"
 	"text/tabwriter"
 
+	"github.com/adrg/strutil"
+	"github.com/adrg/strutil/metrics"
 	"github.com/bartekpacia/fhome/api"
-	dice "github.com/imjasonmiller/godice"
 	"github.com/urfave/cli/v2"
 )
 
@@ -23,7 +24,7 @@ func bestObjectMatch(object string, config *api.Config) (*api.Cell, float64) {
 			continue
 		}
 
-		score := dice.CompareString(object, cell.Name)
+		score := strutil.Similarity(object, cell.Name, metrics.NewLevenshtein())
 		if score > bestScore {
 			bestScore = score
 			bestObject = &cell

@@ -33,9 +33,23 @@ func (e *Env) verify() error {
 
 // Load loads env vars from shell to e.
 func (e *Env) Load() error {
-	e.Email = os.Getenv("FHOME_EMAIL")
-	e.CloudPassword = os.Getenv("FHOME_CLOUD_PASSWORD")
-	e.ResourcePassword = os.Getenv("FHOME_RESOURCE_PASSWORD")
+	email, ok := os.LookupEnv("FHOME_EMAIL")
+	if !ok {
+		return fmt.Errorf("FHOME_EMAIL is not set")
+	}
+	e.Email = email
+
+	cloudPassword, ok := os.LookupEnv("FHOME_CLOUD_PASSWORD")
+	if !ok {
+		return fmt.Errorf("FHOME_CLOUD_PASSWORD is not set")
+	}
+	e.CloudPassword = cloudPassword
+
+	resourcePassword, ok := os.LookupEnv("FHOME_RESOURCE_PASSWORD")
+	if !ok {
+		return fmt.Errorf("FHOME_RESOURCE_PASSWORD is not set")
+	}
+	e.ResourcePassword = resourcePassword
 
 	return e.verify()
 }

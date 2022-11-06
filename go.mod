@@ -9,11 +9,12 @@ require (
 	golang.org/x/crypto v0.0.0-20221005025214-4161e89ecf1b
 )
 
+require github.com/adrg/strutil v0.3.0
+
 require (
 	github.com/brutella/dnssd v1.2.4 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/go-chi/chi v1.5.4 // indirect
-	github.com/imjasonmiller/godice v0.1.2
 	github.com/miekg/dns v1.1.50 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/tadglines/go-pkgs v0.0.0-20210623144937-b983b20f54f9 // indirect
