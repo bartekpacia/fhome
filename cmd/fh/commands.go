@@ -24,7 +24,7 @@ func bestObjectMatch(object string, config *api.Config) (*api.Cell, float64) {
 			continue
 		}
 
-		score := strutil.Similarity(object, cell.Name, metrics.NewLevenshtein())
+		score := strutil.Similarity(object, cell.Name, metrics.NewSorensenDice())
 		if score > bestScore {
 			bestScore = score
 			bestObject = &cell
