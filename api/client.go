@@ -373,11 +373,14 @@ func (c *Client) reader() {
 func connect() (*websocket.Conn, error) {
 	conn, resp, err := Dialer.Dial(APIURL, nil)
 	if err != nil {
-		log.Printf("status: %s\n", resp.Status)
-		for name, value := range resp.Header {
-			log.Printf("header %s: %s\n", name, value)
+		if resp != nil {
+			log.Printf("status: %s, headers: %d\n", resp.Status, len(resp.Header))
+			for name, value := range resp.Header {
+				log.Printf("header %s: %s\n", name, value)
+			}
+		} else {
+			log.Println("no response")
 		}
-
 		return nil, fmt.Errorf("failed to dial: %v", err)
 	}
 
