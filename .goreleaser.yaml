@@ -1,0 +1,20 @@
+builds:
+  - binary: fh
+    main: ./cmd/fh
+    goos:
+      - windows
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+
+changelog:
+  skip: true
+brews:
+  - tap:
+      owner: bartekpacia
+      name: homebrew-tools
+    folder: Formula
+    homepage: "https://github.com/bartekpacia/fhome"
+    description: "CLI app talking to F&Home API – a smart home system"
