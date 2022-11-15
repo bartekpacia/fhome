@@ -184,11 +184,13 @@ var eventCommand = cli.Command{
 }
 
 var objectCommand = cli.Command{
-	Name:  "object",
-	Usage: "Manage objects",
+	Name:    "object",
+	Aliases: []string{"o"},
+	Usage:   "Manage objects",
 	Subcommands: []*cli.Command{
 		{
 			Name:      "toggle",
+			Aliases:   []string{"t"},
 			Usage:     "Toggle object's state (on/off)",
 			ArgsUsage: "<object>",
 			Action: func(c *cli.Context) error {
@@ -258,6 +260,7 @@ var objectCommand = cli.Command{
 		},
 		{
 			Name:      "set",
+			Aliases:   []string{"s"},
 			Usage:     "Set object's state (0-100)",
 			ArgsUsage: "<object> <0-100>",
 			Action: func(c *cli.Context) error {
