@@ -12,7 +12,8 @@ builds:
 changelog:
   skip: true
 brews:
-  - tap:
+  - name: fh
+    tap:
       owner: bartekpacia
       name: homebrew-tools
     folder: Formula
