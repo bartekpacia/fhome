@@ -56,7 +56,7 @@ var configCommand = cli.Command{
 					return fmt.Errorf("cannot use both --system and --user")
 				}
 
-				err := client.OpenCloudSession(e.Email, e.CloudPassword)
+				err := client.OpenCloudSession(config.Email, config.CloudPassword)
 				if err != nil {
 					return fmt.Errorf("failed to open client session: %v", err)
 				}
@@ -68,7 +68,7 @@ var configCommand = cli.Command{
 				}
 				log.Println("got my resources")
 
-				err = client.OpenResourceSession(e.ResourcePassword)
+				err = client.OpenResourceSession(config.ResourcePassword)
 				if err != nil {
 					return fmt.Errorf("failed to open client to resource session: %v", err)
 				}
@@ -147,7 +147,7 @@ var eventCommand = cli.Command{
 			Name:  "watch",
 			Usage: "Print all incoming messages",
 			Action: func(c *cli.Context) error {
-				err := client.OpenCloudSession(e.Email, e.CloudPassword)
+				err := client.OpenCloudSession(config.Email, config.CloudPassword)
 				if err != nil {
 					return fmt.Errorf("failed to open client session: %v", err)
 				}
@@ -157,7 +157,7 @@ var eventCommand = cli.Command{
 					return fmt.Errorf("failed to get my resources: %v", err)
 				}
 
-				err = client.OpenResourceSession(e.ResourcePassword)
+				err = client.OpenResourceSession(config.ResourcePassword)
 				if err != nil {
 					return fmt.Errorf("failed to open client to resource session: %v", err)
 				}
@@ -197,7 +197,7 @@ var objectCommand = cli.Command{
 					return fmt.Errorf("object not specified")
 				}
 
-				err := client.OpenCloudSession(e.Email, e.CloudPassword)
+				err := client.OpenCloudSession(config.Email, config.CloudPassword)
 				if err != nil {
 					return fmt.Errorf("failed to open client session: %v", err)
 				}
@@ -207,7 +207,7 @@ var objectCommand = cli.Command{
 					return fmt.Errorf("failed to get my resources: %v", err)
 				}
 
-				err = client.OpenResourceSession(e.ResourcePassword)
+				err = client.OpenResourceSession(config.ResourcePassword)
 				if err != nil {
 					return fmt.Errorf("failed to open client to resource session: %v", err)
 				}
@@ -271,7 +271,7 @@ var objectCommand = cli.Command{
 					return fmt.Errorf("invalid value: %v", err)
 				}
 
-				err = client.OpenCloudSession(e.Email, e.CloudPassword)
+				err = client.OpenCloudSession(config.Email, config.CloudPassword)
 				if err != nil {
 					return fmt.Errorf("failed to open client session: %v", err)
 				}
@@ -285,7 +285,7 @@ var objectCommand = cli.Command{
 
 				log.Println("got my resources")
 
-				err = client.OpenResourceSession(e.ResourcePassword)
+				err = client.OpenResourceSession(config.ResourcePassword)
 				if err != nil {
 					return fmt.Errorf("failed to open client to resource session: %v", err)
 				}
