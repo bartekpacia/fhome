@@ -6,13 +6,13 @@ import (
 	"log"
 
 	"github.com/bartekpacia/fhome/api"
+	"github.com/bartekpacia/fhome/cfg"
 	"github.com/bartekpacia/fhome/cmd/fhomed/homekit"
-	"github.com/bartekpacia/fhome/env"
 )
 
 var (
 	client *api.Client
-	e      env.Env
+	config cfg.Config
 )
 
 var (
@@ -33,8 +33,8 @@ func init() {
 		log.Fatalf("failed to create api api client: %v\n", err)
 	}
 
-	e = env.Env{}
-	err = e.Load()
+	config = cfg.Config{}
+	err = config.Load()
 	if err != nil {
 		log.Fatalf("failed to load env: %v\n", err)
 	}
@@ -42,7 +42,7 @@ func init() {
 
 func main() {
 	flag.Parse()
-	err := client.OpenCloudSession(e.Email, e.CloudPassword)
+	err := client.OpenCloudSession(config.Email, config.CloudPassword)
 	if err != nil {
 		log.Fatalf("failed to open client session: %v", err)
 	}
@@ -56,7 +56,7 @@ func main() {
 
 	log.Println("got my resources")
 
-	err = client.OpenResourceSession(e.ResourcePassword)
+	err = client.OpenResourceSession(config.ResourcePassword)
 	if err != nil {
 		log.Fatalf("failed to open client to resource session: %v", err)
 	}

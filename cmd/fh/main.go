@@ -1,17 +1,19 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
 	"github.com/bartekpacia/fhome/api"
-	"github.com/bartekpacia/fhome/env"
+	"github.com/bartekpacia/fhome/cfg"
+	"github.com/spf13/viper"
 	"github.com/urfave/cli/v2"
 )
 
 var (
 	client *api.Client
-	e      env.Env
+	config cfg.Config
 )
 
 func init() {
@@ -23,10 +25,28 @@ func init() {
 		log.Fatalf("failed to create api api client: %v\n", err)
 	}
 
-	e = env.Env{}
-	err = e.Load()
+	viper.SetConfigName("config")
+	viper.SetConfigType("toml")
+	viper.AddConfigPath(".")
+	viper.AddConfigPath("$HOME/.config/fh/")
+	viper.AddConfigPath("/etc/fh/")
+	if err := viper.ReadInConfig(); err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+			log.Fatalf("failed to read in config: %v\n", err)
+		}
+	}
+
+	config = cfg.Config{
+		Email:            viper.GetString("FHOME_EMAIL"),
+		CloudPassword:    viper.GetString("FHOME_CLOUD_PASSWORD"),
+		ResourcePassword: viper.GetString("FHOME_RESOURCE_PASSWORD"),
+	}
+
+	fmt.Println("using", viper.ConfigFileUsed())
+
+	err = config.Verify()
 	if err != nil {
-		log.Fatalf("failed to load env: %v\n", err)
+		log.Fatalf("failed to load config: %v\n", err)
 	}
 }
 

@@ -1,21 +1,21 @@
-// Package env provides common configuration provided with environment
+// Package cfg provides common configuration provided with environment
 // variables.
-package env
+package cfg
 
 import (
 	"fmt"
 	"os"
 )
 
-// Env represents all config vars from the .env file.
-type Env struct {
+// Config for the tool.
+type Config struct {
 	Email            string
 	CloudPassword    string
 	ResourcePassword string
 }
 
-// verify verifies that all env vars are set.
-func (e *Env) verify() error {
+// Verify verifies that all env vars are set.
+func (e *Config) Verify() error {
 	if e.Email == "" {
 		return fmt.Errorf("FHOME_EMAIL is not set")
 	}
@@ -32,7 +32,7 @@ func (e *Env) verify() error {
 }
 
 // Load loads env vars from shell to e.
-func (e *Env) Load() error {
+func (e *Config) Load() error {
 	email, ok := os.LookupEnv("FHOME_EMAIL")
 	if !ok {
 		return fmt.Errorf("FHOME_EMAIL is not set")
@@ -51,9 +51,9 @@ func (e *Env) Load() error {
 	}
 	e.ResourcePassword = resourcePassword
 
-	return e.verify()
+	return e.Verify()
 }
 
-func (e Env) String() string {
+func (e Config) String() string {
 	return fmt.Sprint("email:", e.Email, " password:", e.CloudPassword, "resourcePassword:", e.ResourcePassword)
 }
