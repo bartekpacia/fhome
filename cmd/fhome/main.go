@@ -13,7 +13,6 @@ var config cfg.Config
 
 func init() {
 	log.SetFlags(0)
-	var err error
 
 	viper.SetConfigName("config")
 	viper.SetConfigType("toml")
@@ -32,7 +31,7 @@ func init() {
 		ResourcePassword: viper.GetString("FHOME_RESOURCE_PASSWORD"),
 	}
 
-	err = config.Verify()
+	err := config.Verify()
 	if err != nil {
 		log.Fatalf("failed to load config: %v\n", err)
 	}
