@@ -1,6 +1,6 @@
 builds:
-  - binary: fh
-    main: ./cmd/fh
+  - binary: fhome
+    main: ./cmd/fhome
     goos:
       - windows
       - linux
@@ -12,7 +12,7 @@ builds:
 changelog:
   skip: true
 brews:
-  - name: fh
+  - name: fhome
     tap:
       owner: bartekpacia
       name: homebrew-tools

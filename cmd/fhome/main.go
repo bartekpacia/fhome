@@ -18,8 +18,8 @@ func init() {
 	viper.SetConfigName("config")
 	viper.SetConfigType("toml")
 	viper.AddConfigPath(".")
-	viper.AddConfigPath("$HOME/.config/fh/")
-	viper.AddConfigPath("/etc/fh/")
+	viper.AddConfigPath("$HOME/.config/fhome/")
+	viper.AddConfigPath("/etc/fhome/")
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
 			log.Fatalf("failed to read in config: %v\n", err)
@@ -40,7 +40,7 @@ func init() {
 
 func main() {
 	app := &cli.App{
-		Name:  "fh",
+		Name:  "fhome",
 		Usage: "Interact with smart home devices connected to F&Home",
 		Commands: []*cli.Command{
 			&configCommand,
@@ -48,7 +48,7 @@ func main() {
 			&objectCommand,
 		},
 		CommandNotFound: func(c *cli.Context, command string) {
-			log.Printf("invalid command '%s'. See 'fh --help'\n", command)
+			log.Printf("invalid command '%s'. See 'fhome --help'\n", command)
 		},
 	}
 

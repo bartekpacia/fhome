@@ -15,9 +15,9 @@ Then I started putting together this project.
 The `api` package implements the F&Home API. Use it if you want make your own
 program interacting with it.
 
-### CLI apps
+## CLI apps
 
-### fh
+### fhome
 
 Command-line program to easily interact with your F&Home-enabled devices.
 
@@ -26,19 +26,19 @@ Depends on the `api` package.
 **Build**
 
 ```console
-$ go build -o fh ./cmd/fh/*.go
+$ go build -o fhome ./cmd/fhome/*.go
 ```
 
 **Install**
 
 ```console
-$ go install ./cmd/fh
+$ go install ./cmd/fhome
 ```
 
 **Help**
 
 ```console
-$ fh help
+$ fhome help
 ```
 
 ### fhomed
