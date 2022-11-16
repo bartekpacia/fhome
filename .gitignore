@@ -1,10 +1,13 @@
+.DS_Store
 .env
-config.toml
-*.exe
-/db
-/fh
-/fhomed
-*.js
-config.json
-nohup.out
 .idea/
+config.toml
+
+# build artifacts
+/fhome
+/fhomed
+*.exe
+
+# generated
+/db
+nohup.out

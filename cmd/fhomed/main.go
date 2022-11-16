@@ -8,12 +8,10 @@ import (
 	"github.com/bartekpacia/fhome/api"
 	"github.com/bartekpacia/fhome/cfg"
 	"github.com/bartekpacia/fhome/cmd/fhomed/homekit"
+	"github.com/spf13/viper"
 )
 
-var (
-	client *api.Client
-	config cfg.Config
-)
+var config cfg.Config
 
 var (
 	PIN  string
@@ -24,17 +22,26 @@ func init() {
 	log.SetFlags(0)
 
 	flag.StringVar(&PIN, "pin", "00102003", "accessory PIN")
-	flag.StringVar(&Name, "name", "api", "accessory name")
+	flag.StringVar(&Name, "name", "fhomed", "accessory name")
 
-	var err error
-
-	client, err = api.NewClient()
-	if err != nil {
-		log.Fatalf("failed to create api api client: %v\n", err)
+	viper.SetConfigName("config")
+	viper.SetConfigType("toml")
+	viper.AddConfigPath(".")
+	viper.AddConfigPath("$HOME/.config/fhomed/")
+	viper.AddConfigPath("/etc/fhomed/")
+	if err := viper.ReadInConfig(); err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+			log.Fatalf("failed to read in config: %v\n", err)
+		}
 	}
 
-	config = cfg.Config{}
-	err = config.Load()
+	config = cfg.Config{
+		Email:            viper.GetString("FHOME_EMAIL"),
+		CloudPassword:    viper.GetString("FHOME_CLOUD_PASSWORD"),
+		ResourcePassword: viper.GetString("FHOME_RESOURCE_PASSWORD"),
+	}
+
+	err := config.Verify()
 	if err != nil {
 		log.Fatalf("failed to load env: %v\n", err)
 	}
@@ -42,7 +49,13 @@ func init() {
 
 func main() {
 	flag.Parse()
-	err := client.OpenCloudSession(config.Email, config.CloudPassword)
+
+	client, err := api.NewClient()
+	if err != nil {
+		log.Fatalf("failed to create api client: %v\n", err)
+	}
+
+	err = client.OpenCloudSession(config.Email, config.CloudPassword)
 	if err != nil {
 		log.Fatalf("failed to open client session: %v", err)
 	}

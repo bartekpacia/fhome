@@ -1,6 +1,18 @@
 builds:
-  - binary: fh
-    main: ./cmd/fh
+  - id: fhome
+    binary: fhome
+    main: ./cmd/fhome
+    goos:
+      - windows
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+
+  - id: fhomed
+    binary: fhomed
+    main: ./cmd/fhomed
     goos:
       - windows
       - linux
@@ -12,10 +24,18 @@ builds:
 changelog:
   skip: true
 brews:
-  - name: fh
+  - name: fhome
     tap:
       owner: bartekpacia
       name: homebrew-tools
     folder: Formula
     homepage: "https://github.com/bartekpacia/fhome"
-    description: "CLI app talking to F&Home API – a smart home system"
+    description: "Background daemon for F&Home"
+
+  - name: fhomed
+    tap:
+      owner: bartekpacia
+      name: homebrew-tools
+    folder: Formula
+    homepage: "https://github.com/bartekpacia/fhome"
+    description: "Interact with smart home devices connected to F&Home"
