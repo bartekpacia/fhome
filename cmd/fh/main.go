@@ -4,25 +4,16 @@ import (
 	"log"
 	"os"
 
-	"github.com/bartekpacia/fhome/api"
 	"github.com/bartekpacia/fhome/cfg"
 	"github.com/spf13/viper"
 	"github.com/urfave/cli/v2"
 )
 
-var (
-	client *api.Client
-	config cfg.Config
-)
+var config cfg.Config
 
 func init() {
 	log.SetFlags(0)
 	var err error
-
-	client, err = api.NewClient()
-	if err != nil {
-		log.Fatalf("failed to create api api client: %v\n", err)
-	}
 
 	viper.SetConfigName("config")
 	viper.SetConfigType("toml")

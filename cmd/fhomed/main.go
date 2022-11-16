@@ -30,7 +30,7 @@ func init() {
 
 	client, err = api.NewClient()
 	if err != nil {
-		log.Fatalf("failed to create api api client: %v\n", err)
+		log.Fatalf("failed to create api client: %v\n", err)
 	}
 
 	config = cfg.Config{}

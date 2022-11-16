@@ -49,13 +49,13 @@ type Client struct {
 func NewClient() (*Client, error) {
 	conn, err := connect()
 	if err != nil {
-		return nil, fmt.Errorf("create client: %v", err)
+		return nil, fmt.Errorf("connect: %v", err)
 	}
 
 	var response Response
 	err = conn.ReadJSON(&response)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read initial response")
+		return nil, fmt.Errorf("read json response: %v", err)
 	}
 
 	if response.ActionName != "authentication_required" || response.Status != "" {
@@ -378,9 +378,8 @@ func connect() (*websocket.Conn, error) {
 			for name, value := range resp.Header {
 				log.Printf("header %s: %s\n", name, value)
 			}
-		} else {
-			log.Println("no response")
 		}
+
 		return nil, fmt.Errorf("failed to dial: %v", err)
 	}
 
