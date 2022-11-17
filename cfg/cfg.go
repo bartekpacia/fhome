@@ -2,10 +2,7 @@
 // variables.
 package cfg
 
-import (
-	"fmt"
-	"os"
-)
+import "fmt"
 
 // Config for the tool.
 type Config struct {
@@ -31,29 +28,10 @@ func (e *Config) Verify() error {
 	return nil
 }
 
-// Load loads env vars from shell to e.
-func (e *Config) Load() error {
-	email, ok := os.LookupEnv("FHOME_EMAIL")
-	if !ok {
-		return fmt.Errorf("FHOME_EMAIL is not set")
-	}
-	e.Email = email
-
-	cloudPassword, ok := os.LookupEnv("FHOME_CLOUD_PASSWORD")
-	if !ok {
-		return fmt.Errorf("FHOME_CLOUD_PASSWORD is not set")
-	}
-	e.CloudPassword = cloudPassword
-
-	resourcePassword, ok := os.LookupEnv("FHOME_RESOURCE_PASSWORD")
-	if !ok {
-		return fmt.Errorf("FHOME_RESOURCE_PASSWORD is not set")
-	}
-	e.ResourcePassword = resourcePassword
-
-	return e.Verify()
-}
-
 func (e Config) String() string {
-	return fmt.Sprint("email:", e.Email, " password:", e.CloudPassword, "resourcePassword:", e.ResourcePassword)
+	return fmt.Sprint(
+		"email:", e.Email,
+		"password:", e.CloudPassword,
+		"resourcePassword:", e.ResourcePassword,
+	)
 }
