@@ -10,9 +10,9 @@ import (
 )
 
 func dumpConfig(cfg *api.Config) error {
-	file, err := os.Create("config.json")
+	file, err := os.Create("api_config.json")
 	if err != nil {
-		return fmt.Errorf("create config.json: %v", err)
+		return fmt.Errorf("create api_config.json: %v", err)
 	}
 
 	data, err := json.Marshal(cfg)

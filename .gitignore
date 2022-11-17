@@ -3,6 +3,7 @@
 .idea/
 config.toml
 
+
 # build artifacts
 /fhome
 /fhomed
@@ -11,3 +12,4 @@ config.toml
 # generated
 /db
 nohup.out
+api_config.json
