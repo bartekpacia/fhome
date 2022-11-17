@@ -5,12 +5,9 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-EnvironmentFile=/etc/fhomed/env
 ExecStart=/usr/local/bin/fhomed
 Restart=on-failure
 RestartSec=10s
-# StandardOutput=append:/home/pi/fhomed_stdout.log
-# StandardError=append:/home/pi/fhomed_stderr.log
 
 [Install]
 WantedBy=multi-user.target
