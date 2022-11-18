@@ -93,11 +93,6 @@ func main() {
 		log.Fatalf("failed to merge config: %v", err)
 	}
 
-	err = dumpConfig(config)
-	if err != nil {
-		log.Fatalf("failed to dump config: %v", err)
-	}
-
 	homekitClient := &homekit.Client{
 		PIN:  PIN,
 		Name: Name,

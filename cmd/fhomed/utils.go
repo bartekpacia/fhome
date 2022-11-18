@@ -1,32 +1,11 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
-	"os"
 
 	"github.com/bartekpacia/fhome/api"
 )
-
-func dumpConfig(cfg *api.Config) error {
-	file, err := os.Create("api_config.json")
-	if err != nil {
-		return fmt.Errorf("create api_config.json: %v", err)
-	}
-
-	data, err := json.Marshal(cfg)
-	if err != nil {
-		return fmt.Errorf("marshal config: %v", err)
-	}
-
-	_, err = file.Write(data)
-	if err != nil {
-		return fmt.Errorf("write config: %v", err)
-	}
-
-	return nil
-}
 
 func richPrint(cellValue *api.CellValue, cfg *api.Config) error {
 	cell, err := cfg.GetCellByID(cellValue.IntID())

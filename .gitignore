@@ -12,4 +12,3 @@ config.toml
 # generated
 /db
 nohup.out
-api_config.json
