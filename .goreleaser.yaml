@@ -7,12 +7,9 @@ builds:
       - linux
       - darwin
       - freebsd
-      - openbsd
-      - netbsd
     goarch:
       - amd64
       - arm64
-      - arm
 
   - id: fhomed
     binary: fhomed
@@ -22,12 +19,9 @@ builds:
       - linux
       - darwin
       - freebsd
-      - openbsd
-      - netbsd
     goarch:
       - amd64
       - arm64
-      - arm
 
 changelog:
   skip: true
@@ -37,13 +31,15 @@ brews:
       owner: bartekpacia
       name: homebrew-tools
     folder: Formula
-    homepage: "https://github.com/bartekpacia/fhome"
-    description: "Background daemon for F&Home"
+    homepage: https://github.com/bartekpacia/fhome
+    description: Background daemon for F&Home
+    license: MIT
 
   - name: fhomed
     tap:
       owner: bartekpacia
       name: homebrew-tools
     folder: Formula
-    homepage: "https://github.com/bartekpacia/fhome"
-    description: "Interact with smart home devices connected to F&Home"
+    homepage: https://github.com/bartekpacia/fhome
+    description: Interact with smart home devices connected to F&Home
+    license: MIT
