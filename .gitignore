@@ -12,3 +12,5 @@ config.toml
 # generated
 /db
 nohup.out
+
+dist/
