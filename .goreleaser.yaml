@@ -35,7 +35,7 @@ brews:
       name: homebrew-tools
     folder: Formula
     homepage: https://github.com/bartekpacia/fhome
-    description: Background daemon for F&Home
+    description: Interact with smart home devices connected to F&Home
     license: MIT
 
   - name: fhomed
@@ -46,5 +46,5 @@ brews:
       name: homebrew-tools
     folder: Formula
     homepage: https://github.com/bartekpacia/fhome
-    description: Interact with smart home devices connected to F&Home
+    description: Background daemon for F&Home
     license: MIT
