@@ -28,6 +28,8 @@ changelog:
 
 brews:
   - name: fhome
+    ids:
+      - fhome
     tap:
       owner: bartekpacia
       name: homebrew-tools
@@ -37,6 +39,8 @@ brews:
     license: MIT
 
   - name: fhomed
+    ids:
+      - fhomed
     tap:
       owner: bartekpacia
       name: homebrew-tools
