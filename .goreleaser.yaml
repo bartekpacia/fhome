@@ -23,6 +23,33 @@ builds:
       - amd64
       - arm64
 
+archives:
+  - id: fhome
+    name_template: 'fhome_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
+    builds:
+      - fhome
+    files:
+      - LICENSE
+      - README.md
+    wrap_in_directory: true
+    rlcp: true
+    format_overrides:
+      - goos: windows
+        format: zip
+
+  - id: fhomed
+    name_template: 'fhomed_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
+    builds:
+      - fhomed
+    files:
+      - LICENSE
+      - README.md
+    wrap_in_directory: true
+    rlcp: true
+    format_overrides:
+      - goos: windows
+        format: zip
+
 changelog:
   skip: true
 
