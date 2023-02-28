@@ -440,7 +440,6 @@ func MergeConfigs(userConfig *UserConfig, touchesResp *TouchesResponse) (*Config
 }
 
 func generateRequestToken() string {
-	rand.Seed(time.Now().UnixNano())
 	letters := []rune("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz")
 
 	b := make([]rune, 13)
@@ -464,6 +463,5 @@ func generatePasswordHash(password string) *string {
 
 // id generates a random int
 func id() int {
-	rand.Seed(time.Now().UnixNano())
 	return rand.Intn(100000)
 }
