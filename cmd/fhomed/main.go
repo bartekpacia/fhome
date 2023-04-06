@@ -195,6 +195,8 @@ func main() {
 	}
 }
 
+// Below is a hacky workaround for myself to open my gate from my phone.
+
 func serviceListener(client *api.Client) {
 	http.HandleFunc("/gate", func(w http.ResponseWriter, r *http.Request) {
 		var result string
