@@ -91,7 +91,6 @@ func (c *Client) SetUp(cfg *api.Config) (*Home, error) {
 				if err != nil {
 					return nil, fmt.Errorf("failed to remap temperature: %v", err)
 				}
-				fmt.Printf("%#v: %f\n", cell.Name, currentTemp)
 
 				a.Thermostat.CurrentTemperature.Val = currentTemp
 

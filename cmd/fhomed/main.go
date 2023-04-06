@@ -149,7 +149,7 @@ func main() {
 		}
 
 		cellValue := resp.Response.CellValues[0]
-		richPrint(&cellValue, config)
+		printCellData(&cellValue, config)
 
 		// handle lightbulb
 		{
