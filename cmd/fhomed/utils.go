@@ -2,16 +2,15 @@ package main
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/bartekpacia/fhome/api"
 	"golang.org/x/exp/slog"
 )
 
-var (
-	jsonHandler = slog.NewJSONHandler(os.Stdout)
-	logger      = slog.New(jsonHandler)
-)
+// var (
+// 	jsonHandler = slog.NewJSONHandler(os.Stdout)
+// 	jsonLogger  = slog.New(jsonHandler)
+// )
 
 // printCellData prints the values of its arguments into a JSON object.
 func printCellData(cellValue *api.CellValue, cfg *api.Config) error {

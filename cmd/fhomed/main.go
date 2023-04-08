@@ -6,14 +6,21 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"time"
 
 	"github.com/bartekpacia/fhome/api"
 	"github.com/bartekpacia/fhome/cfg"
 	"github.com/bartekpacia/fhome/cmd/fhomed/homekit"
+	"github.com/lmittmann/tint"
 	"github.com/spf13/viper"
+	"golang.org/x/exp/slog"
 )
 
-var config cfg.Config
+var (
+	config cfg.Config
+	logger *slog.Logger
+)
 
 var (
 	PIN  string
@@ -22,6 +29,8 @@ var (
 
 func init() {
 	log.SetFlags(0)
+
+	logger = slog.New(tint.Options{TimeFormat: time.TimeOnly}.NewHandler(os.Stderr))
 
 	flag.StringVar(&PIN, "pin", "00102003", "accessory PIN")
 	flag.StringVar(&Name, "name", "fhomed", "accessory name")
@@ -54,83 +63,129 @@ func main() {
 
 	client, err := api.NewClient()
 	if err != nil {
-		log.Fatalf("failed to create api client: %v\n", err)
+		logger.Error("failed to create api client", slog.Any("err", err))
+		os.Exit(1)
 	}
 
 	err = client.OpenCloudSession(config.Email, config.CloudPassword)
 	if err != nil {
-		log.Fatalf("failed to open client session: %v", err)
+		logger.Error("failed to open client session", slog.Any("error", err))
+		os.Exit(1)
+	} else {
+		logger.Info("opened client session", slog.String("email", config.Email))
 	}
 
-	log.Println("opened client session")
-
-	_, err = client.GetMyResources()
+	myResources, err := client.GetMyResources()
 	if err != nil {
-		log.Fatalf("failed to get my resources: %v", err)
+		logger.Error("failed to get my resources", slog.Any("error", err))
+		os.Exit(1)
+	} else {
+		logger.Info("got resource",
+			slog.String("name", myResources.FriendlyName0),
+			slog.String("id", myResources.UniqueID0),
+			slog.String("type", myResources.ResourceType0),
+		)
 	}
-
-	log.Println("got my resources")
 
 	err = client.OpenResourceSession(config.ResourcePassword)
 	if err != nil {
-		log.Fatalf("failed to open client to resource session: %v", err)
+		logger.Error("failed to open client to resource session", slog.Any("error", err))
+		os.Exit(1)
 	}
 
-	log.Println("opened client to resource session")
+	logger.Info("opened client to resource session")
 
 	userConfig, err := client.GetUserConfig()
 	if err != nil {
-		log.Fatalf("failed to get user config: %v", err)
+		logger.Error("failed to get user config", slog.Any("error", err))
+		os.Exit(1)
+	} else {
+		logger.Info("got user config",
+			slog.Int("panels", len(userConfig.Panels)),
+			slog.Int("cells", len(userConfig.Cells)),
+		)
 	}
 
-	log.Println("got user config")
-
-	touchesResp, err := client.GetSystemConfig()
+	systemConfig, err := client.GetSystemConfig()
 	if err != nil {
-		log.Fatalf("failed to touches: %v", err)
+		logger.Error("failed to get system config", slog.Any("error", err))
+		os.Exit(1)
+	} else {
+		logger.Info("got system config",
+			slog.Int("cells", len(systemConfig.Response.MobileDisplayProperties.Cells)),
+			slog.String("source", systemConfig.Source),
+		)
 	}
 
-	config, err := api.MergeConfigs(userConfig, touchesResp)
+	config, err := api.MergeConfigs(userConfig, systemConfig)
 	if err != nil {
-		log.Fatalf("failed to merge config: %v", err)
+		logger.Error("failed to merge configs", slog.Any("error", err))
+		os.Exit(1)
 	}
 
 	go serviceListener(client)
 
+	// Here we listen to HomeKit events and convert them to API calls to F&Home
+	// to keep the state in sync.
 	homekitClient := &homekit.Client{
 		PIN:  PIN,
 		Name: Name,
 		OnLightbulbUpdate: func(ID int, on bool) {
 			err := client.SendEvent(ID, api.ValueToggle)
 			if err != nil {
-				log.Fatalf("failed to send event to %d: %v\n", ID, err)
+				logger.Error("failed to send event",
+					slog.Any("error", err),
+					slog.Int("object_id", ID),
+					slog.String("value", api.ValueToggle),
+				)
+				os.Exit(1)
 			}
 		},
 		OnLEDUpdate: func(ID int, brightness int) {
-			err := client.SendEvent(ID, api.MapLighting(brightness))
+			value := api.MapLighting(brightness)
+			err := client.SendEvent(ID, value)
 			if err != nil {
-				log.Fatalf("failed to send event to %d: %v\n", ID, err)
+				logger.Error("failed to send event",
+					slog.Any("error", err),
+					slog.Int("object_id", ID),
+					slog.String("value", value),
+				)
+				os.Exit(1)
 			}
 		},
 		OnGarageDoorUpdate: func(ID int) {
 			err := client.SendEvent(ID, api.ValueToggle)
 			if err != nil {
-				log.Fatalf("failed to send event to %d: %v\n", ID, err)
+				logger.Error("failed to send event",
+					slog.Any("error", err),
+					slog.Int("object_id", ID),
+					slog.String("value", api.ValueToggle),
+				)
+				os.Exit(1)
 			}
 		},
 		OnThermostatUpdate: func(ID int, temperature float64) {
-			err = client.SendEvent(ID, api.EncodeTemperature(temperature))
+			value := api.EncodeTemperature(temperature)
+			err = client.SendEvent(ID, value)
 			if err != nil {
-				log.Fatalf("failed to send event to %d: %v\n", ID, err)
+				logger.Error("failed to send event",
+					slog.Any("error", err),
+					slog.Int("object_id", ID),
+					slog.String("value", value),
+				)
+				os.Exit(1)
 			}
 		},
 	}
 
 	home, err := homekitClient.SetUp(config)
 	if err != nil {
-		log.Fatalf("failed to set up homekit: %v", err)
+		logger.Error("failed to set up homekit", slog.Any("error", err))
+		os.Exit(1)
 	}
 
+	// In this loop, we listen to events from F&Home and send updates to HomeKit
+	// to keep the state in sync.
 	for {
 		msg, err := client.ReadMessage(api.ActionStatusTouchesChanged, "")
 		if err != nil {

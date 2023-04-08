@@ -374,6 +374,7 @@ func connect() (*websocket.Conn, error) {
 	conn, resp, err := Dialer.Dial(APIURL, nil)
 	if err != nil {
 		if resp != nil {
+			log.Println("failed to dial")
 			log.Printf("status: %s, headers: %d\n", resp.Status, len(resp.Header))
 			for name, value := range resp.Header {
 				log.Printf("header %s: %s\n", name, value)
