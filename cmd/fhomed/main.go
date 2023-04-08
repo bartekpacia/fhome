@@ -137,29 +137,30 @@ func main() {
 		PIN:  pin,
 		Name: name,
 		OnLightbulbUpdate: func(ID int, on bool) {
+			value := api.ValueToggle
 			attrs := []slog.Attr{
 				slog.Int("object_id", ID),
-				slog.String("value", api.ValueToggle),
-				slog.String("trigger", "homekit"),
+				slog.String("value", value),
+				slog.String("callback", "OnLightbulbUpdate"),
 			}
 
-			err := client.SendEvent(ID, api.ValueToggle)
+			err := client.SendEvent(ID, value)
 			if err != nil {
 				attrs = append(attrs, slog.Any("error", err))
 				logger.LogAttrs(context.TODO(), slog.LevelError, "failed to send event", attrs...)
-				// os.Exit(1)
+				os.Exit(1)
 			} else {
 				logger.LogAttrs(context.TODO(), slog.LevelInfo, "sent event", attrs...)
 			}
 		},
 		OnLEDUpdate: func(ID int, brightness int) {
+			value := api.MapLighting(brightness)
 			attrs := []slog.Attr{
 				slog.Int("object_id", ID),
-				slog.String("value", api.ValueToggle),
-				slog.String("trigger", "homekit"),
+				slog.String("value", value),
+				slog.String("callback", "OnLEDUpdate"),
 			}
 
-			value := api.MapLighting(brightness)
 			err := client.SendEvent(ID, value)
 			if err != nil {
 				attrs = append(attrs, slog.Any("error", err))
@@ -170,26 +171,37 @@ func main() {
 			}
 		},
 		OnGarageDoorUpdate: func(ID int) {
-			err := client.SendEvent(ID, api.ValueToggle)
+			value := api.ValueToggle
+			attrs := []slog.Attr{
+				slog.Int("object_id", ID),
+				slog.String("value", value),
+				slog.String("callback", "OnGarageDoorUpdate"),
+			}
+
+			err := client.SendEvent(ID, value)
 			if err != nil {
-				logger.Error("failed to send event",
-					slog.Any("error", err),
-					slog.Int("object_id", ID),
-					slog.String("value", api.ValueToggle),
-				)
+				attrs = append(attrs, slog.Any("error", err))
+				logger.LogAttrs(context.TODO(), slog.LevelError, "failed to send event", attrs...)
 				os.Exit(1)
+			} else {
+				logger.LogAttrs(context.TODO(), slog.LevelInfo, "sent event", attrs...)
 			}
 		},
 		OnThermostatUpdate: func(ID int, temperature float64) {
 			value := api.EncodeTemperature(temperature)
+			attrs := []slog.Attr{
+				slog.Int("object_id", ID),
+				slog.String("value", value),
+				slog.String("callback", "OnGarageDoorUpdate"),
+			}
+
 			err = client.SendEvent(ID, value)
 			if err != nil {
-				logger.Error("failed to send event",
-					slog.Any("error", err),
-					slog.Int("object_id", ID),
-					slog.String("value", value),
-				)
+				attrs = append(attrs, slog.Any("error", err))
+				logger.LogAttrs(context.TODO(), slog.LevelError, "failed to send event", attrs...)
 				os.Exit(1)
+			} else {
+				logger.LogAttrs(context.TODO(), slog.LevelInfo, "sent event", attrs...)
 			}
 		},
 	}
