@@ -303,8 +303,6 @@ func (c *Client) ReadAnyMessage() (*Message, error) {
 //
 // Events are named "Xevents" in F&Home's terminology.
 func (c *Client) SendEvent(cellID int, value string) error {
-	log.Println("sending event to cell with id", cellID, "with value", value)
-
 	actionName := ActionEvent
 	token := generateRequestToken()
 

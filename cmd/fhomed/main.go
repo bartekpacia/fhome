@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -23,17 +24,24 @@ var (
 )
 
 var (
-	PIN  string
-	Name string
+	pin        string
+	name       string
+	jsonOutput bool
 )
 
 func init() {
 	log.SetFlags(0)
 
-	logger = slog.New(tint.Options{TimeFormat: time.TimeOnly}.NewHandler(os.Stderr))
+	flag.StringVar(&pin, "pin", "00102003", "accessory PIN")
+	flag.StringVar(&name, "name", "fhomed", "accessory name")
+	flag.BoolVar(&jsonOutput, "json", false, "output logs in JSON")
+	flag.Parse()
 
-	flag.StringVar(&PIN, "pin", "00102003", "accessory PIN")
-	flag.StringVar(&Name, "name", "fhomed", "accessory name")
+	if jsonOutput {
+		logger = slog.New(slog.HandlerOptions{Level: slog.LevelDebug}.NewJSONHandler(os.Stderr))
+	} else {
+		logger = slog.New(tint.Options{Level: slog.LevelDebug, TimeFormat: time.TimeOnly}.NewHandler(os.Stderr))
+	}
 
 	viper.SetConfigName("config")
 	viper.SetConfigType("toml")
@@ -59,8 +67,6 @@ func init() {
 }
 
 func main() {
-	flag.Parse()
-
 	client, err := api.NewClient()
 	if err != nil {
 		logger.Error("failed to create api client", slog.Any("err", err))
@@ -128,29 +134,39 @@ func main() {
 	// Here we listen to HomeKit events and convert them to API calls to F&Home
 	// to keep the state in sync.
 	homekitClient := &homekit.Client{
-		PIN:  PIN,
-		Name: Name,
+		PIN:  pin,
+		Name: name,
 		OnLightbulbUpdate: func(ID int, on bool) {
+			attrs := []slog.Attr{
+				slog.Int("object_id", ID),
+				slog.String("value", api.ValueToggle),
+				slog.String("trigger", "homekit"),
+			}
+
 			err := client.SendEvent(ID, api.ValueToggle)
 			if err != nil {
-				logger.Error("failed to send event",
-					slog.Any("error", err),
-					slog.Int("object_id", ID),
-					slog.String("value", api.ValueToggle),
-				)
-				os.Exit(1)
+				attrs = append(attrs, slog.Any("error", err))
+				logger.LogAttrs(context.TODO(), slog.LevelError, "failed to send event", attrs...)
+				// os.Exit(1)
+			} else {
+				logger.LogAttrs(context.TODO(), slog.LevelInfo, "sent event", attrs...)
 			}
 		},
 		OnLEDUpdate: func(ID int, brightness int) {
+			attrs := []slog.Attr{
+				slog.Int("object_id", ID),
+				slog.String("value", api.ValueToggle),
+				slog.String("trigger", "homekit"),
+			}
+
 			value := api.MapLighting(brightness)
 			err := client.SendEvent(ID, value)
 			if err != nil {
-				logger.Error("failed to send event",
-					slog.Any("error", err),
-					slog.Int("object_id", ID),
-					slog.String("value", value),
-				)
+				attrs = append(attrs, slog.Any("error", err))
+				logger.LogAttrs(context.TODO(), slog.LevelError, "failed to send event", attrs...)
 				os.Exit(1)
+			} else {
+				logger.LogAttrs(context.TODO(), slog.LevelInfo, "sent event", attrs...)
 			}
 		},
 		OnGarageDoorUpdate: func(ID int) {
