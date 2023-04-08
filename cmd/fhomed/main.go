@@ -189,14 +189,16 @@ func main() {
 	for {
 		msg, err := client.ReadMessage(api.ActionStatusTouchesChanged, "")
 		if err != nil {
-			log.Fatalln("failed to read message:", err)
+			logger.Error("failed to read message", slog.Any("error", err))
+			os.Exit(1)
 		}
 
 		var resp api.StatusTouchesChangedResponse
 
 		err = json.Unmarshal(msg.Raw, &resp)
 		if err != nil {
-			log.Fatalln("failed to unmarshal message:", err)
+			logger.Error("failed to unmarshal message", slog.Any("error", err))
+			os.Exit(1)
 		}
 
 		if len(resp.Response.CellValues) == 0 {
@@ -224,13 +226,21 @@ func main() {
 			if accessory != nil {
 				newValue, err := api.RemapLighting(cellValue.Value)
 				if err != nil {
-					log.Printf("failed to remap lightning: %v\n", err)
+					logger.Error("failed to remap lightning value",
+						slog.Any("error", err),
+						slog.String("value", cellValue.Value),
+						slog.Int("object_id", cellValue.IntID()),
+					)
 				}
 
 				accessory.Lightbulb.On.SetValue(newValue > 0)
 				err = accessory.Lightbulb.Brightness.SetValue(newValue)
 				if err != nil {
-					log.Printf("failed to set brightness to %d: %v\n", newValue, err)
+					logger.Error("failed to set brightness",
+						slog.Any("error", err),
+						slog.Int("value", newValue),
+						slog.Int("object_id", cellValue.IntID()),
+					)
 				}
 			}
 		}
@@ -241,7 +251,11 @@ func main() {
 			if accessory != nil {
 				newValue, err := api.DecodeTemperatureValue(cellValue.Value)
 				if err != nil {
-					log.Printf("failed to remap temperature: %v\n", err)
+					logger.Error("failed to remap temperature",
+						slog.Any("error", err),
+						slog.String("value", cellValue.Value),
+						slog.Int("object_id", cellValue.IntID()),
+					)
 				}
 
 				accessory.Thermostat.TargetTemperature.SetValue(newValue)

@@ -254,7 +254,8 @@ func (c *Client) GetUserConfig() (*UserConfig, error) {
 // ReadMessage waits until the client receives message with matching actionName
 // and requestToken.
 //
-// If requestToken is empty, then it is ignored.
+// If requestToken is empty, then it is ignored. In such case, the first message
+// with matching actionName is returned.
 //
 // If its status is not "ok", it returns an error.
 func (c *Client) ReadMessage(actionName string, requestToken string) (*Message, error) {
@@ -347,13 +348,14 @@ func (c *Client) read() <-chan Message {
 // subscribers.
 func (c *Client) reader() {
 	for {
-		// read new message
+		// read a new message in JSON
 		_, data, err := c.mainConn.ReadMessage()
 		if err != nil {
 			log.Fatalln("failed to read json from conn2:", err)
 		}
 
 		// unmarshal it
+
 		var msg Message
 		err = json.Unmarshal(data, &msg)
 		if err != nil {
