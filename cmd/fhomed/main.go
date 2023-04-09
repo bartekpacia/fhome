@@ -15,10 +15,7 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-var (
-	config cfg.Config
-	logger *slog.Logger
-)
+var config cfg.Config
 
 func main() {
 	app := &cli.App{
@@ -58,7 +55,7 @@ func main() {
 
 	err := app.Run(os.Args)
 	if err != nil {
-		logger.Error("exit", slog.Any("error", err))
+		slog.Error("exit", slog.Any("error", err))
 		os.Exit(1)
 	}
 }
@@ -72,25 +69,27 @@ func before(c *cli.Context) error {
 	}
 
 	if c.Bool("jsonl") {
-		logger = slog.New(slog.HandlerOptions{Level: level}.NewJSONHandler(os.Stdout))
+		logger := slog.New(slog.HandlerOptions{Level: level}.NewJSONHandler(os.Stdout))
+		slog.SetDefault(logger)
 	} else {
-		logger = slog.New(tint.Options{Level: level, TimeFormat: time.TimeOnly}.NewHandler(os.Stdout))
+		logger := slog.New(tint.Options{Level: level, TimeFormat: time.TimeOnly}.NewHandler(os.Stdout))
+		slog.SetDefault(logger)
 	}
 
 	k := koanf.New(".")
 	p := "/etc/fhomed/config.toml"
 	if err := k.Load(file.Provider(p), toml.Parser()); err != nil {
-		logger.Debug("failed to load config file", slog.Any("error", err))
+		slog.Debug("failed to load config file", slog.Any("error", err))
 	} else {
-		logger.Debug("loaded config file", slog.String("path", p))
+		slog.Debug("loaded config file", slog.String("path", p))
 	}
 
 	homeDir, _ := os.UserHomeDir()
 	p = fmt.Sprintf("%s/.config/fhomed/config.toml", homeDir)
 	if err := k.Load(file.Provider(p), toml.Parser()); err != nil {
-		logger.Debug("failed to load config file", slog.Any("error", err))
+		slog.Debug("failed to load config file", slog.Any("error", err))
 	} else {
-		logger.Debug("loaded config file", slog.String("path", p))
+		slog.Debug("loaded config file", slog.String("path", p))
 	}
 
 	config = cfg.Config{

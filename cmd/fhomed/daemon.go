@@ -13,24 +13,24 @@ import (
 func daemon(name, pin string) error {
 	client, err := api.NewClient()
 	if err != nil {
-		logger.Error("failed to create api client", slog.Any("err", err))
+		slog.Error("failed to create api client", slog.Any("err", err))
 		return err
 	}
 
 	err = client.OpenCloudSession(config.Email, config.CloudPassword)
 	if err != nil {
-		logger.Error("failed to open client session", slog.Any("error", err))
+		slog.Error("failed to open client session", slog.Any("error", err))
 		return err
 	} else {
-		logger.Info("opened client session", slog.String("email", config.Email))
+		slog.Info("opened client session", slog.String("email", config.Email))
 	}
 
 	myResources, err := client.GetMyResources()
 	if err != nil {
-		logger.Error("failed to get my resources", slog.Any("error", err))
+		slog.Error("failed to get my resources", slog.Any("error", err))
 		return err
 	} else {
-		logger.Info("got resource",
+		slog.Info("got resource",
 			slog.String("name", myResources.FriendlyName0),
 			slog.String("id", myResources.UniqueID0),
 			slog.String("type", myResources.ResourceType0),
@@ -39,18 +39,18 @@ func daemon(name, pin string) error {
 
 	err = client.OpenResourceSession(config.ResourcePassword)
 	if err != nil {
-		logger.Error("failed to open client to resource session", slog.Any("error", err))
+		slog.Error("failed to open client to resource session", slog.Any("error", err))
 		return err
 	}
 
-	logger.Info("opened client to resource session")
+	slog.Info("opened client to resource session")
 
 	userConfig, err := client.GetUserConfig()
 	if err != nil {
-		logger.Error("failed to get user config", slog.Any("error", err))
+		slog.Error("failed to get user config", slog.Any("error", err))
 		return err
 	} else {
-		logger.Info("got user config",
+		slog.Info("got user config",
 			slog.Int("panels", len(userConfig.Panels)),
 			slog.Int("cells", len(userConfig.Cells)),
 		)
@@ -58,10 +58,10 @@ func daemon(name, pin string) error {
 
 	systemConfig, err := client.GetSystemConfig()
 	if err != nil {
-		logger.Error("failed to get system config", slog.Any("error", err))
+		slog.Error("failed to get system config", slog.Any("error", err))
 		return err
 	} else {
-		logger.Info("got system config",
+		slog.Info("got system config",
 			slog.Int("cells", len(systemConfig.Response.MobileDisplayProperties.Cells)),
 			slog.String("source", systemConfig.Source),
 		)
@@ -69,7 +69,7 @@ func daemon(name, pin string) error {
 
 	config, err := api.MergeConfigs(userConfig, systemConfig)
 	if err != nil {
-		logger.Error("failed to merge configs", slog.Any("error", err))
+		slog.Error("failed to merge configs", slog.Any("error", err))
 		return err
 	}
 
@@ -91,10 +91,10 @@ func daemon(name, pin string) error {
 			err := client.SendEvent(ID, value)
 			if err != nil {
 				attrs = append(attrs, slog.Any("error", err))
-				logger.LogAttrs(context.TODO(), slog.LevelError, "failed to send event", attrs...)
+				slog.LogAttrs(context.TODO(), slog.LevelError, "failed to send event", attrs...)
 				os.Exit(1)
 			} else {
-				logger.LogAttrs(context.TODO(), slog.LevelInfo, "sent event", attrs...)
+				slog.LogAttrs(context.TODO(), slog.LevelInfo, "sent event", attrs...)
 			}
 		},
 		OnLEDUpdate: func(ID int, brightness int) {
@@ -108,10 +108,10 @@ func daemon(name, pin string) error {
 			err := client.SendEvent(ID, value)
 			if err != nil {
 				attrs = append(attrs, slog.Any("error", err))
-				logger.LogAttrs(context.TODO(), slog.LevelError, "failed to send event", attrs...)
+				slog.LogAttrs(context.TODO(), slog.LevelError, "failed to send event", attrs...)
 				os.Exit(1)
 			} else {
-				logger.LogAttrs(context.TODO(), slog.LevelInfo, "sent event", attrs...)
+				slog.LogAttrs(context.TODO(), slog.LevelInfo, "sent event", attrs...)
 			}
 		},
 		OnGarageDoorUpdate: func(ID int) {
@@ -125,10 +125,10 @@ func daemon(name, pin string) error {
 			err := client.SendEvent(ID, value)
 			if err != nil {
 				attrs = append(attrs, slog.Any("error", err))
-				logger.LogAttrs(context.TODO(), slog.LevelError, "failed to send event", attrs...)
+				slog.LogAttrs(context.TODO(), slog.LevelError, "failed to send event", attrs...)
 				os.Exit(1)
 			} else {
-				logger.LogAttrs(context.TODO(), slog.LevelInfo, "sent event", attrs...)
+				slog.LogAttrs(context.TODO(), slog.LevelInfo, "sent event", attrs...)
 			}
 		},
 		OnThermostatUpdate: func(ID int, temperature float64) {
@@ -142,17 +142,17 @@ func daemon(name, pin string) error {
 			err = client.SendEvent(ID, value)
 			if err != nil {
 				attrs = append(attrs, slog.Any("error", err))
-				logger.LogAttrs(context.TODO(), slog.LevelError, "failed to send event", attrs...)
+				slog.LogAttrs(context.TODO(), slog.LevelError, "failed to send event", attrs...)
 				os.Exit(1)
 			} else {
-				logger.LogAttrs(context.TODO(), slog.LevelInfo, "sent event", attrs...)
+				slog.LogAttrs(context.TODO(), slog.LevelInfo, "sent event", attrs...)
 			}
 		},
 	}
 
 	home, err := homekitClient.SetUp(config)
 	if err != nil {
-		logger.Error("failed to set up homekit", slog.Any("error", err))
+		slog.Error("failed to set up homekit", slog.Any("error", err))
 		return err
 	}
 
@@ -161,7 +161,7 @@ func daemon(name, pin string) error {
 	for {
 		msg, err := client.ReadMessage(api.ActionStatusTouchesChanged, "")
 		if err != nil {
-			logger.Error("failed to read message", slog.Any("error", err))
+			slog.Error("failed to read message", slog.Any("error", err))
 			return err
 		}
 
@@ -169,7 +169,7 @@ func daemon(name, pin string) error {
 
 		err = json.Unmarshal(msg.Raw, &resp)
 		if err != nil {
-			logger.Error("failed to unmarshal message", slog.Any("error", err))
+			slog.Error("failed to unmarshal message", slog.Any("error", err))
 			return err
 		}
 
@@ -198,7 +198,7 @@ func daemon(name, pin string) error {
 			if accessory != nil {
 				newValue, err := api.RemapLighting(cellValue.Value)
 				if err != nil {
-					logger.Error("failed to remap lightning value",
+					slog.Error("failed to remap lightning value",
 						slog.Any("error", err),
 						slog.String("value", cellValue.Value),
 						slog.Int("object_id", cellValue.IntID()),
@@ -208,7 +208,7 @@ func daemon(name, pin string) error {
 				accessory.Lightbulb.On.SetValue(newValue > 0)
 				err = accessory.Lightbulb.Brightness.SetValue(newValue)
 				if err != nil {
-					logger.Error("failed to set brightness",
+					slog.Error("failed to set brightness",
 						slog.Any("error", err),
 						slog.Int("value", newValue),
 						slog.Int("object_id", cellValue.IntID()),
@@ -223,7 +223,7 @@ func daemon(name, pin string) error {
 			if accessory != nil {
 				newValue, err := api.DecodeTemperatureValue(cellValue.Value)
 				if err != nil {
-					logger.Error("failed to remap temperature",
+					slog.Error("failed to remap temperature",
 						slog.Any("error", err),
 						slog.String("value", cellValue.Value),
 						slog.Int("object_id", cellValue.IntID()),
