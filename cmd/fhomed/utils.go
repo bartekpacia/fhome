@@ -14,7 +14,7 @@ func printCellData(cellValue *api.CellValue, cfg *api.Config) error {
 		return fmt.Errorf("failed to get cell with ID %d: %v", cellValue.IntID(), err)
 	}
 
-	logger.Info("cell event received",
+	logger.Info("object state changed",
 		slog.Int("id", cell.ID),
 		slog.String("name", cell.Name),
 		slog.String("desc", cell.Desc),
