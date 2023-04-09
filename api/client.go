@@ -254,7 +254,8 @@ func (c *Client) GetUserConfig() (*UserConfig, error) {
 // ReadMessage waits until the client receives message with matching actionName
 // and requestToken.
 //
-// If requestToken is empty, then it is ignored.
+// If requestToken is empty, then it is ignored. In such case, the first message
+// with matching actionName is returned.
 //
 // If its status is not "ok", it returns an error.
 func (c *Client) ReadMessage(actionName string, requestToken string) (*Message, error) {
@@ -302,8 +303,6 @@ func (c *Client) ReadAnyMessage() (*Message, error) {
 //
 // Events are named "Xevents" in F&Home's terminology.
 func (c *Client) SendEvent(cellID int, value string) error {
-	log.Println("sending event to cell with id", cellID, "with value", value)
-
 	actionName := ActionEvent
 	token := generateRequestToken()
 
@@ -347,13 +346,14 @@ func (c *Client) read() <-chan Message {
 // subscribers.
 func (c *Client) reader() {
 	for {
-		// read new message
+		// read a new message in JSON
 		_, data, err := c.mainConn.ReadMessage()
 		if err != nil {
 			log.Fatalln("failed to read json from conn2:", err)
 		}
 
 		// unmarshal it
+
 		var msg Message
 		err = json.Unmarshal(data, &msg)
 		if err != nil {
@@ -374,6 +374,7 @@ func connect() (*websocket.Conn, error) {
 	conn, resp, err := Dialer.Dial(APIURL, nil)
 	if err != nil {
 		if resp != nil {
+			log.Println("failed to dial")
 			log.Printf("status: %s, headers: %d\n", resp.Status, len(resp.Header))
 			for name, value := range resp.Header {
 				log.Printf("header %s: %s\n", name, value)

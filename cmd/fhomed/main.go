@@ -1,30 +1,47 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"time"
 
 	"github.com/bartekpacia/fhome/api"
 	"github.com/bartekpacia/fhome/cfg"
 	"github.com/bartekpacia/fhome/cmd/fhomed/homekit"
+	"github.com/lmittmann/tint"
 	"github.com/spf13/viper"
+	"golang.org/x/exp/slog"
 )
 
-var config cfg.Config
+var (
+	config cfg.Config
+	logger *slog.Logger
+)
 
 var (
-	PIN  string
-	Name string
+	pin        string
+	name       string
+	jsonOutput bool
 )
 
 func init() {
 	log.SetFlags(0)
 
-	flag.StringVar(&PIN, "pin", "00102003", "accessory PIN")
-	flag.StringVar(&Name, "name", "fhomed", "accessory name")
+	flag.StringVar(&pin, "pin", "00102003", "accessory PIN")
+	flag.StringVar(&name, "name", "fhomed", "accessory name")
+	flag.BoolVar(&jsonOutput, "json", false, "output logs in JSON")
+	flag.Parse()
+
+	if jsonOutput {
+		logger = slog.New(slog.HandlerOptions{Level: slog.LevelDebug}.NewJSONHandler(os.Stderr))
+	} else {
+		logger = slog.New(tint.Options{Level: slog.LevelDebug, TimeFormat: time.TimeOnly}.NewHandler(os.Stderr))
+	}
 
 	viper.SetConfigName("config")
 	viper.SetConfigType("toml")
@@ -50,98 +67,166 @@ func init() {
 }
 
 func main() {
-	flag.Parse()
-
 	client, err := api.NewClient()
 	if err != nil {
-		log.Fatalf("failed to create api client: %v\n", err)
+		logger.Error("failed to create api client", slog.Any("err", err))
+		os.Exit(1)
 	}
 
 	err = client.OpenCloudSession(config.Email, config.CloudPassword)
 	if err != nil {
-		log.Fatalf("failed to open client session: %v", err)
+		logger.Error("failed to open client session", slog.Any("error", err))
+		os.Exit(1)
+	} else {
+		logger.Info("opened client session", slog.String("email", config.Email))
 	}
 
-	log.Println("opened client session")
-
-	_, err = client.GetMyResources()
+	myResources, err := client.GetMyResources()
 	if err != nil {
-		log.Fatalf("failed to get my resources: %v", err)
+		logger.Error("failed to get my resources", slog.Any("error", err))
+		os.Exit(1)
+	} else {
+		logger.Info("got resource",
+			slog.String("name", myResources.FriendlyName0),
+			slog.String("id", myResources.UniqueID0),
+			slog.String("type", myResources.ResourceType0),
+		)
 	}
-
-	log.Println("got my resources")
 
 	err = client.OpenResourceSession(config.ResourcePassword)
 	if err != nil {
-		log.Fatalf("failed to open client to resource session: %v", err)
+		logger.Error("failed to open client to resource session", slog.Any("error", err))
+		os.Exit(1)
 	}
 
-	log.Println("opened client to resource session")
+	logger.Info("opened client to resource session")
 
 	userConfig, err := client.GetUserConfig()
 	if err != nil {
-		log.Fatalf("failed to get user config: %v", err)
+		logger.Error("failed to get user config", slog.Any("error", err))
+		os.Exit(1)
+	} else {
+		logger.Info("got user config",
+			slog.Int("panels", len(userConfig.Panels)),
+			slog.Int("cells", len(userConfig.Cells)),
+		)
 	}
 
-	log.Println("got user config")
-
-	touchesResp, err := client.GetSystemConfig()
+	systemConfig, err := client.GetSystemConfig()
 	if err != nil {
-		log.Fatalf("failed to touches: %v", err)
+		logger.Error("failed to get system config", slog.Any("error", err))
+		os.Exit(1)
+	} else {
+		logger.Info("got system config",
+			slog.Int("cells", len(systemConfig.Response.MobileDisplayProperties.Cells)),
+			slog.String("source", systemConfig.Source),
+		)
 	}
 
-	config, err := api.MergeConfigs(userConfig, touchesResp)
+	config, err := api.MergeConfigs(userConfig, systemConfig)
 	if err != nil {
-		log.Fatalf("failed to merge config: %v", err)
+		logger.Error("failed to merge configs", slog.Any("error", err))
+		os.Exit(1)
 	}
 
 	go serviceListener(client)
 
+	// Here we listen to HomeKit events and convert them to API calls to F&Home
+	// to keep the state in sync.
 	homekitClient := &homekit.Client{
-		PIN:  PIN,
-		Name: Name,
+		PIN:  pin,
+		Name: name,
 		OnLightbulbUpdate: func(ID int, on bool) {
-			err := client.SendEvent(ID, api.ValueToggle)
+			value := api.ValueToggle
+			attrs := []slog.Attr{
+				slog.Int("object_id", ID),
+				slog.String("value", value),
+				slog.String("callback", "OnLightbulbUpdate"),
+			}
+
+			err := client.SendEvent(ID, value)
 			if err != nil {
-				log.Fatalf("failed to send event to %d: %v\n", ID, err)
+				attrs = append(attrs, slog.Any("error", err))
+				logger.LogAttrs(context.TODO(), slog.LevelError, "failed to send event", attrs...)
+				os.Exit(1)
+			} else {
+				logger.LogAttrs(context.TODO(), slog.LevelInfo, "sent event", attrs...)
 			}
 		},
 		OnLEDUpdate: func(ID int, brightness int) {
-			err := client.SendEvent(ID, api.MapLighting(brightness))
+			value := api.MapLighting(brightness)
+			attrs := []slog.Attr{
+				slog.Int("object_id", ID),
+				slog.String("value", value),
+				slog.String("callback", "OnLEDUpdate"),
+			}
+
+			err := client.SendEvent(ID, value)
 			if err != nil {
-				log.Fatalf("failed to send event to %d: %v\n", ID, err)
+				attrs = append(attrs, slog.Any("error", err))
+				logger.LogAttrs(context.TODO(), slog.LevelError, "failed to send event", attrs...)
+				os.Exit(1)
+			} else {
+				logger.LogAttrs(context.TODO(), slog.LevelInfo, "sent event", attrs...)
 			}
 		},
 		OnGarageDoorUpdate: func(ID int) {
-			err := client.SendEvent(ID, api.ValueToggle)
+			value := api.ValueToggle
+			attrs := []slog.Attr{
+				slog.Int("object_id", ID),
+				slog.String("value", value),
+				slog.String("callback", "OnGarageDoorUpdate"),
+			}
+
+			err := client.SendEvent(ID, value)
 			if err != nil {
-				log.Fatalf("failed to send event to %d: %v\n", ID, err)
+				attrs = append(attrs, slog.Any("error", err))
+				logger.LogAttrs(context.TODO(), slog.LevelError, "failed to send event", attrs...)
+				os.Exit(1)
+			} else {
+				logger.LogAttrs(context.TODO(), slog.LevelInfo, "sent event", attrs...)
 			}
 		},
 		OnThermostatUpdate: func(ID int, temperature float64) {
-			err = client.SendEvent(ID, api.EncodeTemperature(temperature))
+			value := api.EncodeTemperature(temperature)
+			attrs := []slog.Attr{
+				slog.Int("object_id", ID),
+				slog.String("value", value),
+				slog.String("callback", "OnGarageDoorUpdate"),
+			}
+
+			err = client.SendEvent(ID, value)
 			if err != nil {
-				log.Fatalf("failed to send event to %d: %v\n", ID, err)
+				attrs = append(attrs, slog.Any("error", err))
+				logger.LogAttrs(context.TODO(), slog.LevelError, "failed to send event", attrs...)
+				os.Exit(1)
+			} else {
+				logger.LogAttrs(context.TODO(), slog.LevelInfo, "sent event", attrs...)
 			}
 		},
 	}
 
 	home, err := homekitClient.SetUp(config)
 	if err != nil {
-		log.Fatalf("failed to set up homekit: %v", err)
+		logger.Error("failed to set up homekit", slog.Any("error", err))
+		os.Exit(1)
 	}
 
+	// In this loop, we listen to events from F&Home and send updates to HomeKit
+	// to keep the state in sync.
 	for {
 		msg, err := client.ReadMessage(api.ActionStatusTouchesChanged, "")
 		if err != nil {
-			log.Fatalln("failed to read message:", err)
+			logger.Error("failed to read message", slog.Any("error", err))
+			os.Exit(1)
 		}
 
 		var resp api.StatusTouchesChangedResponse
 
 		err = json.Unmarshal(msg.Raw, &resp)
 		if err != nil {
-			log.Fatalln("failed to unmarshal message:", err)
+			logger.Error("failed to unmarshal message", slog.Any("error", err))
+			os.Exit(1)
 		}
 
 		if len(resp.Response.CellValues) == 0 {
@@ -169,13 +254,21 @@ func main() {
 			if accessory != nil {
 				newValue, err := api.RemapLighting(cellValue.Value)
 				if err != nil {
-					log.Printf("failed to remap lightning: %v\n", err)
+					logger.Error("failed to remap lightning value",
+						slog.Any("error", err),
+						slog.String("value", cellValue.Value),
+						slog.Int("object_id", cellValue.IntID()),
+					)
 				}
 
 				accessory.Lightbulb.On.SetValue(newValue > 0)
 				err = accessory.Lightbulb.Brightness.SetValue(newValue)
 				if err != nil {
-					log.Printf("failed to set brightness to %d: %v\n", newValue, err)
+					logger.Error("failed to set brightness",
+						slog.Any("error", err),
+						slog.Int("value", newValue),
+						slog.Int("object_id", cellValue.IntID()),
+					)
 				}
 			}
 		}
@@ -186,7 +279,11 @@ func main() {
 			if accessory != nil {
 				newValue, err := api.DecodeTemperatureValue(cellValue.Value)
 				if err != nil {
-					log.Printf("failed to remap temperature: %v\n", err)
+					logger.Error("failed to remap temperature",
+						slog.Any("error", err),
+						slog.String("value", cellValue.Value),
+						slog.Int("object_id", cellValue.IntID()),
+					)
 				}
 
 				accessory.Thermostat.TargetTemperature.SetValue(newValue)
