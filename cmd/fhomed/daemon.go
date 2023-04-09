@@ -18,8 +18,6 @@ func daemon(name, pin string) error {
 		return fmt.Errorf("failed to create api client: %v", err)
 	}
 
-	slog.Info("opened client to resource session")
-
 	userConfig, err := client.GetUserConfig()
 	if err != nil {
 		slog.Error("failed to get user config", slog.Any("error", err))
@@ -49,6 +47,7 @@ func daemon(name, pin string) error {
 	}
 
 	go serviceListener(client)
+	go websiteListener(config)
 
 	// Here we listen to HomeKit events and convert them to API calls to F&Home
 	// to keep the state in sync.

@@ -1,15 +1,22 @@
 package main
 
 import (
+	"embed"
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 
 	"github.com/bartekpacia/fhome/api"
+	"golang.org/x/exp/slog"
 )
 
-// Below is a hacky workaround for myself to open my gate from my phone.
+//go:embed templates/*
+var resources embed.FS
 
+var tmpl = template.Must(template.ParseFS(resources, "templates/*"))
+
+// Hacky workaround for myself to open my gate from my phone.
 func serviceListener(client *api.Client) {
 	http.HandleFunc("/gate", func(w http.ResponseWriter, r *http.Request) {
 		var result string
@@ -26,6 +33,25 @@ func serviceListener(client *api.Client) {
 	})
 
 	err := http.ListenAndServe(":9000", nil)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func websiteListener(homeConfig *api.Config) {
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		slog.Info("got request", slog.String("method", r.Method), slog.String("path", r.URL.Path))
+
+		data := map[string]interface{}{
+			"Email":  config.Email,
+			"Panels": homeConfig.Panels,
+			"Cells":  homeConfig.Cells(),
+		}
+
+		tmpl.ExecuteTemplate(w, "index.html.tmpl", data)
+	})
+
+	err := http.ListenAndServe(":9001", nil)
 	if err != nil {
 		panic(err)
 	}

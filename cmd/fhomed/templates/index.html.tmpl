@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+    </head>
+
+    <body>
+        <h1>Hello from F&Home</h1>
+        <p>Welcome {{.Email}}!</p>
+        <p>You have {{len .Cells}} objects in {{len .Panels}} panels.</p>
+
+        <!-- Display all panels and cells -->
+        {{range $i, $panel := .Panels}}
+            <h2>{{$panel.Name}} ({{len $panel.Cells }} objects) </h2>
+            <ul>
+                {{range $j, $cell := $panel.Cells}}
+                    <li>{{$cell.Name}}</li>
+                {{end}}
+            </ul>
+        {{end}}
+    </body>
+</html>
