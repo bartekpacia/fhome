@@ -22,8 +22,8 @@ var (
 
 func main() {
 	app := &cli.App{
-		Name:  "fhomed",
-		Usage: "Long-running daemon for F&Home Cloud",
+		Name:  "fhome",
+		Usage: "Interact with smart home devices connected to F&Home",
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:  "json",
@@ -41,13 +41,14 @@ func main() {
 			&objectCommand,
 		},
 		CommandNotFound: func(c *cli.Context, command string) {
-			log.Printf("invalid command '%s'. See 'fhomed --help'\n", command)
+			log.Printf("invalid command '%s'. See 'fhome --help'\n", command)
 		},
 	}
 
 	err := app.Run(os.Args)
 	if err != nil {
-		log.Fatalln(err)
+		logger.Error("exit", slog.Any("error", err))
+		os.Exit(1)
 	}
 }
 
