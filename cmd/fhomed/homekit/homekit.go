@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	"github.com/bartekpacia/fhome/api"
-	"github.com/brutella/hap"
-	"github.com/brutella/hap/accessory"
+	//"github.com/brutella/hap"
+	//"github.com/brutella/hap/accessory"
 )
 
 type OnLightbulbUpdated func(ID int, v bool)

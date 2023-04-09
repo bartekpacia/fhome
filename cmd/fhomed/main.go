@@ -14,7 +14,6 @@ import (
 	"github.com/bartekpacia/fhome/cfg"
 	"github.com/bartekpacia/fhome/cmd/fhomed/homekit"
 	"github.com/lmittmann/tint"
-	"github.com/spf13/viper"
 	"golang.org/x/exp/slog"
 )
 
@@ -43,27 +42,27 @@ func init() {
 		logger = slog.New(tint.Options{Level: slog.LevelDebug, TimeFormat: time.TimeOnly}.NewHandler(os.Stdout))
 	}
 
-	viper.SetConfigName("config")
-	viper.SetConfigType("toml")
-	viper.AddConfigPath(".")
-	viper.AddConfigPath("$HOME/.config/fhomed/")
-	viper.AddConfigPath("/etc/fhomed/")
-	if err := viper.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
-			log.Fatalf("failed to read in config: %v\n", err)
-		}
-	}
+	// viper.SetConfigName("config")
+	// viper.SetConfigType("toml")
+	// viper.AddConfigPath(".")
+	// viper.AddConfigPath("$HOME/.config/fhomed/")
+	// viper.AddConfigPath("/etc/fhomed/")
+	// if err := viper.ReadInConfig(); err != nil {
+	// 	if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+	// 		log.Fatalf("failed to read in config: %v\n", err)
+	// 	}
+	// }
 
-	config = cfg.Config{
-		Email:            viper.GetString("FHOME_EMAIL"),
-		CloudPassword:    viper.GetString("FHOME_CLOUD_PASSWORD"),
-		ResourcePassword: viper.GetString("FHOME_RESOURCE_PASSWORD"),
-	}
+	// config = cfg.Config{
+	// 	Email:            viper.GetString("FHOME_EMAIL"),
+	// 	CloudPassword:    viper.GetString("FHOME_CLOUD_PASSWORD"),
+	// 	ResourcePassword: viper.GetString("FHOME_RESOURCE_PASSWORD"),
+	// }
 
-	err := config.Verify()
-	if err != nil {
-		log.Fatalf("failed to load env: %v\n", err)
-	}
+	// err := config.Verify()
+	// if err != nil {
+	// 	log.Fatalf("failed to load env: %v\n", err)
+	// }
 }
 
 func main() {
