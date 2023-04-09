@@ -4,7 +4,7 @@ package cfg
 
 import "fmt"
 
-// Config for the tool.
+// Config required to authenticate to F&Home Cloud.
 type Config struct {
 	Email            string
 	CloudPassword    string

@@ -13,8 +13,10 @@ import (
 	"github.com/bartekpacia/fhome/api"
 	"github.com/bartekpacia/fhome/cfg"
 	"github.com/bartekpacia/fhome/cmd/fhomed/homekit"
+	"github.com/knadh/koanf"
+	"github.com/knadh/koanf/parsers/toml"
+	"github.com/knadh/koanf/providers/file"
 	"github.com/lmittmann/tint"
-	"github.com/spf13/viper"
 	"golang.org/x/exp/slog"
 )
 
@@ -24,40 +26,53 @@ var (
 )
 
 var (
-	pin        string
-	name       string
-	jsonOutput bool
+	name  string
+	pin   string
+	jsonl bool
+	debug bool
 )
 
 func init() {
 	log.SetFlags(0)
-
-	flag.StringVar(&pin, "pin", "00102003", "accessory PIN")
-	flag.StringVar(&name, "name", "fhomed", "accessory name")
-	flag.BoolVar(&jsonOutput, "json", false, "output logs in JSON")
+	flag.StringVar(&name, "name", "fhomed", "name of the HomeKit bridge accessory")
+	flag.StringVar(&pin, "pin", "00102003", "PIN of the HomeKit bridge accessory")
+	flag.BoolVar(&jsonl, "json", false, "output logs in JSON Lines format")
+	flag.BoolVar(&debug, "debug", false, "show debug logs")
 	flag.Parse()
 
-	if jsonOutput {
-		logger = slog.New(slog.HandlerOptions{Level: slog.LevelDebug}.NewJSONHandler(os.Stdout))
+	var level slog.Level
+	if debug {
+		level = slog.LevelDebug
 	} else {
-		logger = slog.New(tint.Options{Level: slog.LevelDebug, TimeFormat: time.TimeOnly}.NewHandler(os.Stdout))
+		level = slog.LevelInfo
 	}
 
-	viper.SetConfigName("config")
-	viper.SetConfigType("toml")
-	viper.AddConfigPath(".")
-	viper.AddConfigPath("$HOME/.config/fhomed/")
-	viper.AddConfigPath("/etc/fhomed/")
-	if err := viper.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
-			log.Fatalf("failed to read in config: %v\n", err)
-		}
+	if jsonl {
+		logger = slog.New(slog.HandlerOptions{Level: level}.NewJSONHandler(os.Stdout))
+	} else {
+		logger = slog.New(tint.Options{Level: level, TimeFormat: time.TimeOnly}.NewHandler(os.Stdout))
+	}
+
+	k := koanf.New(".")
+	p := "/etc/fhome/config.toml"
+	if err := k.Load(file.Provider(p), toml.Parser()); err != nil {
+		logger.Debug("failed to load config file", slog.Any("error", err))
+	} else {
+		logger.Debug("loaded config file", slog.String("path", p))
+	}
+
+	homeDir, _ := os.UserHomeDir()
+	p = fmt.Sprintf("%s/.config/fhomed/config.toml", homeDir)
+	if err := k.Load(file.Provider(p), toml.Parser()); err != nil {
+		logger.Debug("failed to load config file", slog.Any("error", err))
+	} else {
+		logger.Debug("loaded config file", slog.String("path", p))
 	}
 
 	config = cfg.Config{
-		Email:            viper.GetString("FHOME_EMAIL"),
-		CloudPassword:    viper.GetString("FHOME_CLOUD_PASSWORD"),
-		ResourcePassword: viper.GetString("FHOME_RESOURCE_PASSWORD"),
+		Email:            k.String("FHOME_EMAIL"),
+		CloudPassword:    k.String("FHOME_CLOUD_PASSWORD"),
+		ResourcePassword: k.String("FHOME_RESOURCE_PASSWORD"),
 	}
 
 	err := config.Verify()
