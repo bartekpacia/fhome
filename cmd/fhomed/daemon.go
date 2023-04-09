@@ -17,12 +17,12 @@ func daemon(name, pin string) error {
 		return err
 	}
 
-	err = client.OpenCloudSession(config.Email, config.CloudPassword)
+	err = client.OpenCloudSession(k.String("FHOME_EMAIL"), k.String("FHOME_CLOUD_PASSWORD"))
 	if err != nil {
 		slog.Error("failed to open client session", slog.Any("error", err))
 		return err
 	} else {
-		slog.Info("opened client session", slog.String("email", config.Email))
+		slog.Info("opened client session", slog.String("email", k.String("FHOME_EMAIL")))
 	}
 
 	myResources, err := client.GetMyResources()
@@ -37,7 +37,7 @@ func daemon(name, pin string) error {
 		)
 	}
 
-	err = client.OpenResourceSession(config.ResourcePassword)
+	err = client.OpenResourceSession(k.String("FHOME_RESOURCE_PASSWORD"))
 	if err != nil {
 		slog.Error("failed to open client to resource session", slog.Any("error", err))
 		return err

@@ -6,7 +6,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/bartekpacia/fhome/cfg"
 	"github.com/knadh/koanf"
 	"github.com/knadh/koanf/parsers/toml"
 	"github.com/knadh/koanf/providers/file"
@@ -15,7 +14,7 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-var config cfg.Config
+var k = koanf.New(".")
 
 func main() {
 	app := &cli.App{
@@ -65,7 +64,6 @@ func before(c *cli.Context) error {
 		slog.SetDefault(logger)
 	}
 
-	k := koanf.New(".")
 	p := "/etc/fhome/config.toml"
 	if err := k.Load(file.Provider(p), toml.Parser()); err != nil {
 		slog.Debug("failed to load config file", slog.Any("error", err))
@@ -79,17 +77,6 @@ func before(c *cli.Context) error {
 		slog.Debug("failed to load config file", slog.Any("error", err))
 	} else {
 		slog.Debug("loaded config file", slog.String("path", p))
-	}
-
-	config = cfg.Config{
-		Email:            k.String("FHOME_EMAIL"),
-		CloudPassword:    k.String("FHOME_CLOUD_PASSWORD"),
-		ResourcePassword: k.String("FHOME_RESOURCE_PASSWORD"),
-	}
-
-	err := config.Verify()
-	if err != nil {
-		log.Fatalf("failed to load config: %v\n", err)
 	}
 
 	return nil
