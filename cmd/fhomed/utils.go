@@ -14,8 +14,20 @@ func printCellData(cellValue *api.CellValue, cfg *api.Config) error {
 		return fmt.Errorf("failed to get cell with ID %d: %v", cellValue.IntID(), err)
 	}
 
+	// Find panel ID of the cell
+	var panelName string
+	for _, panel := range cfg.Panels {
+		for _, c := range panel.Cells {
+			if c.ID == cell.ID {
+				panelName = panel.Name
+				break
+			}
+		}
+	}
+
 	logger.Info("object state changed",
 		slog.Int("id", cell.ID),
+		slog.String("panel", panelName),
 		slog.String("name", cell.Name),
 		slog.String("desc", cell.Desc),
 		slog.String("display_type", string(cellValue.DisplayType)),
