@@ -3,44 +3,19 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 
 	"github.com/bartekpacia/fhome/api"
 	"github.com/bartekpacia/fhome/cmd/fhomed/homekit"
+	"github.com/bartekpacia/fhome/internal"
 	"golang.org/x/exp/slog"
 )
 
 func daemon(name, pin string) error {
-	client, err := api.NewClient()
+	client, err := internal.Connect(config)
 	if err != nil {
-		slog.Error("failed to create api client", slog.Any("err", err))
-		return err
-	}
-
-	err = client.OpenCloudSession(k.String("FHOME_EMAIL"), k.String("FHOME_CLOUD_PASSWORD"))
-	if err != nil {
-		slog.Error("failed to open client session", slog.Any("error", err))
-		return err
-	} else {
-		slog.Info("opened client session", slog.String("email", k.String("FHOME_EMAIL")))
-	}
-
-	myResources, err := client.GetMyResources()
-	if err != nil {
-		slog.Error("failed to get my resources", slog.Any("error", err))
-		return err
-	} else {
-		slog.Info("got resource",
-			slog.String("name", myResources.FriendlyName0),
-			slog.String("id", myResources.UniqueID0),
-			slog.String("type", myResources.ResourceType0),
-		)
-	}
-
-	err = client.OpenResourceSession(k.String("FHOME_RESOURCE_PASSWORD"))
-	if err != nil {
-		slog.Error("failed to open client to resource session", slog.Any("error", err))
-		return err
+		return fmt.Errorf("failed to create api client: %v", err)
 	}
 
 	slog.Info("opened client to resource session")

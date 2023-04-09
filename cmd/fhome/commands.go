@@ -11,6 +11,7 @@ import (
 	"github.com/adrg/strutil"
 	"github.com/adrg/strutil/metrics"
 	"github.com/bartekpacia/fhome/api"
+	"github.com/bartekpacia/fhome/internal"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/exp/slog"
 )
@@ -57,28 +58,10 @@ var configCommand = cli.Command{
 					return fmt.Errorf("cannot use both --system and --user")
 				}
 
-				client, err := api.NewClient()
+				client, err := internal.Connect(config)
 				if err != nil {
 					return fmt.Errorf("failed to create api client: %v", err)
 				}
-
-				err = client.OpenCloudSession(k.String("FHOME_EMAIL"), k.String("FHOME_CLOUD_PASSWORD"))
-				if err != nil {
-					return fmt.Errorf("failed to open client session: %v", err)
-				}
-				log.Println("opened client session")
-
-				_, err = client.GetMyResources()
-				if err != nil {
-					return fmt.Errorf("failed to get my resources: %v", err)
-				}
-				log.Println("got my resources")
-
-				err = client.OpenResourceSession(k.String("FHOME_RESOURCE_PASSWORD"))
-				if err != nil {
-					return fmt.Errorf("failed to open client to resource session: %v", err)
-				}
-				log.Println("opened client to resource session")
 
 				sysConfig, err := client.GetSystemConfig()
 				if err != nil {
@@ -153,24 +136,9 @@ var eventCommand = cli.Command{
 			Name:  "watch",
 			Usage: "Print all incoming messages",
 			Action: func(c *cli.Context) error {
-				client, err := api.NewClient()
+				client, err := internal.Connect(config)
 				if err != nil {
-					log.Fatalf("failed to create api client: %v\n", err)
-				}
-
-				err = client.OpenCloudSession(k.String("FHOME_EMAIL"), k.String("FHOME_CLOUD_PASSWORD"))
-				if err != nil {
-					return fmt.Errorf("failed to open client session: %v", err)
-				}
-
-				_, err = client.GetMyResources()
-				if err != nil {
-					return fmt.Errorf("failed to get my resources: %v", err)
-				}
-
-				err = client.OpenResourceSession(k.String("FHOME_RESOURCE_PASSWORD"))
-				if err != nil {
-					return fmt.Errorf("failed to open client to resource session: %v", err)
+					return fmt.Errorf("failed to create api client: %v", err)
 				}
 
 				for {
@@ -210,24 +178,9 @@ var objectCommand = cli.Command{
 					return fmt.Errorf("object not specified")
 				}
 
-				client, err := api.NewClient()
+				client, err := internal.Connect(config)
 				if err != nil {
 					return fmt.Errorf("failed to create api client: %v", err)
-				}
-
-				err = client.OpenCloudSession(k.String("FHOME_EMAIL"), k.String("FHOME_CLOUD_PASSWORD"))
-				if err != nil {
-					return fmt.Errorf("failed to open client session: %v", err)
-				}
-
-				_, err = client.GetMyResources()
-				if err != nil {
-					return fmt.Errorf("failed to get my resources: %v", err)
-				}
-
-				err = client.OpenResourceSession(k.String("FHOME_RESOURCE_PASSWORD"))
-				if err != nil {
-					return fmt.Errorf("failed to open client to resource session: %v", err)
 				}
 
 				objectID, err := strconv.Atoi(object)
@@ -290,31 +243,10 @@ var objectCommand = cli.Command{
 					return fmt.Errorf("invalid value: %v", err)
 				}
 
-				client, err := api.NewClient()
+				client, err := internal.Connect(config)
 				if err != nil {
 					return fmt.Errorf("failed to create api client: %v", err)
 				}
-
-				err = client.OpenCloudSession(k.String("FHOME_EMAIL"), k.String("FHOME_CLOUD_PASSWORD"))
-				if err != nil {
-					return fmt.Errorf("failed to open client session: %v", err)
-				}
-
-				log.Println("opened client session")
-
-				_, err = client.GetMyResources()
-				if err != nil {
-					return fmt.Errorf("failed to get my resources: %v", err)
-				}
-
-				log.Println("got my resources")
-
-				err = client.OpenResourceSession(k.String("FHOME_RESOURCE_PASSWORD"))
-				if err != nil {
-					return fmt.Errorf("failed to open client to resource session: %v", err)
-				}
-
-				log.Println("opened client to resource session")
 
 				objectID, err := strconv.Atoi(object)
 				if err != nil {

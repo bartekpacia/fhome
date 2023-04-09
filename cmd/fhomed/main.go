@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/bartekpacia/fhome/internal"
 	"github.com/knadh/koanf"
 	"github.com/knadh/koanf/parsers/toml"
 	"github.com/knadh/koanf/providers/file"
@@ -14,7 +15,7 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-var k = koanf.New(".")
+var config *internal.Config
 
 func main() {
 	app := &cli.App{
@@ -89,6 +90,12 @@ func before(c *cli.Context) error {
 		slog.Debug("failed to load config file", slog.Any("error", err))
 	} else {
 		slog.Debug("loaded config file", slog.String("path", p))
+	}
+
+	config = &internal.Config{
+		Email:            k.String("FHOME_EMAIL"),
+		Password:         k.String("FHOME_CLOUD_PASSWORD"),
+		ResourcePassword: k.String("FHOME_RESOURCE_PASSWORD"),
 	}
 
 	return nil
