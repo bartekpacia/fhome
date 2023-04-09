@@ -38,9 +38,9 @@ func init() {
 	flag.Parse()
 
 	if jsonOutput {
-		logger = slog.New(slog.HandlerOptions{Level: slog.LevelDebug}.NewJSONHandler(os.Stderr))
+		logger = slog.New(slog.HandlerOptions{Level: slog.LevelDebug}.NewJSONHandler(os.Stdout))
 	} else {
-		logger = slog.New(tint.Options{Level: slog.LevelDebug, TimeFormat: time.TimeOnly}.NewHandler(os.Stderr))
+		logger = slog.New(tint.Options{Level: slog.LevelDebug, TimeFormat: time.TimeOnly}.NewHandler(os.Stdout))
 	}
 
 	viper.SetConfigName("config")
