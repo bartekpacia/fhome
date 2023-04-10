@@ -11,10 +11,13 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-//go:embed templates/*
-var resources embed.FS
+//go:embed assets/*
+var assets embed.FS
 
-var tmpl = template.Must(template.ParseFS(resources, "templates/*"))
+//go:embed templates/*
+var templates embed.FS
+
+var tmpl = template.Must(template.ParseFS(templates, "templates/*"))
 
 // Hacky workaround for myself to open my gate from my phone.
 func serviceListener(client *api.Client) {
@@ -38,8 +41,9 @@ func serviceListener(client *api.Client) {
 	}
 }
 
+// Stupid webserver to display some state about my smart devices.
 func websiteListener(homeConfig *api.Config) {
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/index", func(w http.ResponseWriter, r *http.Request) {
 		slog.Info("got request", slog.String("method", r.Method), slog.String("path", r.URL.Path))
 
 		data := map[string]interface{}{
@@ -50,6 +54,8 @@ func websiteListener(homeConfig *api.Config) {
 
 		tmpl.ExecuteTemplate(w, "index.html.tmpl", data)
 	})
+
+	http.Handle("/public/", http.StripPrefix("/public/", http.FileServer(http.FS(assets))))
 
 	err := http.ListenAndServe(":9001", nil)
 	if err != nil {
