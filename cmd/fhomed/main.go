@@ -1,316 +1,102 @@
 package main
 
 import (
-	"context"
-	"encoding/json"
-	"flag"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"time"
 
-	"github.com/bartekpacia/fhome/api"
-	"github.com/bartekpacia/fhome/cfg"
-	"github.com/bartekpacia/fhome/cmd/fhomed/homekit"
+	"github.com/bartekpacia/fhome/internal"
+	"github.com/knadh/koanf"
+	"github.com/knadh/koanf/parsers/toml"
+	"github.com/knadh/koanf/providers/file"
 	"github.com/lmittmann/tint"
-	"github.com/spf13/viper"
+	"github.com/urfave/cli/v2"
 	"golang.org/x/exp/slog"
 )
 
-var (
-	config cfg.Config
-	logger *slog.Logger
-)
-
-var (
-	pin        string
-	name       string
-	jsonOutput bool
-)
-
-func init() {
-	log.SetFlags(0)
-
-	flag.StringVar(&pin, "pin", "00102003", "accessory PIN")
-	flag.StringVar(&name, "name", "fhomed", "accessory name")
-	flag.BoolVar(&jsonOutput, "json", false, "output logs in JSON")
-	flag.Parse()
-
-	if jsonOutput {
-		logger = slog.New(slog.HandlerOptions{Level: slog.LevelDebug}.NewJSONHandler(os.Stdout))
-	} else {
-		logger = slog.New(tint.Options{Level: slog.LevelDebug, TimeFormat: time.TimeOnly}.NewHandler(os.Stdout))
-	}
-
-	viper.SetConfigName("config")
-	viper.SetConfigType("toml")
-	viper.AddConfigPath(".")
-	viper.AddConfigPath("$HOME/.config/fhomed/")
-	viper.AddConfigPath("/etc/fhomed/")
-	if err := viper.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
-			log.Fatalf("failed to read in config: %v\n", err)
-		}
-	}
-
-	config = cfg.Config{
-		Email:            viper.GetString("FHOME_EMAIL"),
-		CloudPassword:    viper.GetString("FHOME_CLOUD_PASSWORD"),
-		ResourcePassword: viper.GetString("FHOME_RESOURCE_PASSWORD"),
-	}
-
-	err := config.Verify()
-	if err != nil {
-		log.Fatalf("failed to load env: %v\n", err)
-	}
-}
+var config *internal.Config
 
 func main() {
-	client, err := api.NewClient()
-	if err != nil {
-		logger.Error("failed to create api client", slog.Any("err", err))
-		os.Exit(1)
-	}
-
-	err = client.OpenCloudSession(config.Email, config.CloudPassword)
-	if err != nil {
-		logger.Error("failed to open client session", slog.Any("error", err))
-		os.Exit(1)
-	} else {
-		logger.Info("opened client session", slog.String("email", config.Email))
-	}
-
-	myResources, err := client.GetMyResources()
-	if err != nil {
-		logger.Error("failed to get my resources", slog.Any("error", err))
-		os.Exit(1)
-	} else {
-		logger.Info("got resource",
-			slog.String("name", myResources.FriendlyName0),
-			slog.String("id", myResources.UniqueID0),
-			slog.String("type", myResources.ResourceType0),
-		)
-	}
-
-	err = client.OpenResourceSession(config.ResourcePassword)
-	if err != nil {
-		logger.Error("failed to open client to resource session", slog.Any("error", err))
-		os.Exit(1)
-	}
-
-	logger.Info("opened client to resource session")
-
-	userConfig, err := client.GetUserConfig()
-	if err != nil {
-		logger.Error("failed to get user config", slog.Any("error", err))
-		os.Exit(1)
-	} else {
-		logger.Info("got user config",
-			slog.Int("panels", len(userConfig.Panels)),
-			slog.Int("cells", len(userConfig.Cells)),
-		)
-	}
-
-	systemConfig, err := client.GetSystemConfig()
-	if err != nil {
-		logger.Error("failed to get system config", slog.Any("error", err))
-		os.Exit(1)
-	} else {
-		logger.Info("got system config",
-			slog.Int("cells", len(systemConfig.Response.MobileDisplayProperties.Cells)),
-			slog.String("source", systemConfig.Source),
-		)
-	}
-
-	config, err := api.MergeConfigs(userConfig, systemConfig)
-	if err != nil {
-		logger.Error("failed to merge configs", slog.Any("error", err))
-		os.Exit(1)
-	}
-
-	go serviceListener(client)
-
-	// Here we listen to HomeKit events and convert them to API calls to F&Home
-	// to keep the state in sync.
-	homekitClient := &homekit.Client{
-		PIN:  pin,
-		Name: name,
-		OnLightbulbUpdate: func(ID int, on bool) {
-			value := api.ValueToggle
-			attrs := []slog.Attr{
-				slog.Int("object_id", ID),
-				slog.String("value", value),
-				slog.String("callback", "OnLightbulbUpdate"),
-			}
-
-			err := client.SendEvent(ID, value)
-			if err != nil {
-				attrs = append(attrs, slog.Any("error", err))
-				logger.LogAttrs(context.TODO(), slog.LevelError, "failed to send event", attrs...)
-				os.Exit(1)
-			} else {
-				logger.LogAttrs(context.TODO(), slog.LevelInfo, "sent event", attrs...)
-			}
+	app := &cli.App{
+		Name:  "fhomed",
+		Usage: "Long-running daemon for F&Home Cloud",
+		Flags: []cli.Flag{
+			&cli.BoolFlag{
+				Name:  "json",
+				Usage: "output logs in JSON Lines format",
+			},
+			&cli.BoolFlag{
+				Name:  "debug",
+				Usage: "show debug logs",
+			},
+			&cli.StringFlag{
+				Name:  "name",
+				Usage: "name of the HomeKit bridge accessory",
+				Value: "fhomed",
+			},
+			&cli.StringFlag{
+				Name:  "pin",
+				Usage: "PIN of the HomeKit bridge accessory",
+				Value: "00102003",
+			},
 		},
-		OnLEDUpdate: func(ID int, brightness int) {
-			value := api.MapLighting(brightness)
-			attrs := []slog.Attr{
-				slog.Int("object_id", ID),
-				slog.String("value", value),
-				slog.String("callback", "OnLEDUpdate"),
-			}
+		Before: before,
+		Action: func(c *cli.Context) error {
+			name := c.String("name")
+			pin := c.String("pin")
 
-			err := client.SendEvent(ID, value)
-			if err != nil {
-				attrs = append(attrs, slog.Any("error", err))
-				logger.LogAttrs(context.TODO(), slog.LevelError, "failed to send event", attrs...)
-				os.Exit(1)
-			} else {
-				logger.LogAttrs(context.TODO(), slog.LevelInfo, "sent event", attrs...)
-			}
+			return daemon(name, pin)
 		},
-		OnGarageDoorUpdate: func(ID int) {
-			value := api.ValueToggle
-			attrs := []slog.Attr{
-				slog.Int("object_id", ID),
-				slog.String("value", value),
-				slog.String("callback", "OnGarageDoorUpdate"),
-			}
-
-			err := client.SendEvent(ID, value)
-			if err != nil {
-				attrs = append(attrs, slog.Any("error", err))
-				logger.LogAttrs(context.TODO(), slog.LevelError, "failed to send event", attrs...)
-				os.Exit(1)
-			} else {
-				logger.LogAttrs(context.TODO(), slog.LevelInfo, "sent event", attrs...)
-			}
-		},
-		OnThermostatUpdate: func(ID int, temperature float64) {
-			value := api.EncodeTemperature(temperature)
-			attrs := []slog.Attr{
-				slog.Int("object_id", ID),
-				slog.String("value", value),
-				slog.String("callback", "OnGarageDoorUpdate"),
-			}
-
-			err = client.SendEvent(ID, value)
-			if err != nil {
-				attrs = append(attrs, slog.Any("error", err))
-				logger.LogAttrs(context.TODO(), slog.LevelError, "failed to send event", attrs...)
-				os.Exit(1)
-			} else {
-				logger.LogAttrs(context.TODO(), slog.LevelInfo, "sent event", attrs...)
-			}
+		CommandNotFound: func(c *cli.Context, command string) {
+			log.Printf("invalid command '%s'. See 'fhomed --help'\n", command)
 		},
 	}
 
-	home, err := homekitClient.SetUp(config)
+	err := app.Run(os.Args)
 	if err != nil {
-		logger.Error("failed to set up homekit", slog.Any("error", err))
+		slog.Error("exit", slog.Any("error", err))
 		os.Exit(1)
-	}
-
-	// In this loop, we listen to events from F&Home and send updates to HomeKit
-	// to keep the state in sync.
-	for {
-		msg, err := client.ReadMessage(api.ActionStatusTouchesChanged, "")
-		if err != nil {
-			logger.Error("failed to read message", slog.Any("error", err))
-			os.Exit(1)
-		}
-
-		var resp api.StatusTouchesChangedResponse
-
-		err = json.Unmarshal(msg.Raw, &resp)
-		if err != nil {
-			logger.Error("failed to unmarshal message", slog.Any("error", err))
-			os.Exit(1)
-		}
-
-		if len(resp.Response.CellValues) == 0 {
-			continue
-		}
-
-		cellValue := resp.Response.CellValues[0]
-		printCellData(&cellValue, config)
-
-		// handle lightbulb
-		{
-			accessory := home.Lightbulbs[cellValue.IntID()]
-			if accessory != nil {
-				if cellValue.ValueStr == "100%" {
-					accessory.Lightbulb.On.SetValue(true)
-				} else if cellValue.ValueStr == "0%" {
-					accessory.Lightbulb.On.SetValue(false)
-				}
-			}
-		}
-
-		// handle LEDs
-		{
-			accessory := home.ColoredLightbulbs[cellValue.IntID()]
-			if accessory != nil {
-				newValue, err := api.RemapLighting(cellValue.Value)
-				if err != nil {
-					logger.Error("failed to remap lightning value",
-						slog.Any("error", err),
-						slog.String("value", cellValue.Value),
-						slog.Int("object_id", cellValue.IntID()),
-					)
-				}
-
-				accessory.Lightbulb.On.SetValue(newValue > 0)
-				err = accessory.Lightbulb.Brightness.SetValue(newValue)
-				if err != nil {
-					logger.Error("failed to set brightness",
-						slog.Any("error", err),
-						slog.Int("value", newValue),
-						slog.Int("object_id", cellValue.IntID()),
-					)
-				}
-			}
-		}
-
-		// handle thermostats
-		{
-			accessory := home.Thermostats[cellValue.IntID()]
-			if accessory != nil {
-				newValue, err := api.DecodeTemperatureValue(cellValue.Value)
-				if err != nil {
-					logger.Error("failed to remap temperature",
-						slog.Any("error", err),
-						slog.String("value", cellValue.Value),
-						slog.Int("object_id", cellValue.IntID()),
-					)
-				}
-
-				accessory.Thermostat.TargetTemperature.SetValue(newValue)
-			}
-		}
 	}
 }
 
-// Below is a hacky workaround for myself to open my gate from my phone.
-
-func serviceListener(client *api.Client) {
-	http.HandleFunc("/gate", func(w http.ResponseWriter, r *http.Request) {
-		var result string
-		err := client.SendEvent(260, api.ValueToggle)
-		if err != nil {
-			result = fmt.Sprintf("Failed to send event: %v", err)
-			w.WriteHeader(http.StatusInternalServerError)
-		}
-
-		if result != "" {
-			log.Print(result)
-			fmt.Fprint(w, result)
-		}
-	})
-
-	err := http.ListenAndServe(":9000", nil)
-	if err != nil {
-		panic(err)
+func before(c *cli.Context) error {
+	var level slog.Level
+	if c.Bool("debug") {
+		level = slog.LevelDebug
+	} else {
+		level = slog.LevelInfo
 	}
+
+	if c.Bool("jsonl") {
+		logger := slog.New(slog.HandlerOptions{Level: level}.NewJSONHandler(os.Stdout))
+		slog.SetDefault(logger)
+	} else {
+		logger := slog.New(tint.Options{Level: level, TimeFormat: time.TimeOnly}.NewHandler(os.Stdout))
+		slog.SetDefault(logger)
+	}
+
+	k := koanf.New(".")
+	p := "/etc/fhomed/config.toml"
+	if err := k.Load(file.Provider(p), toml.Parser()); err != nil {
+		slog.Debug("failed to load config file", slog.Any("error", err))
+	} else {
+		slog.Debug("loaded config file", slog.String("path", p))
+	}
+
+	homeDir, _ := os.UserHomeDir()
+	p = fmt.Sprintf("%s/.config/fhomed/config.toml", homeDir)
+	if err := k.Load(file.Provider(p), toml.Parser()); err != nil {
+		slog.Debug("failed to load config file", slog.Any("error", err))
+	} else {
+		slog.Debug("loaded config file", slog.String("path", p))
+	}
+
+	config = &internal.Config{
+		Email:            k.String("FHOME_EMAIL"),
+		Password:         k.String("FHOME_CLOUD_PASSWORD"),
+		ResourcePassword: k.String("FHOME_RESOURCE_PASSWORD"),
+	}
+
+	return nil
 }

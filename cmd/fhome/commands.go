@@ -11,7 +11,9 @@ import (
 	"github.com/adrg/strutil"
 	"github.com/adrg/strutil/metrics"
 	"github.com/bartekpacia/fhome/api"
+	"github.com/bartekpacia/fhome/internal"
 	"github.com/urfave/cli/v2"
+	"golang.org/x/exp/slog"
 )
 
 func bestObjectMatch(object string, config *api.Config) (*api.Cell, float64) {
@@ -56,28 +58,10 @@ var configCommand = cli.Command{
 					return fmt.Errorf("cannot use both --system and --user")
 				}
 
-				client, err := api.NewClient()
+				client, err := internal.Connect(config)
 				if err != nil {
 					return fmt.Errorf("failed to create api client: %v", err)
 				}
-
-				err = client.OpenCloudSession(config.Email, config.CloudPassword)
-				if err != nil {
-					return fmt.Errorf("failed to open client session: %v", err)
-				}
-				log.Println("opened client session")
-
-				_, err = client.GetMyResources()
-				if err != nil {
-					return fmt.Errorf("failed to get my resources: %v", err)
-				}
-				log.Println("got my resources")
-
-				err = client.OpenResourceSession(config.ResourcePassword)
-				if err != nil {
-					return fmt.Errorf("failed to open client to resource session: %v", err)
-				}
-				log.Println("opened client to resource session")
 
 				sysConfig, err := client.GetSystemConfig()
 				if err != nil {
@@ -152,24 +136,9 @@ var eventCommand = cli.Command{
 			Name:  "watch",
 			Usage: "Print all incoming messages",
 			Action: func(c *cli.Context) error {
-				client, err := api.NewClient()
+				client, err := internal.Connect(config)
 				if err != nil {
-					log.Fatalf("failed to create api client: %v\n", err)
-				}
-
-				err = client.OpenCloudSession(config.Email, config.CloudPassword)
-				if err != nil {
-					return fmt.Errorf("failed to open client session: %v", err)
-				}
-
-				_, err = client.GetMyResources()
-				if err != nil {
-					return fmt.Errorf("failed to get my resources: %v", err)
-				}
-
-				err = client.OpenResourceSession(config.ResourcePassword)
-				if err != nil {
-					return fmt.Errorf("failed to open client to resource session: %v", err)
+					return fmt.Errorf("failed to create api client: %v", err)
 				}
 
 				for {
@@ -209,24 +178,9 @@ var objectCommand = cli.Command{
 					return fmt.Errorf("object not specified")
 				}
 
-				client, err := api.NewClient()
+				client, err := internal.Connect(config)
 				if err != nil {
 					return fmt.Errorf("failed to create api client: %v", err)
-				}
-
-				err = client.OpenCloudSession(config.Email, config.CloudPassword)
-				if err != nil {
-					return fmt.Errorf("failed to open client session: %v", err)
-				}
-
-				_, err = client.GetMyResources()
-				if err != nil {
-					return fmt.Errorf("failed to get my resources: %v", err)
-				}
-
-				err = client.OpenResourceSession(config.ResourcePassword)
-				if err != nil {
-					return fmt.Errorf("failed to open client to resource session: %v", err)
 				}
 
 				objectID, err := strconv.Atoi(object)
@@ -289,36 +243,15 @@ var objectCommand = cli.Command{
 					return fmt.Errorf("invalid value: %v", err)
 				}
 
-				client, err := api.NewClient()
+				client, err := internal.Connect(config)
 				if err != nil {
 					return fmt.Errorf("failed to create api client: %v", err)
 				}
 
-				err = client.OpenCloudSession(config.Email, config.CloudPassword)
-				if err != nil {
-					return fmt.Errorf("failed to open client session: %v", err)
-				}
-
-				log.Println("opened client session")
-
-				_, err = client.GetMyResources()
-				if err != nil {
-					return fmt.Errorf("failed to get my resources: %v", err)
-				}
-
-				log.Println("got my resources")
-
-				err = client.OpenResourceSession(config.ResourcePassword)
-				if err != nil {
-					return fmt.Errorf("failed to open client to resource session: %v", err)
-				}
-
-				log.Println("opened client to resource session")
-
 				objectID, err := strconv.Atoi(object)
 				if err != nil {
 					// string
-					log.Println("looking for object with name", object)
+					slog.Info("looking for object", slog.String("name", object))
 
 					userConfig, err := client.GetUserConfig()
 					if err != nil {
@@ -337,13 +270,22 @@ var objectCommand = cli.Command{
 
 					bestObject, bestScore := bestObjectMatch(object, config)
 
-					log.Printf("selected object %#v with id %d with %d%% confidence\n", bestObject.Name, bestObject.ID, int(bestScore*100))
+					slog.Info("selected object",
+						slog.String("name", bestObject.Name),
+						slog.Int("id", bestObject.ID),
+						slog.Int("confidence", int(bestScore*100)),
+					)
 
-					err = client.SendEvent(bestObject.ID, api.MapLighting(value))
+					value := api.MapLighting(value)
+					err = client.SendEvent(bestObject.ID, value)
 					if err != nil {
 						return fmt.Errorf("failed to send event to object %#v with id %d", bestObject.Name, bestObject.ID)
 					} else {
-						log.Printf("sent event to object %#v with id %d\n", bestObject.Name, bestObject.ID)
+						slog.Info("sent event to object",
+							slog.String("name", bestObject.Name),
+							slog.Int("id", bestObject.ID),
+							slog.String("value", value),
+						)
 						return nil
 					}
 				} else {
@@ -352,7 +294,7 @@ var objectCommand = cli.Command{
 						return fmt.Errorf("sent event to object with id %d: %v", objectID, err)
 					}
 
-					log.Println("sent event to object with id", objectID)
+					slog.Info("sent event to object", slog.Int("id", objectID), slog.String("value", api.MapLighting(value)))
 					return nil
 				}
 			},
