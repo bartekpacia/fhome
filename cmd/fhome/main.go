@@ -57,7 +57,7 @@ func before(c *cli.Context) error {
 		level = slog.LevelInfo
 	}
 
-	if c.Bool("jsonl") {
+	if c.Bool("json") {
 		logger := slog.New(slog.HandlerOptions{Level: level}.NewJSONHandler(os.Stdout))
 		slog.SetDefault(logger)
 	} else {
