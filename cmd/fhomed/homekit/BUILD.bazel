@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "homekit",
+    srcs = ["homekit.go"],
+    importpath = "github.com/example/project/cmd/fhomed/homekit",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_github_bartekpacia_fhome//api:go_default_library",
+        "@com_github_brutella_hap//:go_default_library",
+        "@com_github_brutella_hap//accessory:go_default_library",
+    ],
+)

@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "fhome_lib",
+    srcs = [
+        "commands.go",
+        "main.go",
+    ],
+    importpath = "github.com/example/project/cmd/fhome",
+    visibility = ["//visibility:private"],
+    deps = [
+        "@com_github_adrg_strutil//:go_default_library",
+        "@com_github_adrg_strutil//metrics:go_default_library",
+        "@com_github_bartekpacia_fhome//api:go_default_library",
+        "@com_github_bartekpacia_fhome//internal:go_default_library",
+        "@com_github_knadh_koanf//:go_default_library",
+        "@com_github_knadh_koanf//parsers/toml:go_default_library",
+        "@com_github_knadh_koanf//providers/file:go_default_library",
+        "@com_github_lmittmann_tint//:go_default_library",
+        "@com_github_urfave_cli_v2//:go_default_library",
+        "@org_golang_x_exp//slog:go_default_library",
+    ],
+)
+
+go_binary(
+    name = "fhome",
+    embed = [":fhome_lib"],
+    visibility = ["//visibility:public"],
+)

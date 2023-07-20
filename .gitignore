@@ -14,3 +14,9 @@ config.toml
 nohup.out
 
 dist/
+
+# bazel
+bazel-bin
+bazel-out
+bazel-testlogs
+bazel-fhome

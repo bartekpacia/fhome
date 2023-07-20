@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "api",
+    srcs = [
+        "client.go",
+        "config.go",
+        "icons.go",
+        "mappers.go",
+        "messages.go",
+        "responses.go",
+        "user_config.go",
+        "utils.go",
+    ],
+    importpath = "github.com/example/project/api",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_github_gorilla_websocket//:go_default_library",
+        "@org_golang_x_crypto//pbkdf2:go_default_library",
+    ],
+)
