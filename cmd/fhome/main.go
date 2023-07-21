@@ -19,8 +19,9 @@ var config *internal.Config
 
 func main() {
 	app := &cli.App{
-		Name:  "fhome",
-		Usage: "Interact with smart home devices connected to F&Home",
+		Name:                 "fhome",
+		Usage:                "Interact with smart home devices connected to F&Home",
+		EnableBashCompletion: true,
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:  "json",
