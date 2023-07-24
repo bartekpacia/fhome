@@ -52,3 +52,26 @@ archives:
 
 changelog:
   skip: true
+
+brews:
+  - name: fhome
+    ids:
+      - fhome
+    tap:
+      owner: bartekpacia
+      name: homebrew-tools
+    folder: Formula
+    homepage: https://github.com/bartekpacia/fhome
+    description: Interact with smart home devices connected to F&Home
+    license: MIT
+
+  - name: fhomed
+    ids:
+      - fhomed
+    tap:
+      owner: bartekpacia
+      name: homebrew-tools
+    folder: Formula
+    homepage: https://github.com/bartekpacia/fhome
+    description: Background daemon for F&Home
+    license: MIT
