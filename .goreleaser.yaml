@@ -32,7 +32,6 @@ archives:
       - LICENSE
       - README.md
     wrap_in_directory: true
-    rlcp: true
     format_overrides:
       - goos: windows
         format: zip
@@ -45,7 +44,6 @@ archives:
       - LICENSE
       - README.md
     wrap_in_directory: true
-    rlcp: true
     format_overrides:
       - goos: windows
         format: zip
