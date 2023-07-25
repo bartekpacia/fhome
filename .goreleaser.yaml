@@ -31,6 +31,7 @@ archives:
     files:
       - LICENSE
       - README.md
+      - autocomplete/zsh_autocomplete
     wrap_in_directory: true
     format_overrides:
       - goos: windows
@@ -55,7 +56,7 @@ brews:
   - name: fhome
     ids:
       - fhome
-    tap:
+    repository:
       owner: bartekpacia
       name: homebrew-tools
     folder: Formula
@@ -69,7 +70,7 @@ brews:
   - name: fhomed
     ids:
       - fhomed
-    tap:
+    repository:
       owner: bartekpacia
       name: homebrew-tools
     folder: Formula
