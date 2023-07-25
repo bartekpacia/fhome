@@ -32,6 +32,7 @@ archives:
       - LICENSE
       - README.md
       - autocomplete/zsh_autocomplete_fhome
+      - autocomplete/bash_autocomplete_fhome
     wrap_in_directory: true
     format_overrides:
       - goos: windows
@@ -45,6 +46,7 @@ archives:
       - LICENSE
       - README.md
       - autocomplete/zsh_autocomplete_fhomed
+      - autocomplete/bash_autocomplete_fhomed
     wrap_in_directory: true
     format_overrides:
       - goos: windows
