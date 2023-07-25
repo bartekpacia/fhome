@@ -64,6 +64,9 @@ brews:
     homepage: https://github.com/bartekpacia/fhome
     description: Interact with smart home devices connected to F&Home
     license: MIT
+    install: |
+      bin.install "fhome"
+      zsh_completion.install "autocomplete/zsh_autocomplete" => "_fhome"
 
   - name: fhomed
     ids:

@@ -18,6 +18,7 @@ import (
 var config *internal.Config
 
 func main() {
+	loadConfig()
 	app := &cli.App{
 		Name:                 "fhome",
 		Usage:                "Interact with smart home devices connected to F&Home",
@@ -66,6 +67,10 @@ func before(c *cli.Context) error {
 		slog.SetDefault(logger)
 	}
 
+	return nil
+}
+
+func loadConfig() {
 	k := koanf.New(".")
 
 	p := "/etc/fhome/config.toml"
@@ -88,6 +93,4 @@ func before(c *cli.Context) error {
 		Password:         k.String("FHOME_CLOUD_PASSWORD"),
 		ResourcePassword: k.String("FHOME_RESOURCE_PASSWORD"),
 	}
-
-	return nil
 }

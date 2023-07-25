@@ -226,6 +226,22 @@ var objectCommand = cli.Command{
 					return nil
 				}
 			},
+			BashComplete: func(c *cli.Context) {
+				client, err := internal.Connect(config)
+				if err != nil {
+					panic(err)
+				}
+
+				// TODO: Save to cache because it's slow
+				userConfig, err := client.GetUserConfig()
+				if err != nil {
+					panic(err)
+				}
+
+				for _, cell := range userConfig.Cells {
+					fmt.Println(cell.Name)
+				}
+			},
 		},
 		{
 			Name:      "set",
