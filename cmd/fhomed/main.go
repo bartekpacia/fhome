@@ -18,9 +18,11 @@ import (
 var config *internal.Config
 
 func main() {
+	loadConfig()
 	app := &cli.App{
-		Name:  "fhomed",
-		Usage: "Long-running daemon for F&Home Cloud",
+		Name:                 "fhomed",
+		Usage:                "Long-running daemon for F&Home Cloud",
+		EnableBashCompletion: true,
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:  "json",
@@ -76,6 +78,10 @@ func before(c *cli.Context) error {
 		slog.SetDefault(logger)
 	}
 
+	return nil
+}
+
+func loadConfig() {
 	k := koanf.New(".")
 	p := "/etc/fhomed/config.toml"
 	if err := k.Load(file.Provider(p), toml.Parser()); err != nil {
@@ -97,6 +103,4 @@ func before(c *cli.Context) error {
 		Password:         k.String("FHOME_CLOUD_PASSWORD"),
 		ResourcePassword: k.String("FHOME_RESOURCE_PASSWORD"),
 	}
-
-	return nil
 }
