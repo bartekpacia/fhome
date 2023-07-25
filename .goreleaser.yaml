@@ -31,7 +31,7 @@ archives:
     files:
       - LICENSE
       - README.md
-      - autocomplete/zsh_autocomplete
+      - autocomplete/zsh_autocomplete_fhome
     wrap_in_directory: true
     format_overrides:
       - goos: windows
@@ -44,6 +44,7 @@ archives:
     files:
       - LICENSE
       - README.md
+      - autocomplete/zsh_autocomplete_fhomed
     wrap_in_directory: true
     format_overrides:
       - goos: windows
@@ -65,7 +66,7 @@ brews:
     license: MIT
     install: |
       bin.install "fhome"
-      zsh_completion.install "autocomplete/zsh_autocomplete" => "_fhome"
+      zsh_completion.install "autocomplete/zsh_autocomplete_fhome" => "_fhome"
 
   - name: fhomed
     ids:
@@ -77,3 +78,6 @@ brews:
     homepage: https://github.com/bartekpacia/fhome
     description: Background daemon for F&Home
     license: MIT
+    install: |
+      bin.install "fhomed"
+      zsh_completion.install "autocomplete/zsh_autocomplete_fhomed" => "_fhomed"
