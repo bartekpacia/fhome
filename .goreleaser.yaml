@@ -66,6 +66,7 @@ brews:
     license: MIT
     install: |
       bin.install "fhome"
+      bash_completion.install "autocomplete/bash_autocomplete_fhome" => "fhome"
       zsh_completion.install "autocomplete/zsh_autocomplete_fhome" => "_fhome"
 
   - name: fhomed
@@ -80,4 +81,5 @@ brews:
     license: MIT
     install: |
       bin.install "fhomed"
+      bash_completion.install "autocomplete/bash_autocomplete_fhomed" => "fhomed"
       zsh_completion.install "autocomplete/zsh_autocomplete_fhomed" => "_fhomed"
