@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
+	"log/slog"
 
 	"github.com/bartekpacia/fhome/api"
-	"golang.org/x/exp/slog"
 )
 
 // printCellData prints the values of its arguments into a JSON object.

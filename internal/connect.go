@@ -2,8 +2,9 @@
 package internal
 
 import (
+	"log/slog"
+
 	"github.com/bartekpacia/fhome/api"
-	"golang.org/x/exp/slog"
 )
 
 type Config struct {

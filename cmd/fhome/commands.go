@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"log/slog"
 	"os"
 	"strconv"
 	"text/tabwriter"
@@ -13,7 +14,6 @@ import (
 	"github.com/bartekpacia/fhome/api"
 	"github.com/bartekpacia/fhome/internal"
 	"github.com/urfave/cli/v2"
-	"golang.org/x/exp/slog"
 )
 
 func bestObjectMatch(object string, config *api.Config) (*api.Cell, float64) {

@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"log/slog"
 	"os"
 	"time"
 
@@ -12,7 +13,6 @@ import (
 	"github.com/knadh/koanf/providers/file"
 	"github.com/lmittmann/tint"
 	"github.com/urfave/cli/v2"
-	"golang.org/x/exp/slog"
 )
 
 var config *internal.Config
@@ -60,10 +60,14 @@ func before(c *cli.Context) error {
 	}
 
 	if c.Bool("json") {
-		logger := slog.New(slog.HandlerOptions{Level: level}.NewJSONHandler(os.Stdout))
+		opts := slog.HandlerOptions{Level: level}
+		handler := slog.NewJSONHandler(os.Stdout, &opts)
+		logger := slog.New(handler)
 		slog.SetDefault(logger)
 	} else {
-		logger := slog.New(tint.Options{Level: level, TimeFormat: time.TimeOnly}.NewHandler(os.Stdout))
+		opts := tint.Options{Level: level, TimeFormat: time.TimeOnly}
+		handler := tint.NewHandler(os.Stdout, &opts)
+		logger := slog.New(handler)
 		slog.SetDefault(logger)
 	}
 

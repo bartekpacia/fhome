@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"html/template"
 	"log"
+	"log/slog"
 	"net/http"
 
 	"github.com/bartekpacia/fhome/api"
-	"golang.org/x/exp/slog"
 )
 
 //go:embed assets/*

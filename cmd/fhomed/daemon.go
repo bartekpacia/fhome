@@ -4,12 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
 
 	"github.com/bartekpacia/fhome/api"
 	"github.com/bartekpacia/fhome/cmd/fhomed/homekit"
 	"github.com/bartekpacia/fhome/internal"
-	"golang.org/x/exp/slog"
 )
 
 func daemon(name, pin string) error {
