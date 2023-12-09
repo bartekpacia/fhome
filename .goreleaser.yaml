@@ -85,3 +85,31 @@ brews:
       bin.install "fhomed"
       bash_completion.install "autocomplete/bash_autocomplete_fhomed" => "fhomed"
       zsh_completion.install "autocomplete/zsh_autocomplete_fhomed" => "_fhomed"
+
+aurs:
+  - name: fhome-bin
+    ids:
+      - fhome
+    homepage: https://github.com/bartekpacia/fhome
+    description: Interact with smart home devices connected to F&Home
+    maintainers:
+      - Bartek Pacia <barpac02@gmail.com>
+    git_url: ssh://git@github.com:bartekpacia/aurmypackage-bin.git
+
+    package: |-
+      # bin
+      install -Dm755 "./mybin" "${pkgdir}/usr/bin/mybin"
+
+      # license
+      install -Dm644 "./LICENSE.md" "${pkgdir}/usr/share/licenses/mybin/LICENSE"
+
+      # completions
+      mkdir -p "${pkgdir}/usr/share/bash-completion/completions/"
+      mkdir -p "${pkgdir}/usr/share/zsh/site-functions/"
+      mkdir -p "${pkgdir}/usr/share/fish/vendor_completions.d/"
+      install -Dm644 "./completions/mybin.bash" "${pkgdir}/usr/share/bash-completion/completions/mybin"
+      install -Dm644 "./completions/mybin.zsh" "${pkgdir}/usr/share/zsh/site-functions/_mybin"
+      install -Dm644 "./completions/mybin.fish" "${pkgdir}/usr/share/fish/vendor_completions.d/mybin.fish"
+
+      # man pages
+      install -Dm644 "./manpages/mybin.1.gz" "${pkgdir}/usr/share/man/man1/mybin.1.gz"
