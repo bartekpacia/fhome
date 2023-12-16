@@ -93,7 +93,7 @@ aurs:
     maintainers:
       - Bartek Pacia <barpac02@gmail.com>
     private_key: '{{ .Env.AUR_SSH_KEY }}'
-    git_url: ssh://git@github.com:bartekpacia/aur.git
+    git_url: git@github.com:bartekpacia/aur.git
 
     package: |-
       cd "$pkgname-$pkgver"
