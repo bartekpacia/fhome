@@ -6,7 +6,6 @@ builds:
       - windows
       - linux
       - darwin
-      - freebsd
     goarch:
       - amd64
       - arm64
@@ -18,7 +17,6 @@ builds:
       - windows
       - linux
       - darwin
-      - freebsd
     goarch:
       - amd64
       - arm64
@@ -55,36 +53,36 @@ archives:
 changelog:
   skip: true
 
-brews:
-  - name: fhome
-    ids:
-      - fhome
-    repository:
-      owner: bartekpacia
-      name: homebrew-tools
-    folder: Formula
-    homepage: https://github.com/bartekpacia/fhome
-    description: Interact with smart home devices connected to F&Home
-    license: MIT
-    install: |
-      bin.install "fhome"
-      bash_completion.install "autocomplete/bash_autocomplete_fhome" => "fhome"
-      zsh_completion.install "autocomplete/zsh_autocomplete_fhome" => "_fhome"
+# brews:
+#   - name: fhome
+#     ids:
+#       - fhome
+#     repository:
+#       owner: bartekpacia
+#       name: homebrew-tools
+#     folder: Formula
+#     homepage: https://github.com/bartekpacia/fhome
+#     description: Interact with smart home devices connected to F&Home
+#     license: MIT
+#     install: |
+#       bin.install "fhome"
+#       bash_completion.install "autocomplete/bash_autocomplete_fhome" => "fhome"
+#       zsh_completion.install "autocomplete/zsh_autocomplete_fhome" => "_fhome"
 
-  - name: fhomed
-    ids:
-      - fhomed
-    repository:
-      owner: bartekpacia
-      name: homebrew-tools
-    folder: Formula
-    homepage: https://github.com/bartekpacia/fhome
-    description: Background daemon for F&Home
-    license: MIT
-    install: |
-      bin.install "fhomed"
-      bash_completion.install "autocomplete/bash_autocomplete_fhomed" => "fhomed"
-      zsh_completion.install "autocomplete/zsh_autocomplete_fhomed" => "_fhomed"
+#   - name: fhomed
+#     ids:
+#       - fhomed
+#     repository:
+#       owner: bartekpacia
+#       name: homebrew-tools
+#     folder: Formula
+#     homepage: https://github.com/bartekpacia/fhome
+#     description: Background daemon for F&Home
+#     license: MIT
+#     install: |
+#       bin.install "fhomed"
+#       bash_completion.install "autocomplete/bash_autocomplete_fhomed" => "fhomed"
+#       zsh_completion.install "autocomplete/zsh_autocomplete_fhomed" => "_fhomed"
 
 aurs:
   - name: fhome-bin
@@ -94,7 +92,7 @@ aurs:
     description: Interact with smart home devices connected to F&Home
     maintainers:
       - Bartek Pacia <barpac02@gmail.com>
-    private_key:  '{{ .Env.AUR_SSH_KEY }}'
+    private_key: '{{ .Env.AUR_SSH_KEY }}'
     git_url: ssh://git@github.com:bartekpacia/aur.git
 
     package: |-
