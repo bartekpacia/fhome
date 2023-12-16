@@ -94,6 +94,7 @@ aurs:
     description: Interact with smart home devices connected to F&Home
     maintainers:
       - Bartek Pacia <barpac02@gmail.com>
+    private_key:  '{{ .Env.AUR_SSH_KEY }}'
     git_url: ssh://git@github.com:bartekpacia/aur.git
 
     package: |-

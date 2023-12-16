@@ -26,3 +26,4 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.TOKEN }}
+          AUR_SSH_KEY: ${{ secrets.AUR_SSH_KEY }}
