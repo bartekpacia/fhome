@@ -94,7 +94,7 @@ aurs:
       - Bartek Pacia <barpac02@gmail.com>
     private_key: '{{ .Env.AUR_SSH_KEY }}'
     git_url: git@github.com:bartekpacia/aur.git
-
+    directory: fhome-bin
     package: |-
       cd "$pkgname-$pkgver"
       # bin
