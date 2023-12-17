@@ -23,7 +23,7 @@ builds:
 
 archives:
   - id: fhome
-    name_template: 'fhome_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
+    name_template: 'fhome_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
     builds:
       - fhome
     files:
@@ -37,7 +37,7 @@ archives:
         format: zip
 
   - id: fhomed
-    name_template: 'fhomed_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
+    name_template: 'fhomed_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
     builds:
       - fhomed
     files:
@@ -95,7 +95,7 @@ aurs:
     private_key: '{{ .Env.AUR_SSH_KEY }}'
     git_url: git@github.com:bartekpacia/aur.git
     directory: fhome-bin
-    package: |-
+    package: |
       cd "$pkgname-$pkgver"
       # bin
       install -Dm755 fhome "${pkgdir}/usr/bin/fhome"
