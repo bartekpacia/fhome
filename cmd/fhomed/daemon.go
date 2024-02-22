@@ -158,9 +158,10 @@ func daemon(name, pin string) error {
 		{
 			accessory := home.Lightbulbs[cellValue.IntID()]
 			if accessory != nil {
-				if cellValue.ValueStr == "100%" {
+				switch cellValue.ValueStr {
+				case "100%":
 					accessory.Lightbulb.On.SetValue(true)
-				} else if cellValue.ValueStr == "0%" {
+				case "0%":
 					accessory.Lightbulb.On.SetValue(false)
 				}
 			}
