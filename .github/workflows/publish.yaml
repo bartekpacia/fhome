@@ -3,7 +3,7 @@ name: publish
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 jobs:
   main:
@@ -20,20 +20,20 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - name: Install GoReleaser
-        run: go install github.com/goreleaser/goreleaser@master
-
-      - name: Run GoReleaser
-        run: goreleaser release
-        env:
-          GITHUB_TOKEN: ${{ secrets.TOKEN }}
-          AUR_SSH_KEY: ${{ secrets.AUR_SSH_KEY }}
+      # - name: Install GoReleaser
+      #   run: go install github.com/goreleaser/goreleaser@master
 
       # - name: Run GoReleaser
-      #   uses: goreleaser/goreleaser-action@v5
-      #   with:
-      #     version: latest
-      #     args: release --clean
+      #   run: goreleaser release
       #   env:
       #     GITHUB_TOKEN: ${{ secrets.TOKEN }}
       #     AUR_SSH_KEY: ${{ secrets.AUR_SSH_KEY }}
+
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v5
+        with:
+          version: latest
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
+          AUR_SSH_KEY: ${{ secrets.AUR_SSH_KEY }}
