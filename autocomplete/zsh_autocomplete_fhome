@@ -1,17 +1,22 @@
 #compdef fhome
 
-local -a opts
-local cur
-cur=${words[-1]}
-if [[ "$cur" == "-"* ]]; then
-  opts=("${(@f)$(${words[@]:0:#words[@]-1} ${cur} --generate-bash-completion)}")
+local -a opts # Declare a local array
+local -r current=${words[-1]} # -1 means "the last element"
+local -a -r original_cmd=("${(@f)$(${words[@]:0:#words[@]-1})}")
+if [[ "$current" == "-"* ]]; then
+  # If starts with a hyphen, complete flags/options
+  opts=("${(@f)$(${words[@]:0:#words[@]-1} ${current} --generate-bash-completion)}")
 else
+  # If does not start with a hyphen, complete commands
   opts=("${(@f)$(${words[@]:0:#words[@]-1} --generate-bash-completion)}")
 fi
 
 if [[ "${opts[1]}" != "" ]]; then
   _describe 'values' opts
 else
+  # local -a subcmdsdisc
+  # values=('first:this is just an example' 'second:yeah')
+  # _describe 'values' subcmds
   _files
 fi
 

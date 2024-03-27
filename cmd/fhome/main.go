@@ -38,6 +38,7 @@ func main() {
 			&configCommand,
 			&eventCommand,
 			&objectCommand,
+			&experimentCommand,
 		},
 		CommandNotFound: func(c *cli.Context, command string) {
 			log.Printf("invalid command '%s'. See 'fhome --help'\n", command)

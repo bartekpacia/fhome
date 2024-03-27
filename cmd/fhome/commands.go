@@ -317,3 +317,25 @@ var objectCommand = cli.Command{
 		},
 	},
 }
+
+var experimentCommand = cli.Command{
+	Name:     "experiment",
+	Usage:    "Shell completion stuff",
+	HideHelp: true,
+	// Flags: []cli.Flag{
+	// 	&cli.BoolFlag{
+	// 		Name:  "option",
+	// 		Usage: "Select one of many options.",
+	// 		// BashComplete: func(c *cli.Context) {},
+	// 	},
+	// 	&cli.BoolFlag{
+	// 		Name:  "user",
+	// 		Usage: "Print config set in the client apps",
+	// 	},
+	// },
+	Action: func(c *cli.Context) error {
+		log.Print("action executed")
+
+		return nil
+	},
+}
