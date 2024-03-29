@@ -9,6 +9,8 @@ builds:
     goarch:
       - amd64
       - arm64
+    env:
+      - CGO_ENABLED=0
 
   - id: fhomed
     binary: fhomed
@@ -20,6 +22,8 @@ builds:
     goarch:
       - amd64
       - arm64
+    env:
+      - CGO_ENABLED=0
 
 archives:
   - id: fhome
