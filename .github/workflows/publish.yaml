@@ -21,7 +21,7 @@ jobs:
           go-version-file: go.mod
 
       - name: Install GoReleaser
-        run: go install github.com/goreleaser/goreleaser@latest
+        run: go install github.com/goreleaser/goreleaser@main
 
       - name: Install 1Password CLI
         uses: 1password/install-cli-action@v1
