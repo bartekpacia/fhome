@@ -61,6 +61,7 @@ brews:
       owner: bartekpacia
       name: homebrew-tools
     folder: Formula
+    commit_msg_template: update fhome to {{ .Tag }}
     homepage: https://github.com/bartekpacia/fhome
     description: Interact with smart home devices connected to F&Home
     license: MIT
@@ -76,6 +77,7 @@ brews:
       owner: bartekpacia
       name: homebrew-tools
     folder: Formula
+    commit_msg_template: update fhomed to {{ .Tag }}
     homepage: https://github.com/bartekpacia/fhome
     description: Background daemon for F&Home
     license: MIT
@@ -92,7 +94,8 @@ aurs:
     description: Interact with smart home devices connected to F&Home
     maintainers:
       - Bartek Pacia <barpac02@gmail.com>
-    private_key: "{{ .Env.AUR_SSH_KEY }}"
+    license: MIT
+    # private_key: "{{ .Env.AUR_SSH_KEY }}"
     git_url: git@github.com:bartekpacia/aur.git
     directory: fhome-bin
     commit_msg_template: update fhome to {{ .Tag }}
@@ -120,7 +123,8 @@ aurs:
     description: Background daemon for F&Home
     maintainers:
       - Bartek Pacia <barpac02@gmail.com>
-    private_key: "{{ .Env.AUR_SSH_KEY }}"
+    license: MIT
+    # private_key: "{{ .Env.AUR_SSH_KEY }}"
     git_url: git@github.com:bartekpacia/aur.git
     directory: fhomed-bin
     commit_msg_template: update fhomed to {{ .Tag }}
