@@ -23,6 +23,37 @@ func main() {
 		Name:                 "fhomed",
 		Usage:                "Long-running daemon for F&Home Cloud",
 		EnableBashCompletion: true,
+		Commands: []*cli.Command{
+			{
+				Name:   "docs",
+				Usage:  "Print documentation in various formats",
+				Hidden: true,
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:   "format",
+						Usage:  "output format [markdown, man, or man-with-section]",
+						Hidden: true,
+						Value:  "markdown",
+					},
+				},
+				Action: func(c *cli.Context) error {
+					format := c.String("format")
+					if format == "" || format == "markdown" {
+						fmt.Println(c.App.ToMarkdown())
+						return nil
+					}
+					if format == "man" {
+						fmt.Println(c.App.ToMan())
+						return nil
+					}
+					if format == "man-with-section" {
+						fmt.Println(c.App.ToManWithSection(1))
+						return nil
+					}
+					return fmt.Errorf("invalid format '%s'", format)
+				},
+			},
+		},
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:  "json",
