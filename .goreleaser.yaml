@@ -69,10 +69,7 @@ brews:
     description: Interact with smart home devices connected to F&Home
     license: MIT
     install: |
-      system("./fhome docs --format man-with-section", :out => ["fhome.1", "w"])
-
       bin.install "fhome"
-      man1.install "fhome.1"
       bash_completion.install "autocomplete/bash_autocomplete_fhome" => "fhome"
       zsh_completion.install "autocomplete/zsh_autocomplete_fhome" => "_fhome"
 
@@ -87,7 +84,10 @@ brews:
     description: Background daemon for F&Home
     license: MIT
     install: |
+      system("./fhomed docs --format man-with-section", :out => ["fhomed.1", "w"])
+
       bin.install "fhomed"
+      man1.install "fhome.1"
       bash_completion.install "autocomplete/bash_autocomplete_fhomed" => "fhomed"
       zsh_completion.install "autocomplete/zsh_autocomplete_fhomed" => "_fhomed"
 
