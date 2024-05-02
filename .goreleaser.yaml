@@ -84,7 +84,8 @@ brews:
     description: Background daemon for F&Home
     license: MIT
     install: |
-      system("./fhomed docs --format man-with-section", :out => "fhomed.1")
+      man_content = `./fhomed docs --format man-with-section`
+      File.write("fhomed.1", man_content)
 
       bin.install "fhomed"
       man1.install "fhomed.1"
