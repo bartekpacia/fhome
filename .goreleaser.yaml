@@ -64,7 +64,7 @@ brews:
     repository:
       owner: bartekpacia
       name: homebrew-tools
-    folder: Formula
+    directory: Formula
     homepage: https://github.com/bartekpacia/fhome
     description: Interact with smart home devices connected to F&Home
     license: MIT
@@ -82,7 +82,7 @@ brews:
     repository:
       owner: bartekpacia
       name: homebrew-tools
-    folder: Formula
+    directory: Formula
     homepage: https://github.com/bartekpacia/fhome
     description: Background daemon for F&Home
     license: MIT
