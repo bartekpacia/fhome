@@ -20,8 +20,15 @@ var config *internal.Config
 func main() {
 	loadConfig()
 	app := &cli.App{
-		Name:                 "fhomed",
-		Usage:                "Long-running daemon for F&Home Cloud",
+		Name:    "fhomed",
+		Usage:   "Long-running daemon for F&Home Cloud",
+		Version: "0.1.24",
+		Authors: []*cli.Author{
+			{
+				Name:  "Bartek Pacia",
+				Email: "barpac02@gmail.com",
+			},
+		},
 		EnableBashCompletion: true,
 		Commands: []*cli.Command{
 			{
