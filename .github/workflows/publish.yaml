@@ -20,8 +20,13 @@ jobs:
         with:
           go-version-file: go.mod
 
+      # - name: Install GoReleaser
+      #   run: go install github.com/goreleaser/goreleaser@main
+
       - name: Install GoReleaser
-        run: go install github.com/goreleaser/goreleaser@main
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          install-only: true
 
       - name: Install 1Password CLI
         uses: 1password/install-cli-action@v1
