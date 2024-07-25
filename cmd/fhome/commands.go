@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"os"
 	"strconv"
+	"strings"
 	"text/tabwriter"
 
 	"github.com/adrg/strutil"
@@ -52,12 +53,16 @@ var configCommand = cli.Command{
 					Name:  "user",
 					Usage: "Print config set in the client apps",
 				},
+				&cli.BoolFlag{
+					Name:  "merged",
+					Usage: "Print merged config (system + user)",
+				},
+				&cli.BoolFlag{
+					Name:  "glance",
+					Usage: "Print nice, at glance status of system",
+				},
 			},
 			Action: func(c *cli.Context) error {
-				if c.Bool("system") && c.Bool("user") {
-					return fmt.Errorf("cannot use both --system and --user")
-				}
-
 				client, err := internal.Connect(config)
 				if err != nil {
 					return fmt.Errorf("failed to create api client: %v", err)
@@ -106,7 +111,7 @@ var configCommand = cli.Command{
 
 						fmt.Fprintf(w, "%3d\t%s\t%s\t%s\n", cell.ObjectID, cell.IconName(), cell.Name, p)
 					}
-				} else {
+				} else if c.Bool("merged") {
 					config, err := api.MergeConfigs(userConfig, sysConfig)
 					if err != nil {
 						return fmt.Errorf("failed to merge configs: %v", err)
@@ -120,6 +125,69 @@ var configCommand = cli.Command{
 						}
 						log.Println()
 					}
+				} else if c.Bool("glance") {
+					// We want to see real values of the system resources.
+					// To do that we need to send "statustouches" action and
+					// wait for its response.
+
+					// Send "statustouches" event.
+					_, err := client.SendAction(api.ActionStatusTouches)
+					if err != nil {
+						return fmt.Errorf("failed to send action: %v", err)
+					}
+
+					msg, err := client.ReadMessage(api.ActionStatusTouchesChanged, "")
+					if err != nil {
+						slog.Error("failed to read message", slog.Any("error", err))
+						return err
+					}
+
+					var resp api.StatusTouchesChangedResponse
+
+					err = json.Unmarshal(msg.Raw, &resp)
+					if err != nil {
+						slog.Error("failed to unmarshal message", slog.Any("error", err))
+						return err
+					}
+
+					cellValue := resp.Response.CellValues
+					printCellData(&cellValue, config)
+
+					cells := []struct {
+						Name  string
+						Value int
+					}{}
+					mdCells := sysConfig.Response.MobileDisplayProperties.Cells
+					for _, cell := range mdCells {
+						if cell.DisplayType != api.Percentage {
+							continue
+						}
+						if !strings.HasPrefix(cell.Step, "0x60") {
+							continue
+						}
+
+						slog.Info("remapping lighting value", slog.String("cell", cell.Desc), slog.String("step", cell.Step))
+						val, err := api.RemapLighting(cell.Step)
+						if err != nil {
+							slog.Error(
+								"error remapping lighting value",
+								slog.Group("cell", slog.String("id", cell.ID), slog.String("desc", cell.Desc)),
+								slog.Any("error", err),
+							)
+							continue
+						}
+
+						cells = append(cells, struct {
+							Name  string
+							Value int
+						}{Name: cell.Desc, Value: val})
+					}
+
+					text := "Oto status oświetlenia:\n"
+					for _, cell := range cells {
+						text += fmt.Sprintf("• %s: %d%%\n", cell.Name, cell.Value)
+					}
+					fmt.Print(text)
 				}
 
 				return nil
@@ -286,10 +354,9 @@ var objectCommand = cli.Command{
 
 					bestObject, bestScore := bestObjectMatch(object, config)
 
-					slog.Info("selected object",
-						slog.String("name", bestObject.Name),
-						slog.Int("id", bestObject.ID),
+					slog.Info("found best match",
 						slog.Int("confidence", int(bestScore*100)),
+						slog.Group("object", slog.String("name", bestObject.Name), slog.Int("id", bestObject.ID)),
 					)
 
 					value := api.MapLighting(value)
