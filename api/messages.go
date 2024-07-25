@@ -19,7 +19,9 @@ const (
 	ActionGetSystemConfig            = "touches"
 	ActionGetUserConfig              = "get_user_config"
 	ActionEvent                      = "xevent"
-	ActionStatusTouchesChanged       = "statustoucheschanged"
+	// Send this to get real values of resources
+	ActionStatusTouches        = "statustouches"
+	ActionStatusTouchesChanged = "statustoucheschanged"
 )
 
 var ValueToggle = "0x4001"
