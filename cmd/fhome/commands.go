@@ -126,6 +126,33 @@ var configCommand = cli.Command{
 						log.Println()
 					}
 				} else if c.Bool("glance") {
+					// We want to see real values of the system resources.
+					// To do that we need to send "statustouches" action and
+					// wait for its response.
+
+					// Send "statustouches" event.
+					_, err := client.SendAction(api.ActionStatusTouches)
+					if err != nil {
+						return fmt.Errorf("failed to send action: %v", err)
+					}
+
+					msg, err := client.ReadMessage(api.ActionStatusTouchesChanged, "")
+					if err != nil {
+						slog.Error("failed to read message", slog.Any("error", err))
+						return err
+					}
+
+					var resp api.StatusTouchesChangedResponse
+
+					err = json.Unmarshal(msg.Raw, &resp)
+					if err != nil {
+						slog.Error("failed to unmarshal message", slog.Any("error", err))
+						return err
+					}
+
+					cellValue := resp.Response.CellValues
+					printCellData(&cellValue, config)
+
 					cells := []struct {
 						Name  string
 						Value int
