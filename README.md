@@ -3,8 +3,8 @@
 [![Go Reference][go-reference-badge]][go-reference-link] [![Go
 Report][go-report-badge]][go-report-link]
 
-> I do these things not because they're easy, but because I thought they're
-> gonna be easy.
+> I do these things not because they're easy, but because I thought they would
+> be easy.
 
 Package and CLI to communicate with [F&Home – a smart home system][fhome].
 
