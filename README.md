@@ -3,6 +3,9 @@
 [![Go Reference][go-reference-badge]][go-reference-link] [![Go
 Report][go-report-badge]][go-report-link]
 
+> I do these things not because they're easy, but because I thought they're
+> gonna be easy.
+
 Package and CLI to communicate with [F&Home – a smart home system][fhome].
 
 F&Home doesn't provide any kind of API, but I managed to figure out how it works
