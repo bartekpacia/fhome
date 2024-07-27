@@ -1,10 +1,14 @@
 # fhome
 
-[![Go Reference][go-reference-badge]][go-reference-link] [![Go
-Report][go-report-badge]][go-report-link]
+> Welcome to F&Home – the worst smart home system ever. 
+>
+> - me
 
-> I do these things not because they're easy, but because I thought they would
-> be easy.
+> I did this thing not because it's easy, but because I thought it would be
+> easy.
+
+[![Go Reference][go-reference-badge]][go-reference-link]
+[![Go Report][go-report-badge]][go-report-link]
 
 Package and CLI to communicate with [F&Home – a smart home system][fhome].
 

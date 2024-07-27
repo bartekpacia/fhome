@@ -212,7 +212,7 @@ var objectCommand = cli.Command{
 						return fmt.Errorf("failed to send event to object %#v with id %d", bestObject.Name, bestObject.ID)
 					}
 
-					log.Printf("sent event to object %#v with id %d\n", bestObject.Name, bestObject.ID)
+					log.Printf("sent event %s to object %#v with id %d\n", api.ValueToggle, bestObject.Name, bestObject.ID)
 					return nil
 				} else {
 					// int
