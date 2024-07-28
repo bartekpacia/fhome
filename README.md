@@ -1,11 +1,11 @@
-# fhome
-
 > Welcome to F&Home – the worst smart home system ever. 
 >
-> - me
+> -me
 
 > I did this thing not because it's easy, but because I thought it would be
 > easy.
+
+# fhome
 
 [![Go Reference][go-reference-badge]][go-reference-link]
 [![Go Report][go-report-badge]][go-report-link]
