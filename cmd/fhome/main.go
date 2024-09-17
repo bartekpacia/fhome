@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/bartekpacia/fhome/internal"
+	highlevel "github.com/bartekpacia/fhome/highlevel"
 	"github.com/knadh/koanf"
 	"github.com/knadh/koanf/parsers/toml"
 	"github.com/knadh/koanf/providers/file"
@@ -15,7 +15,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-var config *internal.Config
+var config *highlevel.Config
 
 func main() {
 	loadConfig()
@@ -92,7 +92,7 @@ func loadConfig() {
 		slog.Debug("loaded config file", slog.String("path", p))
 	}
 
-	config = &internal.Config{
+	config = &highlevel.Config{
 		Email:            k.String("FHOME_EMAIL"),
 		Password:         k.String("FHOME_CLOUD_PASSWORD"),
 		ResourcePassword: k.String("FHOME_RESOURCE_PASSWORD"),

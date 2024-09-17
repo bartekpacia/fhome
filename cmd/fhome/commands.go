@@ -12,7 +12,7 @@ import (
 	"github.com/adrg/strutil"
 	"github.com/adrg/strutil/metrics"
 	"github.com/bartekpacia/fhome/api"
-	"github.com/bartekpacia/fhome/internal"
+	"github.com/bartekpacia/fhome/highlevel"
 	"github.com/urfave/cli/v2"
 )
 
@@ -58,7 +58,7 @@ var configCommand = cli.Command{
 					return fmt.Errorf("cannot use both --system and --user")
 				}
 
-				client, err := internal.Connect(config)
+				client, err := highlevel.Connect(config, nil)
 				if err != nil {
 					return fmt.Errorf("failed to create api client: %v", err)
 				}
@@ -136,7 +136,7 @@ var eventCommand = cli.Command{
 			Name:  "watch",
 			Usage: "Print all incoming messages",
 			Action: func(c *cli.Context) error {
-				client, err := internal.Connect(config)
+				client, err := highlevel.Connect(config, nil)
 				if err != nil {
 					return fmt.Errorf("failed to create api client: %v", err)
 				}
@@ -178,7 +178,7 @@ var objectCommand = cli.Command{
 					return fmt.Errorf("object not specified")
 				}
 
-				client, err := internal.Connect(config)
+				client, err := highlevel.Connect(config, nil)
 				if err != nil {
 					return fmt.Errorf("failed to create api client: %v", err)
 				}
@@ -227,7 +227,7 @@ var objectCommand = cli.Command{
 				}
 			},
 			BashComplete: func(c *cli.Context) {
-				client, err := internal.Connect(config)
+				client, err := highlevel.Connect(config, nil)
 				if err != nil {
 					panic(err)
 				}
@@ -259,7 +259,7 @@ var objectCommand = cli.Command{
 					return fmt.Errorf("invalid value: %v", err)
 				}
 
-				client, err := internal.Connect(config)
+				client, err := highlevel.Connect(config, nil)
 				if err != nil {
 					return fmt.Errorf("failed to create api client: %v", err)
 				}

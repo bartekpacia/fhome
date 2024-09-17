@@ -9,11 +9,11 @@ import (
 
 	"github.com/bartekpacia/fhome/api"
 	"github.com/bartekpacia/fhome/cmd/fhomed/homekit"
-	"github.com/bartekpacia/fhome/internal"
+	"github.com/bartekpacia/fhome/highlevel"
 )
 
 func daemon(name, pin string) error {
-	client, err := internal.Connect(config)
+	client, err := highlevel.Connect(config, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create api client: %v", err)
 	}
