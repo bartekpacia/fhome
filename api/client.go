@@ -10,7 +10,6 @@ import (
 	"log"
 	"math/rand"
 	"strconv"
-	"time"
 
 	"github.com/gorilla/websocket"
 	"golang.org/x/crypto/pbkdf2"
@@ -21,16 +20,12 @@ import (
 // It has to end with a trailing slash, otherwise handshake fails.
 const APIURL = "wss://fhome.cloud/webapp-interface/"
 
-// Dialer is used to create a websocket connection.
-var Dialer = websocket.Dialer{
-	EnableCompression: true,
-	HandshakeTimeout:  5 * time.Second,
-}
-
 type Client struct {
 	email                *string
 	resourcePasswordHash *string
 	uniqueID             *string
+
+	dialer *websocket.Dialer
 
 	// The first websocket connection that is used for the following actions:
 	//  - open_client_session
@@ -44,10 +39,16 @@ type Client struct {
 	msgStreams map[int]chan<- Message
 }
 
-// NewClient creates a new client and automatically starts connecting to
-// websockets.
-func NewClient() (*Client, error) {
-	conn, err := connect()
+// NewClient returns a new F&Home API client.
+//
+// If a nil dialer is provided, a default dialer from gorilla/websocket will be
+// used.
+func NewClient(dialer *websocket.Dialer) (*Client, error) {
+	if dialer == nil {
+		dialer = websocket.DefaultDialer
+	}
+
+	conn, err := connect(dialer)
 	if err != nil {
 		return nil, fmt.Errorf("connect: %v", err)
 	}
@@ -62,7 +63,15 @@ func NewClient() (*Client, error) {
 		return nil, fmt.Errorf("wrong first message received")
 	}
 
-	c := Client{setupConn: conn, msgStreams: make(map[int]chan<- Message)}
+	c := Client{
+		email:                nil,
+		resourcePasswordHash: nil,
+		uniqueID:             nil,
+		dialer:               dialer,
+		setupConn:            conn,
+		mainConn:             nil,
+		msgStreams:           make(map[int]chan<- Message),
+	}
 
 	return &c, nil
 }
@@ -148,7 +157,7 @@ func (c *Client) GetMyResources() (*GetMyResourcesResponse, error) {
 // Currently, it assumes that a user has only one resource.
 func (c *Client) OpenResourceSession(resourcePassword string) error {
 	// We can't use the connection that was used to connect to Cloud.
-	conn, err := connect()
+	conn, err := connect(c.dialer)
 	if err != nil {
 		return fmt.Errorf("reconnect: %v", err)
 	}
@@ -370,8 +379,8 @@ func (c *Client) reader() {
 	}
 }
 
-func connect() (*websocket.Conn, error) {
-	conn, resp, err := Dialer.Dial(APIURL, nil)
+func connect(dialer *websocket.Dialer) (*websocket.Conn, error) {
+	conn, resp, err := dialer.Dial(APIURL, nil)
 	if err != nil {
 		if resp != nil {
 			log.Println("failed to dial")

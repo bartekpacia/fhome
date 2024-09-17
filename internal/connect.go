@@ -15,7 +15,7 @@ type Config struct {
 
 // Connect returns a client that is ready to use.
 func Connect(config *Config) (*api.Client, error) {
-	client, err := api.NewClient()
+	client, err := api.NewClient(nil)
 	if err != nil {
 		slog.Error("failed to create API client", slog.Any("error", err))
 		return nil, err
