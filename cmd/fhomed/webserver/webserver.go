@@ -1,4 +1,4 @@
-package main
+package webserver
 
 import (
 	"embed"
@@ -21,13 +21,13 @@ var tmpl = template.Must(template.ParseFS(templates, "templates/*"))
 
 const port = 9001
 
-// Stupid webserver to display some state about my smart devices.
-func webserver(client *api.Client, homeConfig *api.Config) {
+// Stupid Start to display some state about my smart devices.
+func Start(client *api.Client, homeConfig *api.Config, email string) {
 	http.HandleFunc("GET /index", func(w http.ResponseWriter, r *http.Request) {
 		slog.Info("got request", slog.String("method", r.Method), slog.String("path", r.URL.Path))
 
 		data := map[string]interface{}{
-			"Email":  config.Email,
+			"Email":  email,
 			"Panels": homeConfig.Panels,
 			"Cells":  homeConfig.Cells(),
 		}

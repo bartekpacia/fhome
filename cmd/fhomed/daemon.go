@@ -10,6 +10,7 @@ import (
 	"github.com/bartekpacia/fhome/api"
 	"github.com/bartekpacia/fhome/cmd/db"
 	"github.com/bartekpacia/fhome/cmd/fhomed/homekit"
+	"github.com/bartekpacia/fhome/cmd/fhomed/webserver"
 	"github.com/bartekpacia/fhome/highlevel"
 )
 
@@ -39,14 +40,13 @@ func daemon(name, pin string) error {
 		slog.String("source", systemConfig.Source),
 	)
 
-	config, err := api.MergeConfigs(userConfig, systemConfig)
+	apiConfig, err := api.MergeConfigs(userConfig, systemConfig)
 	if err != nil {
 		slog.Error("failed to merge configs", slog.Any("error", err))
 		return err
 	}
 
-
-	go webserver(client, config)
+	go webserver.Start(client, apiConfig, config.Email)
 
 	go db.DBListener(client)
 
@@ -125,7 +125,7 @@ func daemon(name, pin string) error {
 		},
 	}
 
-	home, err := homekitClient.SetUp(config)
+	home, err := homekitClient.SetUp(apiConfig)
 	if err != nil {
 		slog.Error("failed to set up homekit", slog.Any("error", err))
 		return err
@@ -153,7 +153,7 @@ func daemon(name, pin string) error {
 		}
 
 		cellValue := resp.Response.CellValues[0]
-		printCellData(&cellValue, config)
+		printCellData(&cellValue, apiConfig)
 
 		// handle lightbulb
 		{
