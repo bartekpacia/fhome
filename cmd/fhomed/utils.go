@@ -25,7 +25,7 @@ func printCellData(cellValue *api.CellValue, cfg *api.Config) error {
 		}
 	}
 
-	slog.Info("object state changed",
+	slog.Debug("object state changed",
 		slog.Int("id", cell.ID),
 		slog.String("panel", panelName),
 		slog.String("name", cell.Name),

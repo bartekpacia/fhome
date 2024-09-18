@@ -19,9 +19,11 @@ var templates embed.FS
 
 var tmpl = template.Must(template.ParseFS(templates, "templates/*"))
 
+const port = 9001
+
 // Hacky workaround for myself to open my gate from my phone.
 func serviceListener(client *api.Client) {
-	http.HandleFunc("/gate", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("GET /gate", func(w http.ResponseWriter, r *http.Request) {
 		var result string
 		err := client.SendEvent(260, api.ValueToggle)
 		if err != nil {
@@ -43,7 +45,7 @@ func serviceListener(client *api.Client) {
 
 // Stupid webserver to display some state about my smart devices.
 func websiteListener(homeConfig *api.Config) {
-	http.HandleFunc("/index", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
 		slog.Info("got request", slog.String("method", r.Method), slog.String("path", r.URL.Path))
 
 		data := map[string]interface{}{
@@ -55,9 +57,12 @@ func websiteListener(homeConfig *api.Config) {
 		tmpl.ExecuteTemplate(w, "index.html.tmpl", data)
 	})
 
-	http.Handle("/public/", http.StripPrefix("/public/", http.FileServer(http.FS(assets))))
+	http.Handle("GET /public", http.StripPrefix("/public/", http.FileServer(http.FS(assets))))
 
-	err := http.ListenAndServe(":9001", nil)
+	addr := fmt.Sprint("0.0.0.0:", port)
+	slog.Info("server will listen and serve", "addr", fmt.Sprint("http://", addr))
+	log.Println("http server is listening and serving on port 9001")
+	err := http.ListenAndServe(addr, nil)
 	if err != nil {
 		panic(err)
 	}

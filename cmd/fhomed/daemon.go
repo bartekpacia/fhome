@@ -22,23 +22,21 @@ func daemon(name, pin string) error {
 	if err != nil {
 		slog.Error("failed to get user config", slog.Any("error", err))
 		return err
-	} else {
-		slog.Info("got user config",
-			slog.Int("panels", len(userConfig.Panels)),
-			slog.Int("cells", len(userConfig.Cells)),
-		)
 	}
+	slog.Info("got user config",
+		slog.Int("panels", len(userConfig.Panels)),
+		slog.Int("cells", len(userConfig.Cells)),
+	)
 
 	systemConfig, err := client.GetSystemConfig()
 	if err != nil {
 		slog.Error("failed to get system config", slog.Any("error", err))
 		return err
-	} else {
-		slog.Info("got system config",
-			slog.Int("cells", len(systemConfig.Response.MobileDisplayProperties.Cells)),
-			slog.String("source", systemConfig.Source),
-		)
 	}
+	slog.Info("got system config",
+		slog.Int("cells", len(systemConfig.Response.MobileDisplayProperties.Cells)),
+		slog.String("source", systemConfig.Source),
+	)
 
 	config, err := api.MergeConfigs(userConfig, systemConfig)
 	if err != nil {
