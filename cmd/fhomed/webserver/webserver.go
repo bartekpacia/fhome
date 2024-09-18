@@ -21,8 +21,21 @@ var tmpl = template.Must(template.ParseFS(templates, "templates/*"))
 
 const port = 9001
 
-// Hacky workaround for myself to open my gate from my phone.
-func serviceListener(client *api.Client) {
+// Stupid webserver to display some state about my smart devices.
+func webserver(client *api.Client, homeConfig *api.Config) {
+	http.HandleFunc("GET /index", func(w http.ResponseWriter, r *http.Request) {
+		slog.Info("got request", slog.String("method", r.Method), slog.String("path", r.URL.Path))
+
+		data := map[string]interface{}{
+			"Email":  config.Email,
+			"Panels": homeConfig.Panels,
+			"Cells":  homeConfig.Cells(),
+		}
+
+		tmpl.ExecuteTemplate(w, "index.html.tmpl", data)
+	})
+
+	// Hacky workaround for myself to open my gate from my phone.
 	http.HandleFunc("GET /gate", func(w http.ResponseWriter, r *http.Request) {
 		var result string
 		err := client.SendEvent(260, api.ValueToggle)
@@ -35,26 +48,6 @@ func serviceListener(client *api.Client) {
 			log.Print(result)
 			fmt.Fprint(w, result)
 		}
-	})
-
-	err := http.ListenAndServe(":9000", nil)
-	if err != nil {
-		panic(err)
-	}
-}
-
-// Stupid webserver to display some state about my smart devices.
-func websiteListener(homeConfig *api.Config) {
-	http.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-		slog.Info("got request", slog.String("method", r.Method), slog.String("path", r.URL.Path))
-
-		data := map[string]interface{}{
-			"Email":  config.Email,
-			"Panels": homeConfig.Panels,
-			"Cells":  homeConfig.Cells(),
-		}
-
-		tmpl.ExecuteTemplate(w, "index.html.tmpl", data)
 	})
 
 	http.Handle("GET /public", http.StripPrefix("/public/", http.FileServer(http.FS(assets))))
