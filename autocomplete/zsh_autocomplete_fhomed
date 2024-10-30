@@ -1,16 +1,25 @@
 #compdef fhomed
+compdef _fhomed fhomed
 
-local -a opts
-local cur
-cur=${words[-1]}
-if [[ "$cur" == "-"* ]]; then
-  opts=("${(@f)$(${words[@]:0:#words[@]-1} ${cur} --generate-bash-completion)}")
-else
-  opts=("${(@f)$(${words[@]:0:#words[@]-1} --generate-bash-completion)}")
-fi
+_fhomed() {
+	local -a opts
+	local cur
+	cur=${words[-1]}
+	if [[ "$cur" == "-"* ]]; then
+		opts=("${(@f)$(${words[@]:0:#words[@]-1} ${cur} --generate-shell-completion)}")
+	else
+		opts=("${(@f)$(${words[@]:0:#words[@]-1} --generate-shell-completion)}")
+	fi
 
-if [[ "${opts[1]}" != "" ]]; then
-  _describe 'values' opts
-else
-  _files
+	if [[ "${opts[1]}" != "" ]]; then
+		_describe 'values' opts
+	else
+		_files
+	fi
+}
+
+# Don't run the completion function when being source-ed or eval-ed.
+# See https://github.com/urfave/cli/issues/1874 for discussion.
+if [ "$funcstack[1]" = "_fhomed" ]; then
+	_fhomed
 fi
