@@ -9,7 +9,7 @@ import (
 	"os/signal"
 	"time"
 
-	highlevel "github.com/bartekpacia/fhome/highlevel"
+	"github.com/bartekpacia/fhome/highlevel"
 	"github.com/knadh/koanf"
 	"github.com/knadh/koanf/parsers/toml"
 	"github.com/knadh/koanf/providers/file"

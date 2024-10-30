@@ -9,8 +9,6 @@ import (
 	"os/signal"
 	"time"
 
-	docs "github.com/urfave/cli-docs/v3"
-
 	"github.com/bartekpacia/fhome/highlevel"
 	"github.com/knadh/koanf"
 	"github.com/knadh/koanf/parsers/toml"
@@ -26,8 +24,7 @@ var version = "dev"
 
 func main() {
 	loadConfig()
-	var app *cli.Command
-	app = &cli.Command{
+	app := &cli.Command{
 		Name:    "fhomed",
 		Usage:   "Long-running daemon for F&Home Cloud",
 		Version: version,
@@ -35,46 +32,6 @@ func main() {
 			"Bartek Pacia <barpac02@gmail.com>",
 		},
 		EnableShellCompletion: true,
-		Commands: []*cli.Command{
-			{
-				Name:   "docs",
-				Usage:  "Print documentation in various formats",
-				Hidden: true,
-				Flags: []cli.Flag{
-					&cli.StringFlag{
-						Name:   "format",
-						Usage:  "output format [markdown, man, or man-with-section]",
-						Hidden: true,
-						Value:  "markdown",
-					},
-				},
-				Action: func(ctx context.Context, cmd *cli.Command) error {
-					format := cmd.String("format")
-					if format == "" || format == "markdown" {
-						content, err := docs.ToMarkdown(cmd)
-						if err != nil {
-							return fmt.Errorf("generate documentation in markdown: %v", err)
-						}
-						fmt.Println(content)
-					} else if format == "man" {
-						content, err := docs.ToMan(cmd)
-						if err != nil {
-							return fmt.Errorf("generate documentation in man: %v", err)
-						}
-						fmt.Println(content)
-					} else if format == "man-with-section" {
-						content, err := docs.ToManWithSection(cmd, 1)
-						if err != nil {
-							return fmt.Errorf("generate documentation in man with section 1: %v", err)
-						}
-						fmt.Println(content)
-					} else {
-						return fmt.Errorf("invalid documentation format %#v", format)
-					}
-					return nil
-				},
-			},
-		},
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:  "json",
