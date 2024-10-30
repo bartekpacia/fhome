@@ -1,10 +1,13 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	docs "github.com/urfave/cli-docs/v3"
 	"log"
 	"log/slog"
 	"os"
+	"os/signal"
 	"time"
 
 	"github.com/bartekpacia/fhome/highlevel"
@@ -12,24 +15,25 @@ import (
 	"github.com/knadh/koanf/parsers/toml"
 	"github.com/knadh/koanf/providers/file"
 	"github.com/lmittmann/tint"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 var config *highlevel.Config
 
+// This is set by GoReleaser, see https://goreleaser.com/cookbooks/using-main.version
+var version = "dev"
+
 func main() {
 	loadConfig()
-	app := &cli.App{
+	var app *cli.Command
+	app = &cli.Command{
 		Name:    "fhomed",
 		Usage:   "Long-running daemon for F&Home Cloud",
-		Version: "0.1.24",
-		Authors: []*cli.Author{
-			{
-				Name:  "Bartek Pacia",
-				Email: "barpac02@gmail.com",
-			},
+		Version: version,
+		Authors: []any{
+			"Bartek Pacia <barpac02@gmail.com>",
 		},
-		EnableBashCompletion: true,
+		EnableShellCompletion: true,
 		Commands: []*cli.Command{
 			{
 				Name:   "docs",
@@ -43,21 +47,30 @@ func main() {
 						Value:  "markdown",
 					},
 				},
-				Action: func(c *cli.Context) error {
-					format := c.String("format")
+				Action: func(ctx context.Context, cmd *cli.Command) error {
+					format := cmd.String("format")
 					if format == "" || format == "markdown" {
-						fmt.Println(c.App.ToMarkdown())
-						return nil
+						content, err := docs.ToMarkdown(cmd)
+						if err != nil {
+							return fmt.Errorf("generate documentation in markdown: %v", err)
+						}
+						fmt.Println(content)
+					} else if format == "man" {
+						content, err := docs.ToMan(cmd)
+						if err != nil {
+							return fmt.Errorf("generate documentation in man: %v", err)
+						}
+						fmt.Println(content)
+					} else if format == "man-with-section" {
+						content, err := docs.ToManWithSection(cmd, 1)
+						if err != nil {
+							return fmt.Errorf("generate documentation in man with section 1: %v", err)
+						}
+						fmt.Println(content)
+					} else {
+						return fmt.Errorf("invalid documentation format %#v", format)
 					}
-					if format == "man" {
-						fmt.Println(c.App.ToMan())
-						return nil
-					}
-					if format == "man-with-section" {
-						fmt.Println(c.App.ToManWithSection(1))
-						return nil
-					}
-					return fmt.Errorf("invalid format '%s'", format)
+					return nil
 				},
 			},
 		},
@@ -81,46 +94,45 @@ func main() {
 				Value: "00102003",
 			},
 		},
-		Before: before,
-		Action: func(c *cli.Context) error {
-			name := c.String("name")
-			pin := c.String("pin")
+		Before: func(ctx context.Context, cmd *cli.Command) error {
+			var level slog.Level
+			if cmd.Bool("debug") {
+				level = slog.LevelDebug
+			} else {
+				level = slog.LevelInfo
+			}
+
+			if cmd.Bool("json") {
+				opts := slog.HandlerOptions{Level: level}
+				handler := slog.NewJSONHandler(os.Stdout, &opts)
+				logger := slog.New(handler)
+				slog.SetDefault(logger)
+			} else {
+				opts := tint.Options{Level: level, TimeFormat: time.TimeOnly}
+				handler := tint.NewHandler(os.Stdout, &opts)
+				logger := slog.New(handler)
+				slog.SetDefault(logger)
+			}
+
+			return nil
+		},
+		Action: func(ctx context.Context, cmd *cli.Command) error {
+			name := cmd.String("name")
+			pin := cmd.String("pin")
 
 			return daemon(name, pin)
 		},
-		CommandNotFound: func(c *cli.Context, command string) {
+		CommandNotFound: func(ctx context.Context, cmd *cli.Command, command string) {
 			log.Printf("invalid command '%s'. See 'fhomed --help'\n", command)
 		},
 	}
 
-	err := app.Run(os.Args)
+	ctx, _ := signal.NotifyContext(context.Background(), os.Interrupt)
+	err := app.Run(ctx, os.Args)
 	if err != nil {
 		slog.Error("exit", slog.Any("error", err))
 		os.Exit(1)
 	}
-}
-
-func before(c *cli.Context) error {
-	var level slog.Level
-	if c.Bool("debug") {
-		level = slog.LevelDebug
-	} else {
-		level = slog.LevelInfo
-	}
-
-	if c.Bool("json") {
-		opts := slog.HandlerOptions{Level: level}
-		handler := slog.NewJSONHandler(os.Stdout, &opts)
-		logger := slog.New(handler)
-		slog.SetDefault(logger)
-	} else {
-		opts := tint.Options{Level: level, TimeFormat: time.TimeOnly}
-		handler := tint.NewHandler(os.Stdout, &opts)
-		logger := slog.New(handler)
-		slog.SetDefault(logger)
-	}
-
-	return nil
 }
 
 func loadConfig() {
