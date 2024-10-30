@@ -3,12 +3,13 @@ package main
 import (
 	"context"
 	"fmt"
-	docs "github.com/urfave/cli-docs/v3"
 	"log"
 	"log/slog"
 	"os"
 	"os/signal"
 	"time"
+
+	docs "github.com/urfave/cli-docs/v3"
 
 	"github.com/bartekpacia/fhome/highlevel"
 	"github.com/knadh/koanf"
