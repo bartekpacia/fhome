@@ -12,7 +12,7 @@ import (
 	"github.com/bartekpacia/fhome/highlevel"
 )
 
-func daemon(name, pin string) error {
+func daemon(ctx context.Context, name, pin string) error {
 	client, err := highlevel.Connect(config, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create api client: %v", err)

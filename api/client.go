@@ -3,6 +3,7 @@
 package api
 
 import (
+	"context"
 	"crypto/sha1"
 	"encoding/base64"
 	"encoding/json"
@@ -226,7 +227,7 @@ func (c *Client) GetSystemConfig() (*TouchesResponse, error) {
 // GetUserConfig returns configuration of cells and panels.
 //
 // Configuration returned by this method is set in the web or mobile app.
-func (c *Client) GetUserConfig() (*UserConfig, error) {
+func (c *Client) GetUserConfig(ctx context.Context) (*UserConfig, error) {
 	token := generateRequestToken()
 
 	actionName := ActionGetUserConfig
@@ -240,7 +241,7 @@ func (c *Client) GetUserConfig() (*UserConfig, error) {
 		return nil, fmt.Errorf("failed to write %s to conn: %v", actionName, err)
 	}
 
-	msg, err := c.ReadMessage(actionName, token)
+	msg, err := c.ReadMessage(ctx, actionName, token)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read messagee: %v", err)
 	}
@@ -267,28 +268,30 @@ func (c *Client) GetUserConfig() (*UserConfig, error) {
 // with matching actionName is returned.
 //
 // If its status is not "ok", it returns an error.
-func (c *Client) ReadMessage(actionName string, requestToken string) (*Message, error) {
+func (c *Client) ReadMessage(ctx context.Context, actionName string, requestToken string) (*Message, error) {
 	for {
-		ch := c.read()
-		msg := <-ch
-
-		if msg.Status != nil {
-			if *msg.Status != "ok" {
-				return nil, fmt.Errorf("message status is %s", *msg.Status)
+		select {
+		case <-ctx.Done():
+			return nil, fmt.Errorf("context is done")
+		case msg := <-c.read():
+			if msg.Status != nil {
+				if *msg.Status != "ok" {
+					return nil, fmt.Errorf("message status is %s", *msg.Status)
+				}
 			}
-		}
 
-		tokenOk := true
-		if requestToken != "" {
-			if msg.RequestToken == nil {
-				tokenOk = false
-			} else if requestToken != *msg.RequestToken {
-				tokenOk = false
+			tokenOk := true
+			if requestToken != "" {
+				if msg.RequestToken == nil {
+					tokenOk = false
+				} else if requestToken != *msg.RequestToken {
+					tokenOk = false
+				}
 			}
-		}
 
-		if actionName == msg.ActionName && tokenOk {
-			return &msg, nil
+			if actionName == msg.ActionName && tokenOk {
+				return &msg, nil
+			}
 		}
 	}
 }
