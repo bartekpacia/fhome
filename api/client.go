@@ -156,7 +156,7 @@ func (c *Client) GetMyResources() (*GetMyResourcesResponse, error) {
 // user has.
 //
 // Currently, it assumes that a user has only one resource.
-func (c *Client) OpenResourceSession(resourcePassword string) error {
+func (c *Client) OpenResourceSession(ctx context.Context, resourcePassword string) error {
 	// We can't use the connection that was used to connect to Cloud.
 	conn, err := connect(c.dialer)
 	if err != nil {
@@ -180,7 +180,7 @@ func (c *Client) OpenResourceSession(resourcePassword string) error {
 
 	go c.reader()
 
-	_, err = c.ReadMessage(actionName, token)
+	_, err = c.ReadMessage(ctx, actionName, token)
 	if err != nil {
 		return fmt.Errorf("failed to read %s: %v", actionName, err)
 	}
@@ -196,7 +196,7 @@ func (c *Client) OpenResourceSession(resourcePassword string) error {
 // Configuration returned by this method is set in the desktop configurator app.
 //
 // This action is named "Touches" in F&Home's terminology.
-func (c *Client) GetSystemConfig() (*TouchesResponse, error) {
+func (c *Client) GetSystemConfig(ctx context.Context) (*TouchesResponse, error) {
 	actionName := ActionGetSystemConfig
 	token := generateRequestToken()
 
@@ -210,7 +210,7 @@ func (c *Client) GetSystemConfig() (*TouchesResponse, error) {
 		return nil, fmt.Errorf("failed to write %s: %v", actionName, err)
 	}
 
-	msg, err := c.ReadMessage(actionName, token)
+	msg, err := c.ReadMessage(ctx, actionName, token)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read message: %v", err)
 	}
@@ -314,7 +314,7 @@ func (c *Client) ReadAnyMessage() (*Message, error) {
 // SendEvent sends an event containing value to the cell.
 //
 // Events are named "Xevents" in F&Home's terminology.
-func (c *Client) SendEvent(cellID int, value string) error {
+func (c *Client) SendEvent(ctx context.Context, cellID int, value string) error {
 	actionName := ActionEvent
 	token := generateRequestToken()
 
@@ -332,7 +332,7 @@ func (c *Client) SendEvent(cellID int, value string) error {
 		return fmt.Errorf("failed to write %s to conn: %v", actionName, err)
 	}
 
-	_, err = c.ReadMessage(actionName, token)
+	_, err = c.ReadMessage(ctx, actionName, token)
 	return err
 }
 

@@ -13,12 +13,12 @@ import (
 )
 
 func daemon(ctx context.Context, name, pin string) error {
-	client, err := highlevel.Connect(config, nil)
+	client, err := highlevel.Connect(ctx, config, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create api client: %v", err)
 	}
 
-	userConfig, err := client.GetUserConfig()
+	userConfig, err := client.GetUserConfig(ctx)
 	if err != nil {
 		slog.Error("failed to get user config", slog.Any("error", err))
 		return err
@@ -28,7 +28,7 @@ func daemon(ctx context.Context, name, pin string) error {
 		slog.Int("cells", len(userConfig.Cells)),
 	)
 
-	systemConfig, err := client.GetSystemConfig()
+	systemConfig, err := client.GetSystemConfig(ctx)
 	if err != nil {
 		slog.Error("failed to get system config", slog.Any("error", err))
 		return err
@@ -44,8 +44,8 @@ func daemon(ctx context.Context, name, pin string) error {
 		return err
 	}
 
-	go serviceListener(client)
-	go websiteListener(config)
+	go serviceListener(ctx, client)
+	go websiteListener(ctx, config)
 
 	// Here we listen to HomeKit events and convert them to API calls to F&Home
 	// to keep the state in sync.
@@ -60,7 +60,7 @@ func daemon(ctx context.Context, name, pin string) error {
 				slog.String("callback", "OnLightbulbUpdate"),
 			}
 
-			err := client.SendEvent(ID, value)
+			err := client.SendEvent(ctx, ID, value)
 			if err != nil {
 				attrs = append(attrs, slog.Any("error", err))
 				slog.LogAttrs(context.TODO(), slog.LevelError, "failed to send event", attrs...)
@@ -77,7 +77,7 @@ func daemon(ctx context.Context, name, pin string) error {
 				slog.String("callback", "OnLEDUpdate"),
 			}
 
-			err := client.SendEvent(ID, value)
+			err := client.SendEvent(ctx, ID, value)
 			if err != nil {
 				attrs = append(attrs, slog.Any("error", err))
 				slog.LogAttrs(context.TODO(), slog.LevelError, "failed to send event", attrs...)
@@ -94,7 +94,7 @@ func daemon(ctx context.Context, name, pin string) error {
 				slog.String("callback", "OnGarageDoorUpdate"),
 			}
 
-			err := client.SendEvent(ID, value)
+			err := client.SendEvent(ctx, ID, value)
 			if err != nil {
 				attrs = append(attrs, slog.Any("error", err))
 				slog.LogAttrs(context.TODO(), slog.LevelError, "failed to send event", attrs...)
@@ -111,7 +111,7 @@ func daemon(ctx context.Context, name, pin string) error {
 				slog.String("callback", "OnGarageDoorUpdate"),
 			}
 
-			err = client.SendEvent(ID, value)
+			err = client.SendEvent(ctx, ID, value)
 			if err != nil {
 				attrs = append(attrs, slog.Any("error", err))
 				slog.LogAttrs(context.TODO(), slog.LevelError, "failed to send event", attrs...)
@@ -131,7 +131,7 @@ func daemon(ctx context.Context, name, pin string) error {
 	// In this loop, we listen to events from F&Home and send updates to HomeKit
 	// to keep the state in sync.
 	for {
-		msg, err := client.ReadMessage(api.ActionStatusTouchesChanged, "")
+		msg, err := client.ReadMessage(ctx, api.ActionStatusTouchesChanged, "")
 		if err != nil {
 			slog.Error("failed to read message", slog.Any("error", err))
 			return err
