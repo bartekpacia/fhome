@@ -120,7 +120,7 @@ func main() {
 			name := cmd.String("name")
 			pin := cmd.String("pin")
 
-			return daemon(name, pin)
+			return daemon(ctx, name, pin)
 		},
 		CommandNotFound: func(ctx context.Context, cmd *cli.Command, command string) {
 			log.Printf("invalid command '%s'. See 'fhomed --help'\n", command)
@@ -137,6 +137,7 @@ func main() {
 
 func loadConfig() {
 	k := koanf.New(".")
+
 	p := "/etc/fhomed/config.toml"
 	if err := k.Load(file.Provider(p), toml.Parser()); err != nil {
 		slog.Debug("failed to load config file", slog.Any("error", err))

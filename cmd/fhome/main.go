@@ -103,6 +103,6 @@ func loadConfig() {
 	config = &highlevel.Config{
 		Email:            k.MustString("FHOME_EMAIL"),
 		Password:         k.MustString("FHOME_CLOUD_PASSWORD"),
-		ResourcePassword: k.String("FHOME_RESOURCE_PASSWORD"),
+		ResourcePassword: k.MustString("FHOME_RESOURCE_PASSWORD"),
 	}
 }

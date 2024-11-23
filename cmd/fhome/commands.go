@@ -60,18 +60,18 @@ var configCommand = cli.Command{
 					return fmt.Errorf("cannot use both --system and --user")
 				}
 
-				client, err := highlevel.Connect(config, nil)
+				client, err := highlevel.Connect(ctx, config, nil)
 				if err != nil {
 					return fmt.Errorf("failed to create api client: %v", err)
 				}
 
-				sysConfig, err := client.GetSystemConfig()
+				sysConfig, err := client.GetSystemConfig(ctx)
 				if err != nil {
 					return fmt.Errorf("failed to get sysConfig: %v", err)
 				}
 				log.Println("got system config")
 
-				userConfig, err := client.GetUserConfig()
+				userConfig, err := client.GetUserConfig(ctx)
 				if err != nil {
 					return fmt.Errorf("failed to get user config: %v", err)
 				}
@@ -138,7 +138,7 @@ var eventCommand = cli.Command{
 			Name:  "watch",
 			Usage: "Print all incoming messages",
 			Action: func(ctx context.Context, c *cli.Command) error {
-				client, err := highlevel.Connect(config, nil)
+				client, err := highlevel.Connect(ctx, config, nil)
 				if err != nil {
 					return fmt.Errorf("failed to create api client: %v", err)
 				}
@@ -180,7 +180,7 @@ var objectCommand = cli.Command{
 					return fmt.Errorf("object not specified")
 				}
 
-				client, err := highlevel.Connect(config, nil)
+				client, err := highlevel.Connect(ctx, config, nil)
 				if err != nil {
 					return fmt.Errorf("failed to create api client: %v", err)
 				}
@@ -190,12 +190,12 @@ var objectCommand = cli.Command{
 					// string
 					log.Printf("looking for object with name %q", object)
 
-					userConfig, err := client.GetUserConfig()
+					userConfig, err := client.GetUserConfig(ctx)
 					if err != nil {
 						return fmt.Errorf("failed to get user config: %v", err)
 					}
 
-					sysConfig, err := client.GetSystemConfig()
+					sysConfig, err := client.GetSystemConfig(ctx)
 					if err != nil {
 						return fmt.Errorf("failed to get system config: %v", err)
 					}
@@ -212,7 +212,7 @@ var objectCommand = cli.Command{
 
 					log.Printf("selected object %q with id %d with %d%% confidence\n", bestObject.Name, bestObject.ID, int(bestScore*100))
 
-					err = client.SendEvent(bestObject.ID, api.ValueToggle)
+					err = client.SendEvent(ctx, bestObject.ID, api.ValueToggle)
 					if err != nil {
 						return fmt.Errorf("failed to send event to object %q with id %d", bestObject.Name, bestObject.ID)
 					}
@@ -222,7 +222,7 @@ var objectCommand = cli.Command{
 				} else {
 					// int
 
-					err = client.SendEvent(objectID, api.ValueToggle)
+					err = client.SendEvent(ctx, objectID, api.ValueToggle)
 					if err != nil {
 						return fmt.Errorf("failed to send event to object with id %d: %v", objectID, err)
 					}
@@ -232,13 +232,13 @@ var objectCommand = cli.Command{
 				}
 			},
 			ShellComplete: func(ctx context.Context, cmd *cli.Command) {
-				client, err := highlevel.Connect(config, nil)
+				client, err := highlevel.Connect(ctx, config, nil)
 				if err != nil {
 					panic(err)
 				}
 
 				// TODO: Save to cache because it's slow
-				userConfig, err := client.GetUserConfig()
+				userConfig, err := client.GetUserConfig(ctx)
 				if err != nil {
 					panic(err)
 				}
@@ -264,7 +264,7 @@ var objectCommand = cli.Command{
 					return fmt.Errorf("invalid value: %v", err)
 				}
 
-				client, err := highlevel.Connect(config, nil)
+				client, err := highlevel.Connect(ctx, config, nil)
 				if err != nil {
 					return fmt.Errorf("failed to create api client: %v", err)
 				}
@@ -274,12 +274,12 @@ var objectCommand = cli.Command{
 					// string
 					slog.Info("looking for object", slog.String("name", object))
 
-					userConfig, err := client.GetUserConfig()
+					userConfig, err := client.GetUserConfig(ctx)
 					if err != nil {
 						return fmt.Errorf("failed to get user config: %v", err)
 					}
 
-					sysConfig, err := client.GetSystemConfig()
+					sysConfig, err := client.GetSystemConfig(ctx)
 					if err != nil {
 						return fmt.Errorf("failed to get system config: %v", err)
 					}
@@ -301,7 +301,7 @@ var objectCommand = cli.Command{
 					)
 
 					value := api.MapLighting(value)
-					err = client.SendEvent(bestObject.ID, value)
+					err = client.SendEvent(ctx, bestObject.ID, value)
 					if err != nil {
 						return fmt.Errorf("failed to send event to object %q with id %d", bestObject.Name, bestObject.ID)
 					} else {
@@ -313,7 +313,7 @@ var objectCommand = cli.Command{
 						return nil
 					}
 				} else {
-					err = client.SendEvent(objectID, api.MapLighting(value))
+					err = client.SendEvent(ctx, objectID, api.MapLighting(value))
 					if err != nil {
 						return fmt.Errorf("sent event to object with id %d: %v", objectID, err)
 					}
