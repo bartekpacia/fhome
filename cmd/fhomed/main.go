@@ -14,6 +14,7 @@ import (
 	"github.com/knadh/koanf/parsers/toml"
 	"github.com/knadh/koanf/providers/file"
 	"github.com/lmittmann/tint"
+	docs "github.com/urfave/cli-docs/v3"
 	"github.com/urfave/cli/v3"
 )
 
@@ -32,6 +33,47 @@ func main() {
 			"Bartek Pacia <barpac02@gmail.com>",
 		},
 		EnableShellCompletion: true,
+		Commands: []*cli.Command{
+			{
+				Name:   "docs",
+				Usage:  "Print documentation in various formats",
+				Hidden: true,
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:   "format",
+						Usage:  "output format [markdown, man, or man-with-section]",
+						Hidden: true,
+						Value:  "markdown",
+					},
+				},
+				Action: func(ctx context.Context, cmd *cli.Command) error {
+					format := cmd.String("format")
+					switch format {
+					case "", "markdown":
+						content, err := docs.ToMarkdown(cmd)
+						if err != nil {
+							return fmt.Errorf("generate documentation in markdown: %v", err)
+						}
+						fmt.Println(content)
+					case "man":
+						content, err := docs.ToMan(cmd)
+						if err != nil {
+							return fmt.Errorf("generate documentation in man: %v", err)
+						}
+						fmt.Println(content)
+					case "man-with-section":
+						content, err := docs.ToManWithSection(cmd, 1)
+						if err != nil {
+							return fmt.Errorf("generate documentation in man with section 1: %v", err)
+						}
+						fmt.Println(content)
+					default:
+						return fmt.Errorf("invalid documentation format %#v", format)
+					}
+					return nil
+				},
+			},
+		},
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:  "json",
