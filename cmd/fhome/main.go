@@ -42,7 +42,7 @@ func main() {
 				Usage: "show debug logs",
 			},
 		},
-		Before: func(ctx context.Context, cmd *cli.Command) error {
+		Before: func(ctx context.Context, cmd *cli.Command) (context.Context, error) {
 			var level slog.Level
 			if cmd.Bool("debug") {
 				level = slog.LevelDebug
@@ -62,7 +62,7 @@ func main() {
 				slog.SetDefault(logger)
 			}
 
-			return nil
+			return ctx, nil
 		},
 		Commands: []*cli.Command{
 			&configCommand,
