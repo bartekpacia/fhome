@@ -8,8 +8,8 @@ require (
 	github.com/gorilla/websocket v1.5.3
 	github.com/knadh/koanf v1.5.0
 	github.com/lmittmann/tint v1.0.5
-	github.com/urfave/cli/v3 v3.0.0-alpha9.7
 	github.com/urfave/cli-docs/v3 v3.0.0-alpha6
+	github.com/urfave/cli/v3 v3.0.0-alpha9.7
 	golang.org/x/crypto v0.29.0
 )
 
