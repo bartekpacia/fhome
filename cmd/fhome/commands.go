@@ -17,9 +17,10 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-func bestObjectMatch(object string, config *api.Config) (*api.Cell, float64) {
-	var bestScore float64
-	var bestObject *api.Cell = nil
+// bestObjectMatch returns the cell with the highest similarity score to the given object and the score itself.
+//
+// If no objects match at all (i.e., bestScore is 0), then this method returns nil.
+func bestObjectMatch(object string, config *api.Config) (bestObject *api.Cell, bestScore float64) {
 	for _, cell := range config.Cells() {
 		cell := cell
 
@@ -59,18 +60,18 @@ var configCommand = cli.Command{
 					return fmt.Errorf("cannot use both --system and --user")
 				}
 
-				client, err := highlevel.Connect(config, nil)
+				client, err := highlevel.Connect(ctx, config, nil)
 				if err != nil {
 					return fmt.Errorf("failed to create api client: %v", err)
 				}
 
-				sysConfig, err := client.GetSystemConfig()
+				sysConfig, err := client.GetSystemConfig(ctx)
 				if err != nil {
 					return fmt.Errorf("failed to get sysConfig: %v", err)
 				}
 				log.Println("got system config")
 
-				userConfig, err := client.GetUserConfig()
+				userConfig, err := client.GetUserConfig(ctx)
 				if err != nil {
 					return fmt.Errorf("failed to get user config: %v", err)
 				}
@@ -137,7 +138,7 @@ var eventCommand = cli.Command{
 			Name:  "watch",
 			Usage: "Print all incoming messages",
 			Action: func(ctx context.Context, c *cli.Command) error {
-				client, err := highlevel.Connect(config, nil)
+				client, err := highlevel.Connect(ctx, config, nil)
 				if err != nil {
 					return fmt.Errorf("failed to create api client: %v", err)
 				}
@@ -179,7 +180,7 @@ var objectCommand = cli.Command{
 					return fmt.Errorf("object not specified")
 				}
 
-				client, err := highlevel.Connect(config, nil)
+				client, err := highlevel.Connect(ctx, config, nil)
 				if err != nil {
 					return fmt.Errorf("failed to create api client: %v", err)
 				}
@@ -187,14 +188,14 @@ var objectCommand = cli.Command{
 				objectID, err := strconv.Atoi(object)
 				if err != nil {
 					// string
-					log.Println("looking for object with name", object)
+					log.Printf("looking for object with name %q", object)
 
-					userConfig, err := client.GetUserConfig()
+					userConfig, err := client.GetUserConfig(ctx)
 					if err != nil {
 						return fmt.Errorf("failed to get user config: %v", err)
 					}
 
-					sysConfig, err := client.GetSystemConfig()
+					sysConfig, err := client.GetSystemConfig(ctx)
 					if err != nil {
 						return fmt.Errorf("failed to get system config: %v", err)
 					}
@@ -205,20 +206,23 @@ var objectCommand = cli.Command{
 					}
 
 					bestObject, bestScore := bestObjectMatch(object, config)
-
-					log.Printf("selected object %#v with id %d with %d%% confidence\n", bestObject.Name, bestObject.ID, int(bestScore*100))
-
-					err = client.SendEvent(bestObject.ID, api.ValueToggle)
-					if err != nil {
-						return fmt.Errorf("failed to send event to object %#v with id %d", bestObject.Name, bestObject.ID)
+					if bestObject == nil {
+						return fmt.Errorf("no matching object found, confidence is %d%%", int(bestScore*100))
 					}
 
-					log.Printf("sent event %s to object %#v with id %d\n", api.ValueToggle, bestObject.Name, bestObject.ID)
+					log.Printf("selected object %q with id %d with %d%% confidence\n", bestObject.Name, bestObject.ID, int(bestScore*100))
+
+					err = client.SendEvent(ctx, bestObject.ID, api.ValueToggle)
+					if err != nil {
+						return fmt.Errorf("failed to send event to object %q with id %d", bestObject.Name, bestObject.ID)
+					}
+
+					log.Printf("sent event %s to object %q with id %d\n", api.ValueToggle, bestObject.Name, bestObject.ID)
 					return nil
 				} else {
 					// int
 
-					err = client.SendEvent(objectID, api.ValueToggle)
+					err = client.SendEvent(ctx, objectID, api.ValueToggle)
 					if err != nil {
 						return fmt.Errorf("failed to send event to object with id %d: %v", objectID, err)
 					}
@@ -228,13 +232,13 @@ var objectCommand = cli.Command{
 				}
 			},
 			ShellComplete: func(ctx context.Context, cmd *cli.Command) {
-				client, err := highlevel.Connect(config, nil)
+				client, err := highlevel.Connect(ctx, config, nil)
 				if err != nil {
 					panic(err)
 				}
 
 				// TODO: Save to cache because it's slow
-				userConfig, err := client.GetUserConfig()
+				userConfig, err := client.GetUserConfig(ctx)
 				if err != nil {
 					panic(err)
 				}
@@ -260,7 +264,7 @@ var objectCommand = cli.Command{
 					return fmt.Errorf("invalid value: %v", err)
 				}
 
-				client, err := highlevel.Connect(config, nil)
+				client, err := highlevel.Connect(ctx, config, nil)
 				if err != nil {
 					return fmt.Errorf("failed to create api client: %v", err)
 				}
@@ -270,12 +274,12 @@ var objectCommand = cli.Command{
 					// string
 					slog.Info("looking for object", slog.String("name", object))
 
-					userConfig, err := client.GetUserConfig()
+					userConfig, err := client.GetUserConfig(ctx)
 					if err != nil {
 						return fmt.Errorf("failed to get user config: %v", err)
 					}
 
-					sysConfig, err := client.GetSystemConfig()
+					sysConfig, err := client.GetSystemConfig(ctx)
 					if err != nil {
 						return fmt.Errorf("failed to get system config: %v", err)
 					}
@@ -286,6 +290,9 @@ var objectCommand = cli.Command{
 					}
 
 					bestObject, bestScore := bestObjectMatch(object, config)
+					if bestObject == nil {
+						return fmt.Errorf("no matching object found, confidence is %d%%", int(bestScore*100))
+					}
 
 					slog.Info("selected object",
 						slog.String("name", bestObject.Name),
@@ -294,9 +301,9 @@ var objectCommand = cli.Command{
 					)
 
 					value := api.MapLighting(value)
-					err = client.SendEvent(bestObject.ID, value)
+					err = client.SendEvent(ctx, bestObject.ID, value)
 					if err != nil {
-						return fmt.Errorf("failed to send event to object %#v with id %d", bestObject.Name, bestObject.ID)
+						return fmt.Errorf("failed to send event to object %q with id %d", bestObject.Name, bestObject.ID)
 					} else {
 						slog.Info("sent event to object",
 							slog.String("name", bestObject.Name),
@@ -306,7 +313,7 @@ var objectCommand = cli.Command{
 						return nil
 					}
 				} else {
-					err = client.SendEvent(objectID, api.MapLighting(value))
+					err = client.SendEvent(ctx, objectID, api.MapLighting(value))
 					if err != nil {
 						return fmt.Errorf("sent event to object with id %d: %v", objectID, err)
 					}

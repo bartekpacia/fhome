@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"embed"
 	"fmt"
 	"html/template"
@@ -22,10 +23,10 @@ var tmpl = template.Must(template.ParseFS(templates, "templates/*"))
 const port = 9001
 
 // Hacky workaround for myself to open my gate from my phone.
-func serviceListener(client *api.Client) {
+func serviceListener(ctx context.Context, client *api.Client) {
 	http.HandleFunc("GET /gate", func(w http.ResponseWriter, r *http.Request) {
 		var result string
-		err := client.SendEvent(260, api.ValueToggle)
+		err := client.SendEvent(ctx, 260, api.ValueToggle)
 		if err != nil {
 			result = fmt.Sprintf("Failed to send event: %v", err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -44,7 +45,7 @@ func serviceListener(client *api.Client) {
 }
 
 // A simple webserver to display some state about my smart devices.
-func websiteListener(homeConfig *api.Config) {
+func websiteListener(ctx context.Context, homeConfig *api.Config) {
 	http.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
 		slog.Info("got request", slog.String("method", r.Method), slog.String("path", r.URL.Path))
 

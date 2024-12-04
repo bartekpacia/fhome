@@ -81,8 +81,13 @@ brews:
     description: Background daemon for F&Home
     license: MIT
     install: |
+      man_content = `./fhomed docs --format man-with-section`
+      File.write("fhomed.1", man_content)
+
       bin.install "fhomed"
       generate_completions_from_executable(bin/"fhomed", "completion")
+      
+      man1.install "fhomed.1"
 
 aurs:
   - name: fhome-bin
