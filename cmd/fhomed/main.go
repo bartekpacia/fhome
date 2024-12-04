@@ -22,7 +22,6 @@ import (
 var version = "dev"
 
 func main() {
-	loadConfig()
 	app := &cli.Command{
 		Name:    "fhomed",
 		Usage:   "Long-running daemon for F&Home Cloud",
