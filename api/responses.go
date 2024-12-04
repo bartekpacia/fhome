@@ -62,7 +62,7 @@ const (
 	RGB         DisplayType = "RGB"
 )
 
-// MobileDisplayCell is a Cell, but returned from "touches" action.
+// MobileDisplayCell is a Cell but returned from "touches" action.
 type MobileDisplayCell struct {
 	// Cell description. Note that this is by the configurator app, not by the
 	// user in the mobile or web app.
@@ -85,7 +85,7 @@ type MobileDisplayCell struct {
 	Step string `json:"Sp"`
 	// Display Type.
 	DisplayType DisplayType `json:"DT"`
-	// Cell permission. Known values: FC (Full Control), RO (Read Only)
+	// Cell permission. Known values: FC (Full Control), RO (Read-Only)
 	Permission string `json:"CP"`
 }
 
@@ -116,7 +116,7 @@ type CellValue struct {
 	ValueStr    string      `json:"DVS"` // Probably "data value string"
 }
 
-func (cv *CellValue) IntID() int {
+func (cv CellValue) IntID() int {
 	i, err := strconv.Atoi(cv.ID)
 	if err != nil {
 		log.Fatalln("failed to convert ID to int:", err)

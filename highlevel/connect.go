@@ -1,4 +1,4 @@
-// Package highlevel provides convenient wrappers around some of functionality
+// Package highlevel provides convenient wrappers around some common functionality
 // in the api package.
 package highlevel
 
