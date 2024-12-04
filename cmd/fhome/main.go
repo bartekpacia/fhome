@@ -21,7 +21,6 @@ import (
 var version = "dev"
 
 func main() {
-	loadConfig()
 	app := &cli.Command{
 		Name:                  "fhome",
 		Usage:                 "Interact with smart home devices connected to F&Home",
