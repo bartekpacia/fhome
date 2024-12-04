@@ -60,6 +60,8 @@ var configCommand = cli.Command{
 					return fmt.Errorf("cannot use both --system and --user")
 				}
 
+				config := loadConfig()
+
 				client, err := highlevel.Connect(ctx, config, nil)
 				if err != nil {
 					return fmt.Errorf("failed to create api client: %v", err)
@@ -138,6 +140,8 @@ var eventCommand = cli.Command{
 			Name:  "watch",
 			Usage: "Print all incoming messages",
 			Action: func(ctx context.Context, c *cli.Command) error {
+				config := loadConfig()
+
 				client, err := highlevel.Connect(ctx, config, nil)
 				if err != nil {
 					return fmt.Errorf("failed to create api client: %v", err)
@@ -179,6 +183,8 @@ var objectCommand = cli.Command{
 				if object == "" {
 					return fmt.Errorf("object not specified")
 				}
+
+				config := loadConfig()
 
 				client, err := highlevel.Connect(ctx, config, nil)
 				if err != nil {
@@ -232,6 +238,7 @@ var objectCommand = cli.Command{
 				}
 			},
 			ShellComplete: func(ctx context.Context, cmd *cli.Command) {
+				config := loadConfig()
 				client, err := highlevel.Connect(ctx, config, nil)
 				if err != nil {
 					panic(err)
@@ -263,6 +270,8 @@ var objectCommand = cli.Command{
 				if err != nil {
 					return fmt.Errorf("invalid value: %v", err)
 				}
+
+				config := loadConfig()
 
 				client, err := highlevel.Connect(ctx, config, nil)
 				if err != nil {
