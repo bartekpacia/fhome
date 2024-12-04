@@ -44,7 +44,7 @@ func serviceListener(ctx context.Context, client *api.Client) {
 	}
 }
 
-// Stupid webserver to display some state about my smart devices.
+// A simple webserver to display some state about my smart devices.
 func websiteListener(ctx context.Context, homeConfig *api.Config) {
 	http.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
 		slog.Info("got request", slog.String("method", r.Method), slog.String("path", r.URL.Path))

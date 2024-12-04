@@ -16,10 +16,10 @@ import (
 	"golang.org/x/crypto/pbkdf2"
 )
 
-// APIURL is a URL at which F&Home API lives.
+// URL is a URL at which F&Home API lives.
 //
 // It has to end with a trailing slash, otherwise handshake fails.
-const APIURL = "wss://fhome.cloud/webapp-interface/"
+const URL = "wss://fhome.cloud/webapp-interface/"
 
 type Client struct {
 	email                *string
@@ -117,7 +117,7 @@ func (c *Client) OpenCloudSession(email, password string) error {
 // GetMyResources gets resources assigned to the user.
 //
 // Most of the time, there will be just one resource. Currently we handle only
-// this case and assign its unique ID on the client.
+// this case and assign its unique ID to the client.
 func (c *Client) GetMyResources() (*GetMyResourcesResponse, error) {
 	token := generateRequestToken()
 
@@ -157,7 +157,7 @@ func (c *Client) GetMyResources() (*GetMyResourcesResponse, error) {
 //
 // Currently, it assumes that a user has only one resource.
 func (c *Client) OpenResourceSession(ctx context.Context, resourcePassword string) error {
-	// We can't use the connection that was used to connect to Cloud.
+	// We can't reuse the connection previously used to connect to Cloud.
 	conn, err := connect(c.dialer)
 	if err != nil {
 		return fmt.Errorf("reconnect: %v", err)
@@ -190,7 +190,7 @@ func (c *Client) OpenResourceSession(ctx context.Context, resourcePassword strin
 	return nil
 }
 
-// GetSystemConfig returns additional information about particular cells, e.g
+// GetSystemConfig returns additional information about particular cells, e.g.,
 // their style (icon) and configurator-set name.
 //
 // Configuration returned by this method is set in the desktop configurator app.
@@ -226,7 +226,7 @@ func (c *Client) GetSystemConfig(ctx context.Context) (*TouchesResponse, error) 
 
 // GetUserConfig returns configuration of cells and panels.
 //
-// Configuration returned by this method is set in the web or mobile app.
+// The configuration returned by this method is set in the web or mobile app.
 func (c *Client) GetUserConfig(ctx context.Context) (*UserConfig, error) {
 	token := generateRequestToken()
 
@@ -261,11 +261,11 @@ func (c *Client) GetUserConfig(ctx context.Context) (*UserConfig, error) {
 	return &userConfig, nil
 }
 
-// ReadMessage waits until the client receives message with matching actionName
+// ReadMessage waits until the client receives a message with matching actionName
 // and requestToken.
 //
-// If requestToken is empty, then it is ignored. In such case, the first message
-// with matching actionName is returned.
+// If requestToken is empty, then it is ignored.
+// In such a case, the first message with matching actionName is returned.
 //
 // If its status is not "ok", it returns an error.
 func (c *Client) ReadMessage(ctx context.Context, actionName string, requestToken string) (*Message, error) {
@@ -383,7 +383,7 @@ func (c *Client) reader() {
 }
 
 func connect(dialer *websocket.Dialer) (*websocket.Conn, error) {
-	conn, resp, err := dialer.Dial(APIURL, nil)
+	conn, resp, err := dialer.Dial(URL, nil)
 	if err != nil {
 		if resp != nil {
 			log.Println("failed to dial")
