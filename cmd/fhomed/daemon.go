@@ -12,7 +12,7 @@ import (
 	"github.com/bartekpacia/fhome/highlevel"
 )
 
-func daemon(ctx context.Context, name, pin string) error {
+func daemon(ctx context.Context, config *highlevel.Config, name, pin string) error {
 	client, err := highlevel.Connect(ctx, config, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create api client: %v", err)
@@ -38,14 +38,14 @@ func daemon(ctx context.Context, name, pin string) error {
 		slog.String("source", systemConfig.Source),
 	)
 
-	config, err := api.MergeConfigs(userConfig, systemConfig)
+	apiConfig, err := api.MergeConfigs(userConfig, systemConfig)
 	if err != nil {
 		slog.Error("failed to merge configs", slog.Any("error", err))
 		return err
 	}
 
 	go serviceListener(ctx, client)
-	go websiteListener(ctx, config)
+	go websiteListener(ctx, config, apiConfig)
 
 	// Here we listen to HomeKit events and convert them to API calls to F&Home
 	// to keep the state in sync.
@@ -122,7 +122,7 @@ func daemon(ctx context.Context, name, pin string) error {
 		},
 	}
 
-	home, err := homekitClient.SetUp(config)
+	home, err := homekitClient.SetUp(apiConfig)
 	if err != nil {
 		slog.Error("failed to set up homekit", slog.Any("error", err))
 		return err
@@ -150,7 +150,7 @@ func daemon(ctx context.Context, name, pin string) error {
 		}
 
 		cellValue := resp.Response.CellValues[0]
-		printCellData(&cellValue, config)
+		printCellData(&cellValue, apiConfig)
 
 		// handle lightbulb
 		{

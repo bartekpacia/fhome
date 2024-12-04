@@ -17,8 +17,6 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-var config *highlevel.Config
-
 // This is set by GoReleaser, see https://goreleaser.com/cookbooks/using-main.version
 var version = "dev"
 
@@ -82,7 +80,7 @@ func main() {
 	}
 }
 
-func loadConfig() {
+func loadConfig() *highlevel.Config {
 	k := koanf.New(".")
 
 	p := "/etc/fhome/config.toml"
@@ -100,7 +98,7 @@ func loadConfig() {
 		slog.Debug("loaded config file", slog.String("path", p))
 	}
 
-	config = &highlevel.Config{
+	return &highlevel.Config{
 		Email:            k.MustString("FHOME_EMAIL"),
 		Password:         k.MustString("FHOME_CLOUD_PASSWORD"),
 		ResourcePassword: k.MustString("FHOME_RESOURCE_PASSWORD"),

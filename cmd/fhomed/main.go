@@ -18,8 +18,6 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-var config *highlevel.Config
-
 // This is set by GoReleaser, see https://goreleaser.com/cookbooks/using-main.version
 var version = "dev"
 
@@ -120,7 +118,9 @@ func main() {
 			name := cmd.String("name")
 			pin := cmd.String("pin")
 
-			return daemon(ctx, name, pin)
+			config := loadConfig()
+
+			return daemon(ctx, config, name, pin)
 		},
 		CommandNotFound: func(ctx context.Context, cmd *cli.Command, command string) {
 			log.Printf("invalid command '%s'. See 'fhomed --help'\n", command)
@@ -135,7 +135,7 @@ func main() {
 	}
 }
 
-func loadConfig() {
+func loadConfig() *highlevel.Config {
 	k := koanf.New(".")
 
 	p := "/etc/fhomed/config.toml"
@@ -153,7 +153,7 @@ func loadConfig() {
 		slog.Debug("loaded config file", slog.String("path", p))
 	}
 
-	config = &highlevel.Config{
+	return &highlevel.Config{
 		Email:            k.MustString("FHOME_EMAIL"),
 		Password:         k.MustString("FHOME_CLOUD_PASSWORD"),
 		ResourcePassword: k.MustString("FHOME_RESOURCE_PASSWORD"),
