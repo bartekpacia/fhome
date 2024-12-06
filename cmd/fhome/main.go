@@ -24,11 +24,10 @@ func main() {
 	app := &cli.Command{
 		Name:                  "fhome",
 		Usage:                 "Interact with smart home devices connected to F&Home",
+		Authors:               []any{"Bartek Pacia <barpac02@gmail.com>"},
 		Version:               version,
 		EnableShellCompletion: true,
-		Authors: []any{
-			"Bartek Pacia <barpac02@gmail.com>",
-		},
+		HideHelpCommand:       true,
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:  "json",

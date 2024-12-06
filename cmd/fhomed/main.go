@@ -23,13 +23,12 @@ var version = "dev"
 
 func main() {
 	app := &cli.Command{
-		Name:    "fhomed",
-		Usage:   "Long-running daemon for F&Home Cloud",
-		Version: version,
-		Authors: []any{
-			"Bartek Pacia <barpac02@gmail.com>",
-		},
+		Name:                  "fhomed",
+		Usage:                 "Long-running daemon for F&Home Cloud",
+		Authors:               []any{"Bartek Pacia <barpac02@gmail.com>"},
+		Version:               version,
 		EnableShellCompletion: true,
+		HideHelpCommand:       true,
 		Commands: []*cli.Command{
 			{
 				Name:   "docs",
