@@ -88,6 +88,11 @@ var configCommand = cli.Command{
 				}
 				log.Println("got user config")
 
+				apiConfig, err := api.MergeConfigs(userConfig, sysConfig)
+				if err != nil {
+					return fmt.Errorf("failed to merge configs: %v", err)
+				}
+
 				if cmd.Bool("system") {
 					w := tabwriter.NewWriter(os.Stdout, 8, 8, 0, ' ', 0)
 					defer w.Flush()
@@ -119,7 +124,7 @@ var configCommand = cli.Command{
 
 						fmt.Fprintf(w, "%3d\t%s\t%s\t%s\n", cell.ObjectID, cell.IconName(), cell.Name, p)
 					}
-				} else if c.Bool("merged") {
+				} else if cmd.Bool("merged") {
 					config, err := api.MergeConfigs(userConfig, sysConfig)
 					if err != nil {
 						return fmt.Errorf("failed to merge configs: %v", err)
@@ -133,18 +138,18 @@ var configCommand = cli.Command{
 						}
 						log.Println()
 					}
-				} else if c.Bool("glance") {
+				} else if cmd.Bool("glance") {
 					// We want to see real values of the system resources.
-					// To do that we need to send "statustouches" action and
+					// To do that, we need to send the "statustouches" action and
 					// wait for its response.
 
 					// Send "statustouches" event.
-					_, err := client.SendAction(api.ActionStatusTouches)
+					_, err := client.SendAction(ctx, api.ActionStatusTouches)
 					if err != nil {
 						return fmt.Errorf("failed to send action: %v", err)
 					}
 
-					msg, err := client.ReadMessage(api.ActionStatusTouchesChanged, "")
+					msg, err := client.ReadMessage(ctx, api.ActionStatusTouchesChanged, "")
 					if err != nil {
 						slog.Error("failed to read message", slog.Any("error", err))
 						return err
@@ -158,13 +163,19 @@ var configCommand = cli.Command{
 						return err
 					}
 
-					cellValue := resp.Response.CellValues
-					printCellData(&cellValue, config)
+					cellValues := resp.Response.CellValues
+					for _, cellValue := range cellValues {
+						err = highlevel.PrintCellData(&cellValue, apiConfig)
+						if err != nil {
+							slog.Error("failed to print cell data", slog.Any("error", err))
+							return err
+						}
+					}
 
-					cells := []struct {
+					cells := make([]struct {
 						Name  string
 						Value int
-					}{}
+					}, 0)
 					mdCells := sysConfig.Response.MobileDisplayProperties.Cells
 					for _, cell := range mdCells {
 						if cell.DisplayType != api.Percentage {

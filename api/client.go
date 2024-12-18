@@ -312,7 +312,7 @@ func (c *Client) ReadAnyMessage() (*Message, error) {
 }
 
 // SendAction sends an action to the server.
-func (c *Client) SendAction(actionName string) (*Message, error) {
+func (c *Client) SendAction(ctx context.Context, actionName string) (*Message, error) {
 	token := generateRequestToken()
 
 	action := Action{
@@ -327,7 +327,7 @@ func (c *Client) SendAction(actionName string) (*Message, error) {
 		return nil, fmt.Errorf("failed to write action %s: %v", action.ActionName, err)
 	}
 
-	return c.ReadMessage(action.ActionName, token)
+	return c.ReadMessage(ctx, action.ActionName, token)
 }
 
 // SendEvent sends an event containing value to the cell.
