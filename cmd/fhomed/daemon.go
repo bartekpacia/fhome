@@ -9,45 +9,43 @@ import (
 
 	"github.com/bartekpacia/fhome/api"
 	"github.com/bartekpacia/fhome/cmd/fhomed/homekit"
-	"github.com/bartekpacia/fhome/internal"
+	"github.com/bartekpacia/fhome/highlevel"
 )
 
-func daemon(name, pin string) error {
-	client, err := internal.Connect(config)
+func daemon(ctx context.Context, config *highlevel.Config, name, pin string) error {
+	client, err := highlevel.Connect(ctx, config, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create api client: %v", err)
 	}
 
-	userConfig, err := client.GetUserConfig()
+	userConfig, err := client.GetUserConfig(ctx)
 	if err != nil {
 		slog.Error("failed to get user config", slog.Any("error", err))
 		return err
-	} else {
-		slog.Info("got user config",
-			slog.Int("panels", len(userConfig.Panels)),
-			slog.Int("cells", len(userConfig.Cells)),
-		)
 	}
+	slog.Info("got user config",
+		slog.Int("panels", len(userConfig.Panels)),
+		slog.Int("cells", len(userConfig.Cells)),
+	)
 
-	systemConfig, err := client.GetSystemConfig()
+	systemConfig, err := client.GetSystemConfig(ctx)
 	if err != nil {
 		slog.Error("failed to get system config", slog.Any("error", err))
 		return err
-	} else {
-		slog.Info("got system config",
-			slog.Int("cells", len(systemConfig.Response.MobileDisplayProperties.Cells)),
-			slog.String("source", systemConfig.Source),
-		)
 	}
+	slog.Info("got system config",
+		slog.Int("cells", len(systemConfig.Response.MobileDisplayProperties.Cells)),
+		slog.String("source", systemConfig.Source),
+	)
 
-	config, err := api.MergeConfigs(userConfig, systemConfig)
+	apiConfig, err := api.MergeConfigs(userConfig, systemConfig)
 	if err != nil {
 		slog.Error("failed to merge configs", slog.Any("error", err))
 		return err
 	}
 
-	go serviceListener(client)
-	go websiteListener(config)
+	go serviceListener(ctx, client)
+	go websiteListener(ctx, config, apiConfig)
 
 	// Here we listen to HomeKit events and convert them to API calls to F&Home
 	// to keep the state in sync.
@@ -62,7 +60,7 @@ func daemon(name, pin string) error {
 				slog.String("callback", "OnLightbulbUpdate"),
 			}
 
-			err := client.SendEvent(ID, value)
+			err := client.SendEvent(ctx, ID, value)
 			if err != nil {
 				attrs = append(attrs, slog.Any("error", err))
 				slog.LogAttrs(context.TODO(), slog.LevelError, "failed to send event", attrs...)
@@ -79,7 +77,7 @@ func daemon(name, pin string) error {
 				slog.String("callback", "OnLEDUpdate"),
 			}
 
-			err := client.SendEvent(ID, value)
+			err := client.SendEvent(ctx, ID, value)
 			if err != nil {
 				attrs = append(attrs, slog.Any("error", err))
 				slog.LogAttrs(context.TODO(), slog.LevelError, "failed to send event", attrs...)
@@ -96,7 +94,7 @@ func daemon(name, pin string) error {
 				slog.String("callback", "OnGarageDoorUpdate"),
 			}
 
-			err := client.SendEvent(ID, value)
+			err := client.SendEvent(ctx, ID, value)
 			if err != nil {
 				attrs = append(attrs, slog.Any("error", err))
 				slog.LogAttrs(context.TODO(), slog.LevelError, "failed to send event", attrs...)
@@ -113,7 +111,7 @@ func daemon(name, pin string) error {
 				slog.String("callback", "OnGarageDoorUpdate"),
 			}
 
-			err = client.SendEvent(ID, value)
+			err = client.SendEvent(ctx, ID, value)
 			if err != nil {
 				attrs = append(attrs, slog.Any("error", err))
 				slog.LogAttrs(context.TODO(), slog.LevelError, "failed to send event", attrs...)
@@ -124,7 +122,7 @@ func daemon(name, pin string) error {
 		},
 	}
 
-	home, err := homekitClient.SetUp(config)
+	home, err := homekitClient.SetUp(apiConfig)
 	if err != nil {
 		slog.Error("failed to set up homekit", slog.Any("error", err))
 		return err
@@ -133,7 +131,7 @@ func daemon(name, pin string) error {
 	// In this loop, we listen to events from F&Home and send updates to HomeKit
 	// to keep the state in sync.
 	for {
-		msg, err := client.ReadMessage(api.ActionStatusTouchesChanged, "")
+		msg, err := client.ReadMessage(ctx, api.ActionStatusTouchesChanged, "")
 		if err != nil {
 			slog.Error("failed to read message", slog.Any("error", err))
 			return err
@@ -152,7 +150,7 @@ func daemon(name, pin string) error {
 		}
 
 		cellValue := resp.Response.CellValues[0]
-		printCellData(&cellValue, config)
+		printCellData(&cellValue, apiConfig)
 
 		// handle lightbulb
 		{

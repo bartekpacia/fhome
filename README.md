@@ -1,7 +1,13 @@
+> Welcome to F&Home – the worst smart home system ever.
+>
+> – me
+
+> I did this thing not because it's easy, but because I thought it would be easy.
+
 # fhome
 
-[![Go Reference][go-reference-badge]][go-reference-link] [![Go
-Report][go-report-badge]][go-report-link]
+[![Go Reference][go-reference-badge]][go-reference-link]
+[![Go Report][go-report-badge]][go-report-link]
 
 Package and CLI to communicate with [F&Home – a smart home system][fhome].
 
@@ -12,10 +18,10 @@ Then I started putting together this project.
 
 ## Package
 
-The `api` package implements the F&Home API. Use it if you want make your own
-program interacting with it.
+The `api` package implements the F&Home API.
+Use it if you want to make your own program interact with it.
 
-## CLI apps
+## Command-line apps
 
 ### fhome
 
@@ -52,21 +58,21 @@ Depends on the `api` package.
 
 1. Copy the binary to a common location
 
-```console
-$ sudo cp ./fhomed /usr/local/bin
-```
+    ```console
+    $ sudo cp ./fhomed /usr/local/bin
+    ```
 
 2. Create a service file
 
-```console
-$ sudo cp ./fhomed.service /etc/systemd/system
-```
+    ```console
+    $ sudo cp ./fhomed.service /etc/systemd/system
+    ```
 
 3. Reload changes
 
-```console
-$ sudo systemctl daemon-reload
-```
+    ```console
+    $ sudo systemctl daemon-reload
+    ```
 
 **Extracing status logs from journald**
 
@@ -99,7 +105,11 @@ $ go install ./cmd/fhomed
 ```
 
 [go-reference-badge]: https://pkg.go.dev/badge/github.com/bartekpacia/fhome.svg
+
 [go-reference-link]: https://pkg.go.dev/github.com/bartekpacia/fhome
+
 [go-report-badge]: https://goreportcard.com/badge/github.com/bartekpacia/fhome
+
 [go-report-link]: https://goreportcard.com/report/github.com/bartekpacia/fhome
+
 [fhome]: https://www.fhome.pl
