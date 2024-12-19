@@ -92,6 +92,7 @@ var configCommand = cli.Command{
 				if err != nil {
 					return fmt.Errorf("failed to merge configs: %v", err)
 				}
+				_ = apiConfig
 
 				if cmd.Bool("system") {
 					w := tabwriter.NewWriter(os.Stdout, 8, 8, 0, ' ', 0)
@@ -143,39 +144,24 @@ var configCommand = cli.Command{
 					// To do that, we need to send the "statustouches" action and
 					// wait for its response.
 
-					// Send "statustouches" event.
-					_, err := client.SendAction(ctx, api.ActionStatusTouches)
+					msg, err := client.SendAction(ctx, api.ActionStatusTouches)
 					if err != nil {
 						return fmt.Errorf("failed to send action: %v", err)
 					}
 
-					msg, err := client.ReadMessage(ctx, api.ActionStatusTouchesChanged, "")
-					if err != nil {
-						slog.Error("failed to read message", slog.Any("error", err))
-						return err
-					}
+					var touchesResponse api.StatusTouchesChangedResponse
 
-					var resp api.StatusTouchesChangedResponse
-
-					err = json.Unmarshal(msg.Raw, &resp)
+					err = json.Unmarshal(msg.Raw, &touchesResponse)
 					if err != nil {
 						slog.Error("failed to unmarshal message", slog.Any("error", err))
 						return err
-					}
-
-					cellValues := resp.Response.CellValues
-					for _, cellValue := range cellValues {
-						err = highlevel.PrintCellData(&cellValue, apiConfig)
-						if err != nil {
-							slog.Error("failed to print cell data", slog.Any("error", err))
-							return err
-						}
 					}
 
 					cells := make([]struct {
 						Name  string
 						Value int
 					}, 0)
+
 					mdCells := sysConfig.Response.MobileDisplayProperties.Cells
 					for _, cell := range mdCells {
 						if cell.DisplayType != api.Percentage {
@@ -185,8 +171,20 @@ var configCommand = cli.Command{
 							continue
 						}
 
-						slog.Info("remapping lighting value", slog.String("cell", cell.Desc), slog.String("step", cell.Step))
-						val, err := api.RemapLighting(cell.Step)
+						var cellValue *api.CellValue
+						for _, cv := range touchesResponse.Response.CellValues {
+							if cv.ID == cell.ID {
+								cellValue = &cv
+								break
+							}
+						}
+						if cellValue == nil {
+							slog.Error("failed to find corresponding cell value", slog.String("cell", cell.ID))
+							continue
+						}
+
+						slog.Info("remapping lighting value", slog.String("cell", cell.Desc), slog.String("value", cellValue.Value), slog.String("step", cell.Step))
+						val, err := api.RemapLighting(cellValue.Value)
 						if err != nil {
 							slog.Error(
 								"error remapping lighting value",
