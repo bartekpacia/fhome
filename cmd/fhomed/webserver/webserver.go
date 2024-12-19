@@ -10,7 +10,6 @@ import (
 	"net/http"
 
 	"github.com/bartekpacia/fhome/api"
-	"github.com/bartekpacia/fhome/highlevel"
 )
 
 //go:embed assets/*
