@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"os"
 	"strconv"
+	"strings"
 	"text/tabwriter"
 
 	"github.com/adrg/strutil"
@@ -54,6 +55,14 @@ var configCommand = cli.Command{
 					Name:  "user",
 					Usage: "Print config set in the client apps",
 				},
+				&cli.BoolFlag{
+					Name:  "merged",
+					Usage: "Print merged config (system + user)",
+				},
+				&cli.BoolFlag{
+					Name:  "glance",
+					Usage: "Print nice, at glance status of system",
+				},
 			},
 			Action: func(ctx context.Context, cmd *cli.Command) error {
 				if cmd.Bool("system") && cmd.Bool("user") {
@@ -78,6 +87,12 @@ var configCommand = cli.Command{
 					return fmt.Errorf("failed to get user config: %v", err)
 				}
 				log.Println("got user config")
+
+				apiConfig, err := api.MergeConfigs(userConfig, sysConfig)
+				if err != nil {
+					return fmt.Errorf("failed to merge configs: %v", err)
+				}
+				_ = apiConfig
 
 				if cmd.Bool("system") {
 					w := tabwriter.NewWriter(os.Stdout, 8, 8, 0, ' ', 0)
@@ -110,7 +125,7 @@ var configCommand = cli.Command{
 
 						fmt.Fprintf(w, "%3d\t%s\t%s\t%s\n", cell.ObjectID, cell.IconName(), cell.Name, p)
 					}
-				} else {
+				} else if cmd.Bool("merged") {
 					config, err := api.MergeConfigs(userConfig, sysConfig)
 					if err != nil {
 						return fmt.Errorf("failed to merge configs: %v", err)
@@ -124,6 +139,72 @@ var configCommand = cli.Command{
 						}
 						log.Println()
 					}
+				} else if cmd.Bool("glance") {
+					// We want to see real values of the system resources.
+					// To do that, we need to send the "statustouches" action and
+					// wait for its response.
+
+					msg, err := client.SendAction(ctx, api.ActionStatusTouches)
+					if err != nil {
+						return fmt.Errorf("failed to send action: %v", err)
+					}
+
+					var touchesResponse api.StatusTouchesChangedResponse
+
+					err = json.Unmarshal(msg.Raw, &touchesResponse)
+					if err != nil {
+						slog.Error("failed to unmarshal message", slog.Any("error", err))
+						return err
+					}
+
+					cells := make([]struct {
+						Name  string
+						Value int
+					}, 0)
+
+					mdCells := sysConfig.Response.MobileDisplayProperties.Cells
+					for _, cell := range mdCells {
+						if cell.DisplayType != api.Percentage {
+							continue
+						}
+						if !strings.HasPrefix(cell.Step, "0x60") {
+							continue
+						}
+
+						var cellValue *api.CellValue
+						for _, cv := range touchesResponse.Response.CellValues {
+							if cv.ID == cell.ID {
+								cellValue = &cv
+								break
+							}
+						}
+						if cellValue == nil {
+							slog.Error("failed to find corresponding cell value", slog.String("cell", cell.ID))
+							continue
+						}
+
+						slog.Info("remapping lighting value", slog.String("cell", cell.Desc), slog.String("value", cellValue.Value), slog.String("step", cell.Step))
+						val, err := api.RemapLighting(cellValue.Value)
+						if err != nil {
+							slog.Error(
+								"error remapping lighting value",
+								slog.Group("cell", slog.String("id", cell.ID), slog.String("desc", cell.Desc)),
+								slog.Any("error", err),
+							)
+							continue
+						}
+
+						cells = append(cells, struct {
+							Name  string
+							Value int
+						}{Name: cell.Desc, Value: val})
+					}
+
+					text := "Oto status oświetlenia:\n"
+					for _, cell := range cells {
+						text += fmt.Sprintf("• %s: %d%%\n", cell.Name, cell.Value)
+					}
+					fmt.Print(text)
 				}
 
 				return nil
@@ -303,10 +384,9 @@ var objectCommand = cli.Command{
 						return fmt.Errorf("no matching object found, confidence is %d%%", int(bestScore*100))
 					}
 
-					slog.Info("selected object",
-						slog.String("name", bestObject.Name),
-						slog.Int("id", bestObject.ID),
+					slog.Info("found best match",
 						slog.Int("confidence", int(bestScore*100)),
+						slog.Group("object", slog.String("name", bestObject.Name), slog.Int("id", bestObject.ID)),
 					)
 
 					value := api.MapLighting(value)

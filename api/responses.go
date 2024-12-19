@@ -82,6 +82,10 @@ type MobileDisplayCell struct {
 	MaxValue string `json:"Max"`
 	// Step (aka current value). Display Type TEMP always has this set to
 	// 0xa005.
+	//
+	// Update 25/07/2024: This is literally the *step*, not current value.
+	//
+	// To obtain current value, send "touches".
 	Step string `json:"Sp"`
 	// Display Type.
 	DisplayType DisplayType `json:"DT"`
