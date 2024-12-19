@@ -150,7 +150,11 @@ func daemon(ctx context.Context, config *highlevel.Config, name, pin string) err
 		}
 
 		cellValue := resp.Response.CellValues[0]
-		printCellData(&cellValue, apiConfig)
+		err = highlevel.PrintCellData(&cellValue, apiConfig)
+		if err != nil {
+			slog.Error("failed to print cell data", slog.Any("error", err))
+			return err
+		}
 
 		// handle lightbulb
 		{

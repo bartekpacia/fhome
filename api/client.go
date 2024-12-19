@@ -311,6 +311,25 @@ func (c *Client) ReadAnyMessage() (*Message, error) {
 	return &msg, nil
 }
 
+// SendAction sends an action to the server.
+func (c *Client) SendAction(ctx context.Context, actionName string) (*Message, error) {
+	token := generateRequestToken()
+
+	action := Action{
+		ActionName:   actionName,
+		Login:        *c.email,
+		PasswordHash: *c.resourcePasswordHash,
+		RequestToken: token,
+	}
+
+	err := c.mainConn.WriteJSON(action)
+	if err != nil {
+		return nil, fmt.Errorf("failed to write action %s: %v", action.ActionName, err)
+	}
+
+	return c.ReadMessage(ctx, action.ActionName, token)
+}
+
 // SendEvent sends an event containing value to the cell.
 //
 // Events are named "Xevents" in F&Home's terminology.

@@ -1,4 +1,4 @@
-package main
+package highlevel
 
 import (
 	"fmt"
@@ -7,8 +7,8 @@ import (
 	"github.com/bartekpacia/fhome/api"
 )
 
-// printCellData prints the values of its arguments into a JSON object.
-func printCellData(cellValue *api.CellValue, cfg *api.Config) error {
+// PrintCellData prints the values of its arguments into a JSON object.
+func PrintCellData(cellValue *api.CellValue, cfg *api.Config) error {
 	cell, err := cfg.GetCellByID(cellValue.IntID())
 	if err != nil {
 		return fmt.Errorf("failed to get cell with ID %d: %v", cellValue.IntID(), err)

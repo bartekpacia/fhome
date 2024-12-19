@@ -19,8 +19,12 @@ const (
 	ActionGetSystemConfig            = "touches"
 	ActionGetUserConfig              = "get_user_config"
 	ActionEvent                      = "xevent"
-	// ActionStatusTouches can be sent to get real values of resources.
-	ActionStatusTouches        = "statustouches"
+
+	// ActionStatusTouches returns real values of objects.
+	ActionStatusTouches = "statustouches"
+
+	// ActionStatusTouchesChanged returns mostly the same response as ActionStatusTouches,
+	// but only for a specific (usually single) changed object.
 	ActionStatusTouchesChanged = "statustoucheschanged"
 )
 
