@@ -10,11 +10,8 @@ import (
 	"time"
 
 	"github.com/bartekpacia/fhome/api"
-	"github.com/bartekpacia/fhome/cmd/fhomed/db"
 	"github.com/bartekpacia/fhome/cmd/fhomed/homekit"
-	"github.com/bartekpacia/fhome/cmd/fhomed/webserver"
 	"github.com/bartekpacia/fhome/highlevel"
-	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/knadh/koanf"
 	"github.com/knadh/koanf/parsers/toml"
 	"github.com/knadh/koanf/providers/file"
@@ -101,25 +98,16 @@ func main() {
 		},
 		Before: before,
 		Action: func(c *cli.Context) error {
-			enableDBStream := c.Bool("dbstream")
 			enableWebServer := c.Bool("webserver")
 			enableHomekit := c.Bool("homekit")
 
-			if !enableDBStream && !enableWebServer && !enableHomekit {
+			if !enableWebServer && !enableHomekit {
 				return fmt.Errorf("no features enabled")
 			}
 
-			if enableDBStream {
-				influxURL := mustGetenv("INFLUXDB_URL")
-				influxToken := mustGetenv("INFLUXDB_TOKEN")
-				influxClient := influxdb2.NewClient(influxURL, influxToken)
-
-				go db.DBListener(fhomeClient)
-			}
-
-			if enableWebServer {
-				go webserver.Start(fhomeClient, apiConfig, config.Email)
-			}
+			//if enableWebServer {
+			//	go webserver.Start(fhomeClient, apiConfig, config.Email)
+			//}
 
 			if enableHomekit {
 				name := c.String("name")

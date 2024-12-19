@@ -34,3 +34,5 @@ fhomed.1
 
 # GoReleaser
 dist/
+
+*.iml
