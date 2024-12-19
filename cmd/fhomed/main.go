@@ -7,6 +7,7 @@ import (
 	"log"
 	"log/slog"
 	"os"
+	"os/signal"
 	"time"
 
 	"github.com/bartekpacia/fhome/api"
@@ -16,23 +17,21 @@ import (
 	"github.com/knadh/koanf/parsers/toml"
 	"github.com/knadh/koanf/providers/file"
 	"github.com/lmittmann/tint"
-	"github.com/urfave/cli/v2"
+	docs "github.com/urfave/cli-docs/v3"
+	"github.com/urfave/cli/v3"
 )
 
-func main() {
-	config := loadConfig()
+// This is set by GoReleaser, see https://goreleaser.com/cookbooks/using-main.version
+var version = "dev"
 
-	app := &cli.App{
-		Name:    "fhomed",
-		Usage:   "Long-running daemon for F&Home Cloud",
-		Version: "0.1.24",
-		Authors: []*cli.Author{
-			{
-				Name:  "Bartek Pacia",
-				Email: "barpac02@gmail.com",
-			},
-		},
-		EnableBashCompletion: true,
+func main() {
+	app := &cli.Command{
+		Name:                  "fhomed",
+		Usage:                 "Long-running daemon for F&Home Cloud",
+		Authors:               []any{"Bartek Pacia <barpac02@gmail.com>"},
+		Version:               version,
+		EnableShellCompletion: true,
+		HideHelpCommand:       true,
 		Commands: []*cli.Command{
 			{
 				Name:   "docs",
@@ -46,21 +45,31 @@ func main() {
 						Value:  "markdown",
 					},
 				},
-				Action: func(c *cli.Context) error {
-					format := c.String("format")
-					if format == "" || format == "markdown" {
-						fmt.Println(c.App.ToMarkdown())
-						return nil
+				Action: func(ctx context.Context, cmd *cli.Command) error {
+					format := cmd.String("format")
+					switch format {
+					case "", "markdown":
+						content, err := docs.ToMarkdown(cmd)
+						if err != nil {
+							return fmt.Errorf("generate documentation in markdown: %v", err)
+						}
+						fmt.Println(content)
+					case "man":
+						content, err := docs.ToMan(cmd)
+						if err != nil {
+							return fmt.Errorf("generate documentation in man: %v", err)
+						}
+						fmt.Println(content)
+					case "man-with-section":
+						content, err := docs.ToManWithSection(cmd, 1)
+						if err != nil {
+							return fmt.Errorf("generate documentation in man with section 1: %v", err)
+						}
+						fmt.Println(content)
+					default:
+						return fmt.Errorf("invalid documentation format %#v", format)
 					}
-					if format == "man" {
-						fmt.Println(c.App.ToMan())
-						return nil
-					}
-					if format == "man-with-section" {
-						fmt.Println(c.App.ToManWithSection(1))
-						return nil
-					}
-					return fmt.Errorf("invalid format '%s'", format)
+					return nil
 				},
 			},
 		},
@@ -72,10 +81,6 @@ func main() {
 			&cli.BoolFlag{
 				Name:  "debug",
 				Usage: "show debug logs",
-			},
-			&cli.BoolFlag{
-				Name:  "dbstream",
-				Usage: "Stream data from F&Home to database",
 			},
 			&cli.BoolFlag{
 				Name:  "homekit",
@@ -96,64 +101,52 @@ func main() {
 				Value: "00102003",
 			},
 		},
-		Before: before,
-		Action: func(c *cli.Context) error {
-			enableWebServer := c.Bool("webserver")
-			enableHomekit := c.Bool("homekit")
-
-			if !enableWebServer && !enableHomekit {
-				return fmt.Errorf("no features enabled")
+		Before: func(ctx context.Context, cmd *cli.Command) (context.Context, error) {
+			var level slog.Level
+			if cmd.Bool("debug") {
+				level = slog.LevelDebug
+			} else {
+				level = slog.LevelInfo
 			}
 
-			//if enableWebServer {
-			//	go webserver.Start(fhomeClient, apiConfig, config.Email)
-			//}
-
-			if enableHomekit {
-				name := c.String("name")
-				pin := c.String("pin")
-				go homekitSyncer(config, name, pin)
+			if cmd.Bool("json") {
+				opts := slog.HandlerOptions{Level: level}
+				handler := slog.NewJSONHandler(os.Stdout, &opts)
+				logger := slog.New(handler)
+				slog.SetDefault(logger)
+			} else {
+				opts := tint.Options{Level: level, TimeFormat: time.TimeOnly}
+				handler := tint.NewHandler(os.Stdout, &opts)
+				logger := slog.New(handler)
+				slog.SetDefault(logger)
 			}
 
-			return nil
+			return ctx, nil
 		},
-		CommandNotFound: func(c *cli.Context, command string) {
+		Action: func(ctx context.Context, cmd *cli.Command) error {
+			name := cmd.String("name")
+			pin := cmd.String("pin")
+
+			config := loadConfig()
+
+			return daemon(ctx, config, name, pin)
+		},
+		CommandNotFound: func(ctx context.Context, cmd *cli.Command, command string) {
 			log.Printf("invalid command '%s'. See 'fhomed --help'\n", command)
 		},
 	}
 
-	err := app.Run(os.Args)
+	ctx, _ := signal.NotifyContext(context.Background(), os.Interrupt)
+	err := app.Run(ctx, os.Args)
 	if err != nil {
 		slog.Error("exit", slog.Any("error", err))
 		os.Exit(1)
 	}
 }
 
-func before(c *cli.Context) error {
-	var level slog.Level
-	if c.Bool("debug") {
-		level = slog.LevelDebug
-	} else {
-		level = slog.LevelInfo
-	}
-
-	if c.Bool("json") {
-		opts := slog.HandlerOptions{Level: level}
-		handler := slog.NewJSONHandler(os.Stdout, &opts)
-		logger := slog.New(handler)
-		slog.SetDefault(logger)
-	} else {
-		opts := tint.Options{Level: level, TimeFormat: time.TimeOnly}
-		handler := tint.NewHandler(os.Stdout, &opts)
-		logger := slog.New(handler)
-		slog.SetDefault(logger)
-	}
-
-	return nil
-}
-
 func loadConfig() *highlevel.Config {
 	k := koanf.New(".")
+
 	p := "/etc/fhomed/config.toml"
 	if err := k.Load(file.Provider(p), toml.Parser()); err != nil {
 		slog.Debug("failed to load config file", slog.Any("error", err))
@@ -170,9 +163,9 @@ func loadConfig() *highlevel.Config {
 	}
 
 	return &highlevel.Config{
-		Email:            k.String("FHOME_EMAIL"),
-		Password:         k.String("FHOME_CLOUD_PASSWORD"),
-		ResourcePassword: k.String("FHOME_RESOURCE_PASSWORD"),
+		Email:            k.MustString("FHOME_EMAIL"),
+		Password:         k.MustString("FHOME_CLOUD_PASSWORD"),
+		ResourcePassword: k.MustString("FHOME_RESOURCE_PASSWORD"),
 	}
 }
 

@@ -3,6 +3,7 @@
 package api
 
 import (
+	"context"
 	"crypto/sha1"
 	"encoding/base64"
 	"encoding/json"
@@ -15,10 +16,10 @@ import (
 	"golang.org/x/crypto/pbkdf2"
 )
 
-// APIURL is a URL at which F&Home API lives.
+// URL is a URL at which F&Home API lives.
 //
 // It has to end with a trailing slash, otherwise handshake fails.
-const APIURL = "wss://fhome.cloud/webapp-interface/"
+const URL = "wss://fhome.cloud/webapp-interface/"
 
 type Client struct {
 	email                *string
@@ -116,7 +117,7 @@ func (c *Client) OpenCloudSession(email, password string) error {
 // GetMyResources gets resources assigned to the user.
 //
 // Most of the time, there will be just one resource. Currently we handle only
-// this case and assign its unique ID on the client.
+// this case and assign its unique ID to the client.
 func (c *Client) GetMyResources() (*GetMyResourcesResponse, error) {
 	token := generateRequestToken()
 
@@ -155,8 +156,8 @@ func (c *Client) GetMyResources() (*GetMyResourcesResponse, error) {
 // user has.
 //
 // Currently, it assumes that a user has only one resource.
-func (c *Client) OpenResourceSession(resourcePassword string) error {
-	// We can't use the connection that was used to connect to Cloud.
+func (c *Client) OpenResourceSession(ctx context.Context, resourcePassword string) error {
+	// We can't reuse the connection previously used to connect to Cloud.
 	conn, err := connect(c.dialer)
 	if err != nil {
 		return fmt.Errorf("reconnect: %v", err)
@@ -179,7 +180,7 @@ func (c *Client) OpenResourceSession(resourcePassword string) error {
 
 	go c.reader()
 
-	_, err = c.ReadMessage(actionName, token)
+	_, err = c.ReadMessage(ctx, actionName, token)
 	if err != nil {
 		return fmt.Errorf("failed to read %s: %v", actionName, err)
 	}
@@ -189,13 +190,13 @@ func (c *Client) OpenResourceSession(resourcePassword string) error {
 	return nil
 }
 
-// GetSystemConfig returns additional information about particular cells, e.g
+// GetSystemConfig returns additional information about particular cells, e.g.,
 // their style (icon) and configurator-set name.
 //
 // Configuration returned by this method is set in the desktop configurator app.
 //
 // This action is named "Touches" in F&Home's terminology.
-func (c *Client) GetSystemConfig() (*TouchesResponse, error) {
+func (c *Client) GetSystemConfig(ctx context.Context) (*TouchesResponse, error) {
 	actionName := ActionGetSystemConfig
 	token := generateRequestToken()
 
@@ -209,7 +210,7 @@ func (c *Client) GetSystemConfig() (*TouchesResponse, error) {
 		return nil, fmt.Errorf("failed to write %s: %v", actionName, err)
 	}
 
-	msg, err := c.ReadMessage(actionName, token)
+	msg, err := c.ReadMessage(ctx, actionName, token)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read message: %v", err)
 	}
@@ -225,8 +226,8 @@ func (c *Client) GetSystemConfig() (*TouchesResponse, error) {
 
 // GetUserConfig returns configuration of cells and panels.
 //
-// Configuration returned by this method is set in the web or mobile app.
-func (c *Client) GetUserConfig() (*UserConfig, error) {
+// The configuration returned by this method is set in the web or mobile app.
+func (c *Client) GetUserConfig(ctx context.Context) (*UserConfig, error) {
 	token := generateRequestToken()
 
 	actionName := ActionGetUserConfig
@@ -240,7 +241,7 @@ func (c *Client) GetUserConfig() (*UserConfig, error) {
 		return nil, fmt.Errorf("failed to write %s to conn: %v", actionName, err)
 	}
 
-	msg, err := c.ReadMessage(actionName, token)
+	msg, err := c.ReadMessage(ctx, actionName, token)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read messagee: %v", err)
 	}
@@ -260,35 +261,37 @@ func (c *Client) GetUserConfig() (*UserConfig, error) {
 	return &userConfig, nil
 }
 
-// ReadMessage waits until the client receives message with matching actionName
+// ReadMessage waits until the client receives a message with matching actionName
 // and requestToken.
 //
-// If requestToken is empty, then it is ignored. In such case, the first message
-// with matching actionName is returned.
+// If requestToken is empty, then it is ignored.
+// In such a case, the first message with matching actionName is returned.
 //
 // If its status is not "ok", it returns an error.
-func (c *Client) ReadMessage(actionName string, requestToken string) (*Message, error) {
+func (c *Client) ReadMessage(ctx context.Context, actionName string, requestToken string) (*Message, error) {
 	for {
-		ch := c.read()
-		msg := <-ch
-
-		if msg.Status != nil {
-			if *msg.Status != "ok" {
-				return nil, fmt.Errorf("message status is %s", *msg.Status)
+		select {
+		case <-ctx.Done():
+			return nil, fmt.Errorf("context is done")
+		case msg := <-c.read():
+			if msg.Status != nil {
+				if *msg.Status != "ok" {
+					return nil, fmt.Errorf("message status is %s", *msg.Status)
+				}
 			}
-		}
 
-		tokenOk := true
-		if requestToken != "" {
-			if msg.RequestToken == nil {
-				tokenOk = false
-			} else if requestToken != *msg.RequestToken {
-				tokenOk = false
+			tokenOk := true
+			if requestToken != "" {
+				if msg.RequestToken == nil {
+					tokenOk = false
+				} else if requestToken != *msg.RequestToken {
+					tokenOk = false
+				}
 			}
-		}
 
-		if actionName == msg.ActionName && tokenOk {
-			return &msg, nil
+			if actionName == msg.ActionName && tokenOk {
+				return &msg, nil
+			}
 		}
 	}
 }
@@ -308,10 +311,29 @@ func (c *Client) ReadAnyMessage() (*Message, error) {
 	return &msg, nil
 }
 
+// SendAction sends an action to the server.
+func (c *Client) SendAction(ctx context.Context, actionName string) (*Message, error) {
+	token := generateRequestToken()
+
+	action := Action{
+		ActionName:   actionName,
+		Login:        *c.email,
+		PasswordHash: *c.resourcePasswordHash,
+		RequestToken: token,
+	}
+
+	err := c.mainConn.WriteJSON(action)
+	if err != nil {
+		return nil, fmt.Errorf("failed to write action %s: %v", action.ActionName, err)
+	}
+
+	return c.ReadMessage(ctx, action.ActionName, token)
+}
+
 // SendEvent sends an event containing value to the cell.
 //
 // Events are named "Xevents" in F&Home's terminology.
-func (c *Client) SendEvent(cellID int, value string) error {
+func (c *Client) SendEvent(ctx context.Context, cellID int, value string) error {
 	actionName := ActionEvent
 	token := generateRequestToken()
 
@@ -329,7 +351,7 @@ func (c *Client) SendEvent(cellID int, value string) error {
 		return fmt.Errorf("failed to write %s to conn: %v", actionName, err)
 	}
 
-	_, err = c.ReadMessage(actionName, token)
+	_, err = c.ReadMessage(ctx, actionName, token)
 	return err
 }
 
@@ -380,7 +402,7 @@ func (c *Client) reader() {
 }
 
 func connect(dialer *websocket.Dialer) (*websocket.Conn, error) {
-	conn, resp, err := dialer.Dial(APIURL, nil)
+	conn, resp, err := dialer.Dial(URL, nil)
 	if err != nil {
 		if resp != nil {
 			log.Println("failed to dial")

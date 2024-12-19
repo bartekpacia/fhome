@@ -2,7 +2,7 @@ package api
 
 // Message is a websocket message sent from the client to the server.
 //
-// Messages are most commonly used to make server do perform somehing, e.g
+// Messages are most commonly used to make server do perform something, e.g.,
 // change the status of some resource/device.
 type Message struct {
 	ActionName   string  `json:"action_name"`
@@ -19,8 +19,12 @@ const (
 	ActionGetSystemConfig            = "touches"
 	ActionGetUserConfig              = "get_user_config"
 	ActionEvent                      = "xevent"
-	// Send this to get real values of resources
-	ActionStatusTouches        = "statustouches"
+
+	// ActionStatusTouches returns real values of objects.
+	ActionStatusTouches = "statustouches"
+
+	// ActionStatusTouchesChanged returns mostly the same response as ActionStatusTouches,
+	// but only for a specific (usually single) changed object.
 	ActionStatusTouchesChanged = "statustoucheschanged"
 )
 

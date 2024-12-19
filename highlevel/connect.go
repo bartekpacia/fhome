@@ -1,8 +1,9 @@
-// Package highlevel provides convenient wrappers around some of functionality
+// Package highlevel provides convenient wrappers around some common functionality
 // in the api package.
 package highlevel
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 
@@ -17,7 +18,7 @@ type Config struct {
 }
 
 // Connect returns a client that is ready to use.
-func Connect(config *Config, dialer *websocket.Dialer) (*api.Client, error) {
+func Connect(ctx context.Context, config *Config, dialer *websocket.Dialer) (*api.Client, error) {
 	client, err := api.NewClient(dialer)
 	if err != nil {
 		slog.Error("failed to create API client", slog.Any("error", err))
@@ -45,7 +46,7 @@ func Connect(config *Config, dialer *websocket.Dialer) (*api.Client, error) {
 		slog.String("type", myResources.ResourceType0),
 	)
 
-	err = client.OpenResourceSession(config.ResourcePassword)
+	err = client.OpenResourceSession(ctx, config.ResourcePassword)
 	if err != nil {
 		slog.Error("failed to open client to resource session", slog.Any("error", err))
 		return nil, fmt.Errorf("open resource session: %w", err)

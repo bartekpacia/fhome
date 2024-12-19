@@ -37,7 +37,7 @@ func RemapLighting(value string) (int, error) {
 
 var baseTemperatureValue float64 = 0xa078 - 12*10.0 // 0°C
 
-// EncodeTemperature encodes value to represent temperature that  is ready to be
+// EncodeTemperature encodes value to represent temperature that is ready to be
 // passed to [Client.SendEvent].
 //
 // Examples of the process:
