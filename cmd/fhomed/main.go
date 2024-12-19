@@ -169,13 +169,13 @@ func loadConfig() *highlevel.Config {
 	}
 }
 
-func homekitSyncer(config *highlevel.Config, name, pin string) error {
-	fhomeClient, err := highlevel.Connect(config, nil)
+func homekitSyncer(ctx context.Context, config *highlevel.Config, name, pin string) error {
+	fhomeClient, err := highlevel.Connect(ctx, config, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create api client: %v", err)
 	}
 
-	userConfig, err := fhomeClient.GetUserConfig()
+	userConfig, err := fhomeClient.GetUserConfig(ctx)
 	if err != nil {
 		slog.Error("failed to get user config", slog.Any("error", err))
 		return err
@@ -185,7 +185,7 @@ func homekitSyncer(config *highlevel.Config, name, pin string) error {
 		slog.Int("cells", len(userConfig.Cells)),
 	)
 
-	systemConfig, err := fhomeClient.GetSystemConfig()
+	systemConfig, err := fhomeClient.GetSystemConfig(ctx)
 	if err != nil {
 		slog.Error("failed to get system config", slog.Any("error", err))
 		return err
@@ -216,7 +216,7 @@ func homekitSyncer(config *highlevel.Config, name, pin string) error {
 				slog.String("callback", "OnLightbulbUpdate"),
 			}
 
-			err := fhomeClient.SendEvent(ID, value)
+			err := fhomeClient.SendEvent(ctx, ID, value)
 			if err != nil {
 				attrs = append(attrs, slog.Any("error", err))
 				slog.LogAttrs(context.TODO(), slog.LevelError, "failed to send event", attrs...)
@@ -233,7 +233,7 @@ func homekitSyncer(config *highlevel.Config, name, pin string) error {
 				slog.String("callback", "OnLEDUpdate"),
 			}
 
-			err := fhomeClient.SendEvent(ID, value)
+			err := fhomeClient.SendEvent(ctx, ID, value)
 			if err != nil {
 				attrs = append(attrs, slog.Any("error", err))
 				slog.LogAttrs(context.TODO(), slog.LevelError, "failed to send event", attrs...)
@@ -250,7 +250,7 @@ func homekitSyncer(config *highlevel.Config, name, pin string) error {
 				slog.String("callback", "OnGarageDoorUpdate"),
 			}
 
-			err := fhomeClient.SendEvent(ID, value)
+			err := fhomeClient.SendEvent(ctx, ID, value)
 			if err != nil {
 				attrs = append(attrs, slog.Any("error", err))
 				slog.LogAttrs(context.TODO(), slog.LevelError, "failed to send event", attrs...)
@@ -267,7 +267,7 @@ func homekitSyncer(config *highlevel.Config, name, pin string) error {
 				slog.String("callback", "OnGarageDoorUpdate"),
 			}
 
-			err = fhomeClient.SendEvent(ID, value)
+			err = fhomeClient.SendEvent(ctx, ID, value)
 			if err != nil {
 				attrs = append(attrs, slog.Any("error", err))
 				slog.LogAttrs(context.TODO(), slog.LevelError, "failed to send event", attrs...)
@@ -289,7 +289,7 @@ func homekitSyncer(config *highlevel.Config, name, pin string) error {
 	// In this loop, we listen to events from F&Home and send updates to HomeKit
 	// to keep the state in sync.
 	for {
-		msg, err := fhomeClient.ReadMessage(api.ActionStatusTouchesChanged, "")
+		msg, err := fhomeClient.ReadMessage(ctx, api.ActionStatusTouchesChanged, "")
 		if err != nil {
 			slog.Error("failed to read message", slog.Any("error", err))
 			return err
@@ -308,7 +308,11 @@ func homekitSyncer(config *highlevel.Config, name, pin string) error {
 		}
 
 		cellValue := resp.Response.CellValues[0]
-		printCellData(&cellValue, apiConfig)
+		err = highlevel.PrintCellData(&cellValue, apiConfig)
+		if err != nil {
+			slog.Error("failed to print cell data", slog.Any("error", err))
+			return err
+		}
 
 		// handle lightbulb
 		{
@@ -365,43 +369,4 @@ func homekitSyncer(config *highlevel.Config, name, pin string) error {
 			}
 		}
 	}
-}
-
-func mustGetenv(varname string) string {
-	value := os.Getenv(varname)
-	if value == "" {
-		slog.Error(varname + " env var is empty or not set")
-		os.Exit(1)
-	}
-	return value
-}
-
-// printCellData prints the values of its arguments into a JSON object.
-func printCellData(cellValue *api.CellValue, cfg *api.Config) error {
-	cell, err := cfg.GetCellByID(cellValue.IntID())
-	if err != nil {
-		return fmt.Errorf("failed to get cell with ID %d: %v", cellValue.IntID(), err)
-	}
-
-	// Find panel ID of the cell
-	var panelName string
-	for _, panel := range cfg.Panels {
-		for _, c := range panel.Cells {
-			if c.ID == cell.ID {
-				panelName = panel.Name
-				break
-			}
-		}
-	}
-
-	slog.Debug("object state changed",
-		slog.Int("id", cell.ID),
-		slog.String("panel", panelName),
-		slog.String("name", cell.Name),
-		slog.String("desc", cell.Desc),
-		slog.String("display_type", string(cellValue.DisplayType)),
-		slog.String("value", cellValue.Value),
-		slog.String("value_str", cellValue.ValueStr),
-	)
-	return nil
 }
