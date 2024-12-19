@@ -44,8 +44,8 @@ func daemon(ctx context.Context, config *highlevel.Config, name, pin string) err
 		return err
 	}
 
-	go serviceListener(ctx, client)
-	go websiteListener(ctx, config, apiConfig)
+	//go serviceListener(ctx, client)
+	//go websiteListener(ctx, config, apiConfig)
 
 	// Here we listen to HomeKit events and convert them to API calls to F&Home
 	// to keep the state in sync.
