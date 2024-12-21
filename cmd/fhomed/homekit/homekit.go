@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"log/slog"
 	"strings"
 
 	"github.com/bartekpacia/fhome/api"
@@ -123,7 +124,12 @@ func (c *Client) SetUp(cfg *api.Config) (*Home, error) {
 	}
 	server.Pin = c.PIN
 
-	go server.ListenAndServe(context.Background())
+	go func() {
+		err := server.ListenAndServe(context.Background())
+		if err != nil {
+			slog.Error("failed to start HAP server", slog.Any("error", err))
+		}
+	}()
 
 	return &Home{
 		Lightbulbs:        lightbulbMap,
