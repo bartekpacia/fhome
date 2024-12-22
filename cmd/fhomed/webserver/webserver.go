@@ -3,6 +3,7 @@ package webserver
 import (
 	"context"
 	"embed"
+	"errors"
 	"fmt"
 	"html/template"
 	"log"
@@ -22,8 +23,10 @@ var tmpl = template.Must(template.ParseFS(templates, "templates/*"))
 
 const port = 9001
 
-func serviceListener(ctx context.Context, client *api.Client, homeConfig *api.Config, email string) {
-	http.HandleFunc("GET /index", func(w http.ResponseWriter, r *http.Request) {
+func Run(ctx context.Context, client *api.Client, homeConfig *api.Config, email string) error {
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("GET /index", func(w http.ResponseWriter, r *http.Request) {
 		slog.Info("got request", slog.String("method", r.Method), slog.String("path", r.URL.Path))
 
 		data := map[string]interface{}{
@@ -35,7 +38,7 @@ func serviceListener(ctx context.Context, client *api.Client, homeConfig *api.Co
 		tmpl.ExecuteTemplate(w, "index.html.tmpl", data)
 	})
 	// Hacky workaround for myself to open my gate from my phone.
-	http.HandleFunc("GET /gate", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("GET /gate", func(w http.ResponseWriter, r *http.Request) {
 		var result string
 		err := client.SendEvent(ctx, 260, api.ValueToggle)
 		if err != nil {
@@ -49,13 +52,27 @@ func serviceListener(ctx context.Context, client *api.Client, homeConfig *api.Co
 		}
 	})
 
-	http.Handle("GET /public", http.StripPrefix("/public/", http.FileServer(http.FS(assets))))
-
+	mux.Handle("GET /public", http.StripPrefix("/public/", http.FileServer(http.FS(assets))))
 	addr := fmt.Sprint("0.0.0.0:", port)
-	slog.Info("server will listen and serve", "addr", fmt.Sprint("http://", addr))
-	log.Println("http server is listening and serving on port 9001")
-	err := http.ListenAndServe(addr, nil)
-	if err != nil {
-		panic(err)
-	}
+	httpServer := http.Server{Addr: addr, Handler: mux}
+
+	errs := make(chan error)
+	go func() {
+		slog.Info("server will listen and serve", "addr", fmt.Sprint("http://", addr))
+		err := httpServer.ListenAndServe()
+		if errors.Is(err, http.ErrServerClosed) {
+			errs <- nil
+		} else {
+			slog.Warn("http server's 'listen and serve' failed", slog.Any("error", err))
+			errs <- err
+		}
+	}()
+
+	go func() {
+		<-ctx.Done()
+		err := httpServer.Shutdown(ctx)
+		errs <- err
+	}()
+
+	return <-errs
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/bartekpacia/fhome/cmd/fhomed/webserver"
 	"log"
 	"log/slog"
 	"os"
@@ -129,7 +130,38 @@ func main() {
 
 			config := loadConfig()
 
-			return daemon(ctx, config, name, pin)
+			if !cmd.Bool("homekit") && !cmd.Bool("webserver") {
+				return fmt.Errorf("no modules enabled")
+			}
+
+			apiClient, err := highlevel.Connect(ctx, config, nil)
+			if err != nil {
+				return fmt.Errorf("failed to create api apiClient: %v", err)
+			}
+
+			apiConfig, err := highlevel.GetConfigs(ctx, apiClient)
+			if err != nil {
+				return fmt.Errorf("failed to get api configs: %v", err)
+			}
+
+			errs := make(chan error)
+			if cmd.Bool("homekit") {
+				go func() {
+					err := homekitSyncer(ctx, apiClient, apiConfig, name, pin)
+					slog.Debug("homekit syncer exited", slog.Any("error", err))
+					errs <- err
+				}()
+			}
+
+			if cmd.Bool("webserver") {
+				go func() {
+					err := webserver.Run(ctx, apiClient, apiConfig, config.Email)
+					slog.Debug("webserver exited", slog.Any("error", err))
+					errs <- err
+				}()
+			}
+
+			return <-errs
 		},
 		CommandNotFound: func(ctx context.Context, cmd *cli.Command, command string) {
 			log.Printf("invalid command '%s'. See 'fhomed --help'\n", command)
@@ -169,37 +201,8 @@ func loadConfig() *highlevel.Config {
 	}
 }
 
-func homekitSyncer(ctx context.Context, config *highlevel.Config, name, pin string) error {
-	fhomeClient, err := highlevel.Connect(ctx, config, nil)
-	if err != nil {
-		return fmt.Errorf("failed to create api client: %v", err)
-	}
-
-	userConfig, err := fhomeClient.GetUserConfig(ctx)
-	if err != nil {
-		slog.Error("failed to get user config", slog.Any("error", err))
-		return err
-	}
-	slog.Info("got user config",
-		slog.Int("panels", len(userConfig.Panels)),
-		slog.Int("cells", len(userConfig.Cells)),
-	)
-
-	systemConfig, err := fhomeClient.GetSystemConfig(ctx)
-	if err != nil {
-		slog.Error("failed to get system config", slog.Any("error", err))
-		return err
-	}
-	slog.Info("got system config",
-		slog.Int("cells", len(systemConfig.Response.MobileDisplayProperties.Cells)),
-		slog.String("source", systemConfig.Source),
-	)
-
-	apiConfig, err := api.MergeConfigs(userConfig, systemConfig)
-	if err != nil {
-		slog.Error("failed to merge configs", slog.Any("error", err))
-		return err
-	}
+func homekitSyncer(ctx context.Context, fhomeClient *api.Client, apiConfig *api.Config, name, pin string) error {
+	slog.Debug("starting module: homekit syncer")
 
 	// HomeKit -> F&Home
 	//
@@ -267,7 +270,7 @@ func homekitSyncer(ctx context.Context, config *highlevel.Config, name, pin stri
 				slog.String("callback", "OnGarageDoorUpdate"),
 			}
 
-			err = fhomeClient.SendEvent(ctx, ID, value)
+			err := fhomeClient.SendEvent(ctx, ID, value)
 			if err != nil {
 				attrs = append(attrs, slog.Any("error", err))
 				slog.LogAttrs(context.TODO(), slog.LevelError, "failed to send event", attrs...)

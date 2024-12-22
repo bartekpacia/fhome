@@ -56,3 +56,30 @@ func Connect(ctx context.Context, config *Config, dialer *websocket.Dialer) (*ap
 
 	return client, nil
 }
+
+func GetConfigs(ctx context.Context, fhomeClient *api.Client) (*api.Config, error) {
+	userConfig, err := fhomeClient.GetUserConfig(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("get user config: %w", err)
+	}
+	slog.Debug("got user config",
+		slog.Int("panels", len(userConfig.Panels)),
+		slog.Int("cells", len(userConfig.Cells)),
+	)
+
+	systemConfig, err := fhomeClient.GetSystemConfig(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("get system config: %w", err)
+	}
+	slog.Debug("got system config",
+		slog.Int("cells", len(systemConfig.Response.MobileDisplayProperties.Cells)),
+		slog.String("source", systemConfig.Source),
+	)
+
+	apiConfig, err := api.MergeConfigs(userConfig, systemConfig)
+	if err != nil {
+		return nil, fmt.Errorf("merge configs: %w", err)
+	}
+
+	return apiConfig, nil
+}
