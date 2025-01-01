@@ -1,3 +1,4 @@
+// Package webserver implements a few simple HTTP endpoints for discovery and control of smart home devices.
 package webserver
 
 import (
