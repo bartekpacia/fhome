@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"log/slog"
 	"strings"
 
 	"github.com/bartekpacia/fhome/api"
@@ -116,14 +117,19 @@ func (c *Client) SetUp(cfg *api.Config) (*Home, error) {
 
 	bridge := accessory.NewBridge(accessory.Info{Name: c.Name})
 
-	fs := hap.NewFsStore("./db")
+	fs := hap.NewFsStore("./db") // TODO: Create this in ~/.local/state/fhomed
 	server, err := hap.NewServer(fs, bridge.A, accessories...)
 	if err != nil {
 		log.Panic(err)
 	}
 	server.Pin = c.PIN
 
-	go server.ListenAndServe(context.Background())
+	go func() {
+		err := server.ListenAndServe(context.Background())
+		if err != nil {
+			slog.Error("failed to start HAP server", slog.Any("error", err))
+		}
+	}()
 
 	return &Home{
 		Lightbulbs:        lightbulbMap,

@@ -10,7 +10,7 @@ require (
 	github.com/lmittmann/tint v1.0.5
 	github.com/urfave/cli-docs/v3 v3.0.0-alpha6
 	github.com/urfave/cli/v3 v3.0.0-alpha9.7
-	golang.org/x/crypto v0.29.0
+	golang.org/x/crypto v0.31.0
 )
 
 require (
