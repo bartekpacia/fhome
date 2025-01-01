@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/bartekpacia/fhome/cmd/fhomed/webserver"
 	"log"
 	"log/slog"
 	"os"
 	"os/signal"
 	"time"
+
+	"github.com/bartekpacia/fhome/cmd/fhomed/webserver"
 
 	"github.com/bartekpacia/fhome/api"
 	"github.com/bartekpacia/fhome/cmd/fhomed/homekit"
