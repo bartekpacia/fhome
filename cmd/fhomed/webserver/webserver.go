@@ -54,6 +54,8 @@ func Run(ctx context.Context, client *api.Client, homeConfig *api.Config, email 
 	})
 
 	mux.Handle("GET /public", http.StripPrefix("/public/", http.FileServer(http.FS(assets))))
+	app := NewApi(client)
+	mux.Handle("/api/", http.StripPrefix("/api", app.Mux()))
 	addr := fmt.Sprint("0.0.0.0:", port)
 	httpServer := http.Server{Addr: addr, Handler: mux}
 

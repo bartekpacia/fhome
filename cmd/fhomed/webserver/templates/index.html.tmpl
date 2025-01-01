@@ -16,7 +16,7 @@
             <h2>{{$panel.Name}} ({{len $panel.Cells }} objects) </h2>
             <ul>
                 {{range $j, $cell := $panel.Cells}}
-                    <li>{{$cell.Name}}</li>
+                    <li>{{$cell.Name}} / {{$cell.ID}}</li>
                 {{end}}
             </ul>
         {{end}}
