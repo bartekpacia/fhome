@@ -1,0 +1,2 @@
+GET http://localhost:9001/api/devices
+Authorization: Passphrase: my-passphrase

@@ -1,8 +1,8 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="fhomed --homekit --debug" type="GoApplicationRunConfiguration" factoryName="Go Application" focusToolWindowBeforeRun="true">
+  <configuration default="false" name="fhomed (HomeKit + webserver)" type="GoApplicationRunConfiguration" factoryName="Go Application" focusToolWindowBeforeRun="true">
     <module name="fhome" />
     <working_directory value="$PROJECT_DIR$" />
-    <parameters value="--homekit --debug" />
+    <parameters value="--homekit --webserver --debug" />
     <kind value="PACKAGE" />
     <package value="github.com/bartekpacia/fhome/cmd/fhomed" />
     <directory value="$PROJECT_DIR$" />

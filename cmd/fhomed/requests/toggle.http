@@ -1,0 +1,3 @@
+POST http://localhost:9001/api/devices/291
+Authorization: Passphrase: my-passphrase
+# 291 = bartek sufit 1

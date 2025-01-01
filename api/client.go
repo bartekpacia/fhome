@@ -332,6 +332,8 @@ func (c *Client) SendAction(ctx context.Context, actionName string) (*Message, e
 
 // SendEvent sends an event containing value to the cell.
 //
+// This is a more specific variant of SendAction.
+//
 // Events are named "Xevents" in F&Home's terminology.
 func (c *Client) SendEvent(ctx context.Context, cellID int, value string) error {
 	actionName := ActionEvent
