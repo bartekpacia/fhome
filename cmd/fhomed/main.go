@@ -125,8 +125,8 @@ func main() {
 			return ctx, nil
 		},
 		Action: func(ctx context.Context, cmd *cli.Command) error {
-			name := cmd.String("name")
-			pin := cmd.String("pin")
+			name := cmd.String("homekit-name")
+			pin := cmd.String("homekit-pin")
 
 			config := loadConfig()
 
