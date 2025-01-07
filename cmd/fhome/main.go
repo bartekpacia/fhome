@@ -73,7 +73,7 @@ func main() {
 	ctx, _ := signal.NotifyContext(context.Background(), os.Interrupt)
 	err := app.Run(ctx, os.Args)
 	if err != nil {
-		slog.Error("exit", slog.Any("error", err))
+		slog.Error("exiting because app.Run returned an error", slog.Any("error", err))
 		os.Exit(1)
 	}
 }
