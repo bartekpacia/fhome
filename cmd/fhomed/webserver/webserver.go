@@ -3,6 +3,7 @@ package webserver
 import (
 	"context"
 	"embed"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"html/template"
@@ -49,6 +50,15 @@ func Run(ctx context.Context, client *api.Client, homeConfig *api.Config, email 
 		if result != "" {
 			log.Print(result)
 			fmt.Fprint(w, result)
+		}
+	})
+
+	mux.HandleFunc("GET /api/objects", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		err := json.NewEncoder(w).Encode(homeConfig.Cells())
+		if err != nil {
+			http.Error(w, "failed to encode response to json", http.StatusInternalServerError)
+			return
 		}
 	})
 
