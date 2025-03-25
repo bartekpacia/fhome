@@ -16,6 +16,9 @@ import (
 	"golang.org/x/crypto/pbkdf2"
 )
 
+// ErrClientDone is returned when this client can no longer be used.
+var ErrClientDone = fmt.Errorf("client is done")
+
 // URL is a URL at which F&Home API lives.
 //
 // It has to end with a trailing slash, otherwise handshake fails.
@@ -272,7 +275,7 @@ func (c *Client) ReadMessage(ctx context.Context, actionName string, requestToke
 	for {
 		select {
 		case <-ctx.Done():
-			return nil, fmt.Errorf("context is done")
+			return nil, ErrClientDone
 		case msg := <-c.read():
 			if msg.Status != nil {
 				if *msg.Status != "ok" {
@@ -327,10 +330,17 @@ func (c *Client) SendAction(ctx context.Context, actionName string) (*Message, e
 		return nil, fmt.Errorf("failed to write action %s: %v", action.ActionName, err)
 	}
 
-	return c.ReadMessage(ctx, action.ActionName, token)
+	message, err := c.ReadMessage(ctx, action.ActionName, token)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read message: %v", err)
+	}
+
+	return message, nil
 }
 
 // SendEvent sends an event containing value to the cell.
+//
+// This is a more specific variant of SendAction.
 //
 // Events are named "Xevents" in F&Home's terminology.
 func (c *Client) SendEvent(ctx context.Context, cellID int, value string) error {
@@ -352,6 +362,10 @@ func (c *Client) SendEvent(ctx context.Context, cellID int, value string) error 
 	}
 
 	_, err = c.ReadMessage(ctx, actionName, token)
+	if err != nil {
+		return fmt.Errorf("failed to read message: %v", err)
+	}
+
 	return err
 }
 
