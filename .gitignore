@@ -19,7 +19,6 @@ go.work
 
 .DS_Store
 .env
-.idea/
 config.toml
 
 # build artifacts
@@ -33,5 +32,3 @@ fhomed.1
 
 # GoReleaser
 dist/
-
-*.iml
