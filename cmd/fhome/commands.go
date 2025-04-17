@@ -319,14 +319,7 @@ var objectCommand = cli.Command{
 				}
 			},
 			ShellComplete: func(ctx context.Context, cmd *cli.Command) {
-				config := loadConfig()
-				client, err := highlevel.Connect(ctx, config, nil)
-				if err != nil {
-					panic(err)
-				}
-
-				// TODO: Save to cache because it's slow
-				userConfig, err := client.GetUserConfig(ctx)
+				userConfig, err := getUserConfig(ctx, createClientGetter(ctx))
 				if err != nil {
 					panic(err)
 				}
@@ -413,4 +406,15 @@ var objectCommand = cli.Command{
 			},
 		},
 	},
+}
+
+func createClientGetter(ctx context.Context) func() (*api.Client, error) {
+	return func() (*api.Client, error) {
+		config := loadConfig()
+		client, err := highlevel.Connect(ctx, config, nil)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create api client: %v", err)
+		}
+		return client, nil
+	}
 }

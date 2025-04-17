@@ -1,5 +1,5 @@
 // Package highlevel provides convenient wrappers around some common functionality
-// in the api package.
+// in the [api] package.
 package highlevel
 
 import (
@@ -46,6 +46,7 @@ func Connect(ctx context.Context, config *Config, dialer *websocket.Dialer) (*ap
 		slog.String("type", myResources.ResourceType0),
 	)
 
+	slog.Debug("opening client to resource session")
 	err = client.OpenResourceSession(ctx, config.ResourcePassword)
 	if err != nil {
 		slog.Error("failed to open client to resource session", slog.Any("error", err))
