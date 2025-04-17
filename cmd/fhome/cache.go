@@ -20,7 +20,7 @@ func cacheDir() (string, error) {
 	}
 
 	cacheDir := filepath.Join(homeDir, ".cache", "fhome")
-	err = os.MkdirAll(cacheDir, 0755)
+	err = os.MkdirAll(cacheDir, 0o755)
 	if err != nil {
 		return "", fmt.Errorf("failed to create cache directory: %w", err)
 	}
@@ -72,7 +72,7 @@ func writeUserConfigToCache(userConfig *api.UserConfig) error {
 		return fmt.Errorf("failed to marshal user config: %w", err)
 	}
 
-	err = os.WriteFile(path, data, 0644)
+	err = os.WriteFile(path, data, 0o644)
 	if err != nil {
 		return fmt.Errorf("failed to write cache file: %w", err)
 	}
@@ -85,7 +85,7 @@ func writeUserConfigToCache(userConfig *api.UserConfig) error {
 func updateCache(ctx context.Context, createClient func() (*api.Client, error)) {
 	client, err := createClient()
 	if err != nil {
-		slog.Error("failed to create API client: ", err)
+		slog.Error("failed to create API client: ", slog.Any("error", err))
 		return
 	}
 

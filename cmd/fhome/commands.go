@@ -4,17 +4,18 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/adrg/strutil"
-	"github.com/adrg/strutil/metrics"
-	"github.com/bartekpacia/fhome/api"
-	"github.com/bartekpacia/fhome/highlevel"
-	"github.com/urfave/cli/v3"
 	"log"
 	"log/slog"
 	"os"
 	"strconv"
 	"strings"
 	"text/tabwriter"
+
+	"github.com/adrg/strutil"
+	"github.com/adrg/strutil/metrics"
+	"github.com/bartekpacia/fhome/api"
+	"github.com/bartekpacia/fhome/highlevel"
+	"github.com/urfave/cli/v3"
 )
 
 // bestObjectMatch returns the cell with the highest similarity score to the given object and the score itself.
