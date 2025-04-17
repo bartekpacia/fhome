@@ -82,7 +82,7 @@ func main() {
 			},
 			&cli.BoolFlag{
 				Name:  "debug",
-				Usage: "show debug logs",
+				Usage: "show debug logs (can also be enabled with FHOME_DEBUG env var)",
 			},
 			&cli.BoolFlag{
 				Name:  "homekit",
@@ -105,7 +105,7 @@ func main() {
 		},
 		Before: func(ctx context.Context, cmd *cli.Command) (context.Context, error) {
 			var level slog.Level
-			if cmd.Bool("debug") {
+			if cmd.Bool("debug") || os.Getenv("FHOME_DEBUG") != "" {
 				level = slog.LevelDebug
 			} else {
 				level = slog.LevelInfo
