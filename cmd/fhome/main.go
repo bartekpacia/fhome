@@ -12,6 +12,7 @@ import (
 	"github.com/bartekpacia/fhome/highlevel"
 	"github.com/knadh/koanf"
 	"github.com/knadh/koanf/parsers/toml"
+	"github.com/knadh/koanf/providers/env"
 	"github.com/knadh/koanf/providers/file"
 	"github.com/lmittmann/tint"
 	"github.com/urfave/cli/v3"
@@ -81,19 +82,32 @@ func main() {
 func loadConfig() *highlevel.Config {
 	k := koanf.New(".")
 
+	// Attempt to load configuration from /etc/fhome/config.toml
 	p := "/etc/fhome/config.toml"
-	if err := k.Load(file.Provider(p), toml.Parser()); err != nil {
+	err := k.Load(file.Provider(p), toml.Parser())
+	if err != nil {
 		slog.Debug("failed to load config file", slog.Any("error", err))
 	} else {
 		slog.Debug("loaded config file", slog.String("path", p))
 	}
 
+	// Attempt to load configuration from ~/.config/fhome/config.toml
 	homeDir, _ := os.UserHomeDir()
 	p = fmt.Sprintf("%s/.config/fhome/config.toml", homeDir)
-	if err := k.Load(file.Provider(p), toml.Parser()); err != nil {
+	err = k.Load(file.Provider(p), toml.Parser())
+	if err != nil {
 		slog.Debug("failed to load config file", slog.Any("error", err))
 	} else {
 		slog.Debug("loaded config file", slog.String("path", p))
+	}
+
+	// Attempt to load configuration from environment variables.
+	// This will override any values from config files.
+	err = k.Load(env.Provider("", ".", nil), nil)
+	if err != nil {
+		slog.Debug("failed to load environment variables", slog.Any("error", err))
+	} else {
+		slog.Debug("loaded configuration from environment variables")
 	}
 
 	return &highlevel.Config{
