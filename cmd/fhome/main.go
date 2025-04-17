@@ -22,6 +22,17 @@ import (
 var version = "dev"
 
 func main() {
+	// Maybe slog setup has to happen outside of Before(), because then it's not run during ShellComplete?
+	var logLevel slog.Level
+	if os.Getenv("FHOME_DEBUG") != "" {
+		logLevel = slog.LevelDebug
+	} else {
+		logLevel = slog.LevelInfo
+	}
+	handler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: logLevel})
+	_ = slog.New(handler)
+	// slog.SetDefault(logger)
+
 	app := &cli.Command{
 		Name:                  "fhome",
 		Usage:                 "Interact with smart home devices connected to F&Home",
@@ -40,20 +51,17 @@ func main() {
 			},
 		},
 		Before: func(ctx context.Context, cmd *cli.Command) (context.Context, error) {
-			var level slog.Level
-			if cmd.Bool("debug") || os.Getenv("FHOME_DEBUG") != "" {
-				level = slog.LevelDebug
-			} else {
-				level = slog.LevelInfo
+			if cmd.Bool("debug") {
+				logLevel = slog.LevelDebug
 			}
 
 			if cmd.Bool("json") {
-				opts := slog.HandlerOptions{Level: level}
+				opts := slog.HandlerOptions{Level: logLevel}
 				handler := slog.NewJSONHandler(os.Stdout, &opts)
 				logger := slog.New(handler)
 				slog.SetDefault(logger)
 			} else {
-				opts := tint.Options{Level: level, TimeFormat: time.TimeOnly}
+				opts := tint.Options{Level: logLevel, TimeFormat: time.TimeOnly}
 				handler := tint.NewHandler(os.Stdout, &opts)
 				logger := slog.New(handler)
 				slog.SetDefault(logger)

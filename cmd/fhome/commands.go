@@ -4,18 +4,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/adrg/strutil"
+	"github.com/adrg/strutil/metrics"
+	"github.com/bartekpacia/fhome/api"
+	"github.com/bartekpacia/fhome/highlevel"
+	"github.com/urfave/cli/v3"
 	"log"
 	"log/slog"
 	"os"
 	"strconv"
 	"strings"
 	"text/tabwriter"
-
-	"github.com/adrg/strutil"
-	"github.com/adrg/strutil/metrics"
-	"github.com/bartekpacia/fhome/api"
-	"github.com/bartekpacia/fhome/highlevel"
-	"github.com/urfave/cli/v3"
 )
 
 // bestObjectMatch returns the cell with the highest similarity score to the given object and the score itself.
@@ -319,14 +318,7 @@ var objectCommand = cli.Command{
 				}
 			},
 			ShellComplete: func(ctx context.Context, cmd *cli.Command) {
-				config := loadConfig()
-				client, err := highlevel.Connect(ctx, config, nil)
-				if err != nil {
-					panic(err)
-				}
-
-				// TODO: Save to cache because it's slow
-				userConfig, err := client.GetUserConfig(ctx)
+				userConfig, err := getUserConfig(ctx, createClientGetter(ctx))
 				if err != nil {
 					panic(err)
 				}
@@ -413,4 +405,15 @@ var objectCommand = cli.Command{
 			},
 		},
 	},
+}
+
+func createClientGetter(ctx context.Context) func() (*api.Client, error) {
+	return func() (*api.Client, error) {
+		config := loadConfig()
+		client, err := highlevel.Connect(ctx, config, nil)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create api client: %v", err)
+		}
+		return client, nil
+	}
 }
