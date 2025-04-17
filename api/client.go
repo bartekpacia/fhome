@@ -18,7 +18,7 @@ import (
 
 // URL is a URL at which F&Home API lives.
 //
-// It has to end with a trailing slash, otherwise handshake fails.
+// It has to end with a trailing slash, otherwise the handshake fails.
 const URL = "wss://fhome.cloud/webapp-interface/"
 
 type Client struct {
@@ -116,8 +116,8 @@ func (c *Client) OpenCloudSession(email, password string) error {
 
 // GetMyResources gets resources assigned to the user.
 //
-// Most of the time, there will be just one resource. Currently we handle only
-// this case and assign its unique ID to the client.
+// Most of the time, there will be just one resource.
+// Currently, we handle only this case and assign its unique ID to the client.
 func (c *Client) GetMyResources() (*GetMyResourcesResponse, error) {
 	token := generateRequestToken()
 
@@ -224,7 +224,7 @@ func (c *Client) GetSystemConfig(ctx context.Context) (*TouchesResponse, error) 
 	return &response, nil
 }
 
-// GetUserConfig returns configuration of cells and panels.
+// GetUserConfig returns the configuration of cells and panels.
 //
 // The configuration returned by this method is set in the web or mobile app.
 func (c *Client) GetUserConfig(ctx context.Context) (*UserConfig, error) {
@@ -265,7 +265,7 @@ func (c *Client) GetUserConfig(ctx context.Context) (*UserConfig, error) {
 // and requestToken.
 //
 // If requestToken is empty, then it is ignored.
-// In such a case, the first message with matching actionName is returned.
+// In such a case, the first message with the matching actionName is returned.
 //
 // If its status is not "ok", it returns an error.
 func (c *Client) ReadMessage(ctx context.Context, actionName string, requestToken string) (*Message, error) {
@@ -418,8 +418,8 @@ func connect(dialer *websocket.Dialer) (*websocket.Conn, error) {
 	return conn, nil
 }
 
-// MergeConfigs creates [Config] config from "get_user_config" action and
-// "get_system_config" action.
+// MergeConfigs creates [Config] config from the "get_user_config" and
+// "get_system_config" actions.
 func MergeConfigs(userConfig *UserConfig, touchesResp *TouchesResponse) (*Config, error) {
 	panels := make([]Panel, 0)
 
