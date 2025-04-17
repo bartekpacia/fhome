@@ -1,12 +1,13 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="fhome config list --glance" type="GoApplicationRunConfiguration" factoryName="Go Application" focusToolWindowBeforeRun="true">
+  <configuration default="false" name="fhome" type="GoApplicationRunConfiguration" factoryName="Go Application" activateToolWindowBeforeRun="false">
     <module name="fhome" />
     <working_directory value="$PROJECT_DIR$" />
-    <parameters value="config list --glance" />
+    <parameters value="$Prompt$" />
     <kind value="PACKAGE" />
     <package value="github.com/bartekpacia/fhome/cmd/fhome" />
     <directory value="$PROJECT_DIR$" />
     <filePath value="$PROJECT_DIR$" />
+    <output_directory value="$PROJECT_DIR$" />
     <pty_enabled value="true" />
     <method v="2" />
   </configuration>
