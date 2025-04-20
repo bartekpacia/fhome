@@ -30,7 +30,7 @@ builds:
 archives:
   - id: fhome
     name_template: "fhome_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
-    builds:
+    ids:
       - fhome
     files:
       - LICENSE
@@ -38,11 +38,11 @@ archives:
     wrap_in_directory: true
     format_overrides:
       - goos: windows
-        format: zip
+        formats: zip
 
   - id: fhomed
     name_template: "fhomed_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
-    builds:
+    ids:
       - fhomed
     files:
       - LICENSE
@@ -50,7 +50,7 @@ archives:
     wrap_in_directory: true
     format_overrides:
       - goos: windows
-        format: zip
+        formats: zip
 
 changelog:
   disable: true
