@@ -140,7 +140,7 @@ var configCommand = cli.Command{
 						log.Println()
 					}
 				} else if cmd.Bool("glance") {
-					// We want to see real values of the system resources.
+					// We want to see the real values of the system resources.
 					// To do that, we need to send the "statustouches" action and
 					// wait for its response.
 
