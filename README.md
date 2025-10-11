@@ -74,7 +74,7 @@ Depends on the `api` package.
     $ sudo systemctl daemon-reload
     ```
 
-**Extracing status logs from journald**
+**Extracting status logs from journald**
 
 ```console
 $ journalctl \
