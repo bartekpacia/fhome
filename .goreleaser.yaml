@@ -97,6 +97,7 @@ aurs:
     description: Interact with smart home devices connected to F&Home
     maintainers:
       - Bartek Pacia <barpac02@gmail.com>
+    license: MIT
     private_key: "{{ .Env.AUR_SSH_PRIVATE_KEY }}"
     git_url: git@github.com:bartekpacia/aur.git
     directory: fhome-bin
@@ -126,6 +127,7 @@ aurs:
     description: Background daemon for F&Home
     maintainers:
       - Bartek Pacia <barpac02@gmail.com>
+    license: MIT
     private_key: "{{ .Env.AUR_SSH_PRIVATE_KEY }}"
     git_url: git@github.com:bartekpacia/aur.git
     directory: fhomed-bin
