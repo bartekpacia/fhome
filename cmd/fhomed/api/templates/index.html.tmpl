@@ -8,7 +8,7 @@
 
     <body>
         <h1>Hello from F&Home</h1>
-        <p>Welcome {{.Email}}!</p>
+        <p>Welcome!</p>
         <p>You have {{len .Cells}} objects in {{len .Panels}} panels.</p>
 
         <!-- Display all panels and cells -->
@@ -16,7 +16,7 @@
             <h2>{{$panel.Name}} ({{len $panel.Cells }} objects) </h2>
             <ul>
                 {{range $j, $cell := $panel.Cells}}
-                    <li>{{$cell.Name}}</li>
+                    <li>{{$cell.Name}} / {{$cell.ID}}</li>
                 {{end}}
             </ul>
         {{end}}

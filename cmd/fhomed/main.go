@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"log/slog"
@@ -10,7 +11,7 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/bartekpacia/fhome/cmd/fhomed/webserver"
+	webapi "github.com/bartekpacia/fhome/cmd/fhomed/api"
 
 	"github.com/bartekpacia/fhome/api"
 	"github.com/bartekpacia/fhome/cmd/fhomed/homekit"
@@ -88,10 +89,6 @@ func main() {
 				Name:  "homekit",
 				Usage: "Enable HomeKit bridge",
 			},
-			&cli.BoolFlag{
-				Name:  "webserver",
-				Usage: "Enable web server with simple website preview",
-			},
 			&cli.StringFlag{
 				Name:  "homekit-name",
 				Usage: "name of the HomeKit bridge accessory. Only makes sense when --homekit is set",
@@ -101,6 +98,20 @@ func main() {
 				Name:  "homekit-pin",
 				Usage: "PIN of the HomeKit bridge accessory. Only makes sense when --homekit is set",
 				Value: "00102003",
+			},
+			&cli.BoolFlag{
+				Name:  "api",
+				Usage: "Run a web server with a simple API. Requires --api-passphrase",
+			},
+			&cli.StringFlag{
+				Name:  "api-passphrase",
+				Usage: "Passphrase to access the API. Only makes sense when coupled with --api",
+				Value: "",
+			},
+			&cli.IntFlag{
+				Name:  "api-port",
+				Usage: "Port to run API on. Only makes sense when coupled with --api",
+				Value: 9001,
 			},
 		},
 		Before: func(ctx context.Context, cmd *cli.Command) (context.Context, error) {
@@ -129,9 +140,17 @@ func main() {
 			name := cmd.String("homekit-name")
 			pin := cmd.String("homekit-pin")
 
+			apiPort := cmd.Int("api-port")
+			apiPassphrase := cmd.String("api-passphrase")
+			if cmd.Bool("api") {
+				if apiPassphrase == "" {
+					return fmt.Errorf("--api-passphrase is required when using --api")
+				}
+			}
+
 			config := loadConfig()
 
-			if !cmd.Bool("homekit") && !cmd.Bool("webserver") {
+			if !cmd.Bool("homekit") && !cmd.Bool("api") {
 				return fmt.Errorf("no modules enabled")
 			}
 
@@ -154,10 +173,11 @@ func main() {
 				}()
 			}
 
-			if cmd.Bool("webserver") {
+			if cmd.Bool("api") {
 				go func() {
-					err := webserver.Run(ctx, apiClient, apiConfig, config.Email)
-					slog.Debug("webserver exited", slog.Any("error", err))
+					webSrv := webapi.New(apiClient, apiConfig)
+					err := webSrv.Run(ctx, int(apiPort), apiPassphrase)
+					slog.Debug("api exited", slog.Any("error", err))
 					errs <- err
 				}()
 			}
@@ -172,7 +192,7 @@ func main() {
 	ctx, _ := signal.NotifyContext(context.Background(), os.Interrupt)
 	err := app.Run(ctx, os.Args)
 	if err != nil {
-		slog.Error("exit", slog.Any("error", err))
+		slog.Error("exiting because app.Run returned an error", slog.Any("error", err))
 		os.Exit(1)
 	}
 }
@@ -295,8 +315,14 @@ func homekitSyncer(ctx context.Context, fhomeClient *api.Client, apiConfig *api.
 	for {
 		msg, err := fhomeClient.ReadMessage(ctx, api.ActionStatusTouchesChanged, "")
 		if err != nil {
-			slog.Error("failed to read message", slog.Any("error", err))
-			return err
+			if errors.Is(err, api.ErrClientDone) {
+				slog.Info("client is done, stopping the ReadMessage loop")
+				return nil
+			}
+
+			slog.Warn("got a message but it is an error. Ignoring.", slog.Any("error", err))
+			continue
+			// return err
 		}
 
 		var resp api.StatusTouchesChangedResponse
