@@ -11,12 +11,12 @@ jobs:
 
     steps:
       - name: Clone repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
 
@@ -29,7 +29,7 @@ jobs:
           install-only: true
 
       - name: Install 1Password CLI
-        uses: 1password/install-cli-action@v1
+        uses: 1password/install-cli-action@v2
 
       - name: Run GoReleaser
         run: op run -- goreleaser release --clean
