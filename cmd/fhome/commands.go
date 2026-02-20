@@ -23,7 +23,6 @@ import (
 // If no objects match at all (i.e., bestScore is 0), then this method returns nil.
 func bestObjectMatch(object string, config *api.Config) (bestObject *api.Cell, bestScore float64) {
 	for _, cell := range config.Cells() {
-		cell := cell
 
 		if cell.DisplayType != string(api.Percentage) {
 			continue

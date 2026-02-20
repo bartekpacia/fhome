@@ -47,7 +47,6 @@ func (c *Client) SetUp(cfg *api.Config) (*Home, error) {
 	garageDoorMap := make(map[int]*accessory.GarageDoorOpener)
 	for _, panel := range cfg.Panels {
 		for _, cell := range panel.Cells {
-			cell := cell
 
 			accessoryInfo := accessory.Info{Name: strings.TrimSpace(cell.Name)}
 			if cell.Icon == api.IconLighting {
