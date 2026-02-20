@@ -1,6 +1,6 @@
 module github.com/bartekpacia/fhome
 
-go 1.25
+go 1.26
 
 require (
 	github.com/adrg/strutil v0.3.1
