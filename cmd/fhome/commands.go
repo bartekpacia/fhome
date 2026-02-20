@@ -199,11 +199,12 @@ var configCommand = cli.Command{
 						}{Name: cell.Desc, Value: val})
 					}
 
-					text := "Oto status oświetlenia:\n"
+					var text strings.Builder
+					text.WriteString("Oto status oświetlenia:\n")
 					for _, cell := range cells {
-						text += fmt.Sprintf("• %s: %d%%\n", cell.Name, cell.Value)
+						text.WriteString(fmt.Sprintf("• %s: %d%%\n", cell.Name, cell.Value))
 					}
-					fmt.Print(text)
+					fmt.Print(text.String())
 				}
 
 				return nil
