@@ -30,7 +30,7 @@ func Run(ctx context.Context, client *api.Client, homeConfig *api.Config, email 
 	mux.HandleFunc("GET /index", func(w http.ResponseWriter, r *http.Request) {
 		slog.Info("got request", slog.String("method", r.Method), slog.String("path", r.URL.Path))
 
-		data := map[string]interface{}{
+		data := map[string]any{
 			"Email":  email,
 			"Panels": homeConfig.Panels,
 			"Cells":  homeConfig.Cells(),

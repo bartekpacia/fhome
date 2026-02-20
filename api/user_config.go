@@ -52,11 +52,11 @@ func (p PositionInPanel) String() string {
 }
 
 type UserPanel struct {
-	ID                   string      `json:"id"`
-	Name                 string      `json:"name"`
-	X                    int         `json:"x"`
-	Y                    int         `json:"y"`
-	Icon                 interface{} `json:"icon"`
-	ColumnCountPortrait  int         `json:"columnCountPortrait"`
-	ColumnCountLandscape int         `json:"columnCountLandscape"`
+	ID                   string `json:"id"`
+	Name                 string `json:"name"`
+	X                    int    `json:"x"`
+	Y                    int    `json:"y"`
+	Icon                 any    `json:"icon"`
+	ColumnCountPortrait  int    `json:"columnCountPortrait"`
+	ColumnCountLandscape int    `json:"columnCountLandscape"`
 }
