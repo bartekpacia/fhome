@@ -38,6 +38,36 @@ func bestObjectMatch(object string, config *api.Config) (bestObject *api.Cell, b
 	return bestObject, bestScore
 }
 
+var systemstatusCommand = cli.Command{
+	Name:  "systemstatus",
+	Usage: "Print basic system info from the resource",
+	Action: func(ctx context.Context, cmd *cli.Command) error {
+		config := loadConfig()
+
+		client, err := highlevel.Connect(ctx, config, nil)
+		if err != nil {
+			return fmt.Errorf("failed to create api client: %v", err)
+		}
+
+		status, err := client.GetSystemStatus(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to get system status: %v", err)
+		}
+
+		r := status.Response
+		w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+		defer w.Flush()
+		fmt.Fprintf(w, "ServerName\t%s\n", r.ServerName)
+		fmt.Fprintf(w, "UUID\t%s\n", r.UUID)
+		fmt.Fprintf(w, "ProjectVersion\t%s\n", r.ProjectVersion)
+		fmt.Fprintf(w, "SystemDate\t%s\n", r.SystemDate)
+		fmt.Fprintf(w, "SystemTime\t%s\n", r.SystemTime)
+		fmt.Fprintf(w, "HGVersion\t%s\n", r.HGVersion)
+		fmt.Fprintf(w, "ProxySupport\t%t\n", r.ProxySupport)
+		return nil
+	},
+}
+
 var configCommand = cli.Command{
 	Name:  "config",
 	Usage: "Manage system configuration",

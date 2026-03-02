@@ -26,6 +26,8 @@ const (
 	// ActionStatusTouchesChanged returns mostly the same response as ActionStatusTouches,
 	// but only for a specific (usually single) changed object.
 	ActionStatusTouchesChanged = "statustoucheschanged"
+
+	ActionSystemStatus = "systemstatus"
 )
 
 var ValueToggle = "0x4001"
