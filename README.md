@@ -23,6 +23,30 @@ Use it if you want to make your own program interact with it.
 
 ## Command-line apps
 
+Both `fhome` and `fhomed` read configuration from TOML files.
+Config files are loaded in order (later overrides earlier), and environment variables override file values.
+
+**Config file locations:**
+
+- `fhome`: `/etc/fhome/config.toml`, `~/.config/fhome/config.toml`
+- `fhomed`: `/etc/fhomed/config.toml`, `~/.config/fhomed/config.toml`
+
+**Required keys**
+
+| Key                       | Description                |
+| --------------------------| ---------------------------|
+| `FHOME_EMAIL`             | F&Home account email       |
+| `FHOME_CLOUD_PASSWORD`    | F&Home cloud password      |
+| `FHOME_RESOURCE_PASSWORD` | Resource (device) password |
+
+**Example config**
+
+```toml
+FHOME_EMAIL = "you@example.com"
+FHOME_CLOUD_PASSWORD = "your-cloud-password"
+FHOME_RESOURCE_PASSWORD = "your-resource-password"
+```
+
 ### fhome
 
 Command-line program to easily interact with your F&Home-enabled devices.
