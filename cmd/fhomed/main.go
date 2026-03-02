@@ -15,9 +15,7 @@ import (
 	"github.com/bartekpacia/fhome/api"
 	"github.com/bartekpacia/fhome/cmd/fhomed/homekit"
 	"github.com/bartekpacia/fhome/highlevel"
-	"github.com/knadh/koanf"
-	"github.com/knadh/koanf/parsers/toml"
-	"github.com/knadh/koanf/providers/file"
+	"github.com/bartekpacia/fhome/internal"
 	"github.com/lmittmann/tint"
 	docs "github.com/urfave/cli-docs/v3"
 	"github.com/urfave/cli/v3"
@@ -129,7 +127,7 @@ func main() {
 			name := cmd.String("homekit-name")
 			pin := cmd.String("homekit-pin")
 
-			config := loadConfig()
+			config := internal.Load()
 
 			if !cmd.Bool("homekit") && !cmd.Bool("webserver") {
 				return fmt.Errorf("no modules enabled")
@@ -174,31 +172,6 @@ func main() {
 	if err != nil {
 		slog.Error("exit", slog.Any("error", err))
 		os.Exit(1)
-	}
-}
-
-func loadConfig() *highlevel.Config {
-	k := koanf.New(".")
-
-	p := "/etc/fhome/config.toml"
-	if err := k.Load(file.Provider(p), toml.Parser()); err != nil {
-		slog.Debug("failed to load config file", slog.Any("error", err))
-	} else {
-		slog.Debug("loaded config file", slog.String("path", p))
-	}
-
-	homeDir, _ := os.UserHomeDir()
-	p = fmt.Sprintf("%s/.config/fhome/config.toml", homeDir)
-	if err := k.Load(file.Provider(p), toml.Parser()); err != nil {
-		slog.Debug("failed to load config file", slog.Any("error", err))
-	} else {
-		slog.Debug("loaded config file", slog.String("path", p))
-	}
-
-	return &highlevel.Config{
-		Email:            k.MustString("FHOME_EMAIL"),
-		Password:         k.MustString("FHOME_CLOUD_PASSWORD"),
-		ResourcePassword: k.MustString("FHOME_RESOURCE_PASSWORD"),
 	}
 }
 

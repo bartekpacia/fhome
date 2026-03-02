@@ -15,6 +15,8 @@ import (
 	"github.com/adrg/strutil/metrics"
 	"github.com/bartekpacia/fhome/api"
 	"github.com/bartekpacia/fhome/highlevel"
+	"github.com/bartekpacia/fhome/internal"
+
 	"github.com/urfave/cli/v3"
 )
 
@@ -42,7 +44,7 @@ var systemstatusCommand = cli.Command{
 	Name:  "systemstatus",
 	Usage: "Print basic system info from the resource",
 	Action: func(ctx context.Context, cmd *cli.Command) error {
-		config := loadConfig()
+		config := internal.Load()
 
 		client, err := highlevel.Connect(ctx, config, nil)
 		if err != nil {
@@ -98,7 +100,7 @@ var configCommand = cli.Command{
 					return fmt.Errorf("cannot use both --system and --user")
 				}
 
-				config := loadConfig()
+				config := internal.Load()
 
 				client, err := highlevel.Connect(ctx, config, nil)
 				if err != nil {
@@ -251,7 +253,7 @@ var eventCommand = cli.Command{
 			Name:  "watch",
 			Usage: "Print all incoming messages",
 			Action: func(ctx context.Context, c *cli.Command) error {
-				config := loadConfig()
+				config := internal.Load()
 
 				client, err := highlevel.Connect(ctx, config, nil)
 				if err != nil {
@@ -295,7 +297,7 @@ var objectCommand = cli.Command{
 					return fmt.Errorf("object not specified")
 				}
 
-				config := loadConfig()
+				config := internal.Load()
 
 				client, err := highlevel.Connect(ctx, config, nil)
 				if err != nil {
@@ -375,7 +377,7 @@ var objectCommand = cli.Command{
 					return fmt.Errorf("invalid value: %v", err)
 				}
 
-				config := loadConfig()
+				config := internal.Load()
 
 				client, err := highlevel.Connect(ctx, config, nil)
 				if err != nil {
@@ -440,7 +442,7 @@ var objectCommand = cli.Command{
 
 func createClientGetter(ctx context.Context) func() (*api.Client, error) {
 	return func() (*api.Client, error) {
-		config := loadConfig()
+		config := internal.Load()
 		client, err := highlevel.Connect(ctx, config, nil)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create api client: %v", err)
