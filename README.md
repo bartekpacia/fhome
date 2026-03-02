@@ -26,10 +26,12 @@ Use it if you want to make your own program interact with it.
 Both `fhome` and `fhomed` read configuration from TOML files.
 Config files are loaded in order (later overrides earlier), and environment variables override file values.
 
-**Config file locations:**
+**Config file locations**
 
-- `fhome`: `/etc/fhome/config.toml`, `~/.config/fhome/config.toml`
-- `fhomed`: `/etc/fhomed/config.toml`, `~/.config/fhomed/config.toml`
+- `/etc/fhome/config.toml`
+- `~/.config/fhome/config.toml`
+
+(these locations are common for both `fhome` and `fhomed`)
 
 **Required keys**
 

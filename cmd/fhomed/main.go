@@ -180,7 +180,7 @@ func main() {
 func loadConfig() *highlevel.Config {
 	k := koanf.New(".")
 
-	p := "/etc/fhomed/config.toml"
+	p := "/etc/fhome/config.toml"
 	if err := k.Load(file.Provider(p), toml.Parser()); err != nil {
 		slog.Debug("failed to load config file", slog.Any("error", err))
 	} else {
@@ -188,7 +188,7 @@ func loadConfig() *highlevel.Config {
 	}
 
 	homeDir, _ := os.UserHomeDir()
-	p = fmt.Sprintf("%s/.config/fhomed/config.toml", homeDir)
+	p = fmt.Sprintf("%s/.config/fhome/config.toml", homeDir)
 	if err := k.Load(file.Provider(p), toml.Parser()); err != nil {
 		slog.Debug("failed to load config file", slog.Any("error", err))
 	} else {
