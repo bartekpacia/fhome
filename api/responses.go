@@ -112,6 +112,22 @@ type StatusTouchesChangedResponse struct {
 	Source string `json:"source"`
 }
 
+type SystemStatusResponse struct {
+	ActionName string `json:"action_name"`
+	Response   struct {
+		ServerName     string `json:"ServerName"`
+		UUID           string `json:"UUID"`
+		ProjectVersion string `json:"ProjectVersion"`
+		SystemTime     string `json:"SystemTime"`
+		SystemDate     string `json:"SystemDate"`
+		HGVersion      string `json:"HGVersion"`
+		ProxySupport   bool   `json:"ProxySupport"`
+	} `json:"response"`
+	Status       string `json:"status"`
+	Source       string `json:"source"`
+	RequestToken string `json:"request_token"`
+}
+
 type CellValue struct {
 	ID          string      `json:"VOI"`
 	Ii          string      `json:"II"`

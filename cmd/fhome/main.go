@@ -73,6 +73,7 @@ func main() {
 			&configCommand,
 			&eventCommand,
 			&objectCommand,
+			&systemstatusCommand,
 		},
 		CommandNotFound: func(ctx context.Context, cmd *cli.Command, command string) {
 			log.Printf("invalid command '%s'. See 'fhome --help'\n", command)

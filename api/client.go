@@ -330,6 +330,23 @@ func (c *Client) SendAction(ctx context.Context, actionName string) (*Message, e
 	return c.ReadMessage(ctx, action.ActionName, token)
 }
 
+// GetSystemStatus returns basic system info from the resource.
+// Auth is not required for this endpoint per the API spec; SendAction sends it anyway and the server ignores it.
+func (c *Client) GetSystemStatus(ctx context.Context) (*SystemStatusResponse, error) {
+	msg, err := c.SendAction(ctx, ActionSystemStatus)
+	if err != nil {
+		return nil, fmt.Errorf("send systemstatus: %v", err)
+	}
+
+	var resp SystemStatusResponse
+	err = json.Unmarshal(msg.Raw, &resp)
+	if err != nil {
+		return nil, fmt.Errorf("unmarshal systemstatus response: %v", err)
+	}
+
+	return &resp, nil
+}
+
 // SendEvent sends an event containing value to the cell.
 //
 // Events are named "Xevents" in F&Home's terminology.
