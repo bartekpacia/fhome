@@ -130,6 +130,47 @@ $ go build -o fhomed ./cmd/fhomed/*.go
 $ go install ./cmd/fhomed
 ```
 
+### fhome-exporter
+
+Prometheus exporter that exposes F&Home temperature sensor data at `/metrics`.
+
+Reads the same config files as `fhome` and `fhomed`.
+
+**Metrics example**
+
+```
+# HELP fhome_room_temperature_celsius Room temperature in degrees Celsius
+# TYPE fhome_room_temperature_celsius gauge
+fhome_room_temperature_celsius{panel="Ogrzewanie",room="Bartek",cell_id="439"} 22.5
+```
+
+**Build**
+
+```console
+$ go build -o fhome-exporter ./cmd/fhome-exporter
+```
+
+**Install**
+
+```console
+$ go install ./cmd/fhome-exporter
+```
+
+**Docker**
+
+```console
+$ docker build -t fhome-exporter -f cmd/fhome-exporter/Dockerfile .
+$ docker run -p 9222:9222 -v ~/.config/fhome:/root/.config/fhome:ro fhome-exporter
+```
+
+**Flags**
+
+| Flag      | Default | Description                  |
+| --------- | ------- | ---------------------------- |
+| `--port`  | `9222`  | Port to listen on            |
+| `--json`  |         | Output logs in JSON Lines    |
+| `--debug` |         | Show debug logs              |
+
 [go-reference-badge]: https://pkg.go.dev/badge/github.com/bartekpacia/fhome.svg
 
 [go-reference-link]: https://pkg.go.dev/github.com/bartekpacia/fhome
