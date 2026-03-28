@@ -23,7 +23,7 @@ Use it if you want to make your own program interact with it.
 
 ## Command-line apps
 
-Both `fhome` and `fhomed` read configuration from TOML files.
+Both `fhome`, `fhome-homekit`, `fhome-web`, and `fhome-exporter` read configuration from TOML files.
 Config files are loaded in order (later overrides earlier), and environment variables override file values.
 
 **Config file locations**
@@ -31,7 +31,7 @@ Config files are loaded in order (later overrides earlier), and environment vari
 - `/etc/fhome/config.toml`
 - `~/.config/fhome/config.toml`
 
-(these locations are common for both `fhome` and `fhomed`)
+(these locations are common for all CLI apps)
 
 **Required keys**
 
@@ -73,25 +73,38 @@ $ go install ./cmd/fhome
 $ fhome help
 ```
 
-### fhomed
+### fhome-homekit
 
-Provides integration between F&Home and HomeKit. Intended to be used as a
-background daemon.
+HomeKit bridge for F&Home.
+Provides bidirectional sync between F&Home devices and Apple HomeKit.
+Intended to be used as a background daemon.
 
 Depends on the `api` package.
 
-**Registering with systemd**
+**Build**
+
+```console
+$ go build -o fhome-homekit ./cmd/fhome-homekit
+```
+
+**Install**
+
+```console
+$ go install ./cmd/fhome-homekit
+```
+
+**Register with systemd**
 
 1. Copy the binary to a common location
 
     ```console
-    $ sudo cp ./fhomed /usr/local/bin
+    $ sudo cp ./fhome-homekit /usr/local/bin
     ```
 
 2. Create a service file
 
     ```console
-    $ sudo cp ./fhomed.service /etc/systemd/system
+    $ sudo cp ./fhome-homekit.service /etc/systemd/system
     ```
 
 3. Reload changes
@@ -100,11 +113,11 @@ Depends on the `api` package.
     $ sudo systemctl daemon-reload
     ```
 
-**Extracting status logs from journald**
+**Extract status logs from journald**
 
 ```console
 $ journalctl \
-  _SYSTEMD_UNIT=fhomed.service \
+  _SYSTEMD_UNIT=fhome-homekit.service \
   --no-pager \
   --output json-pretty \
   | jq --slurp \
@@ -115,26 +128,14 @@ $ journalctl \
 Or in a single line:
 
 ```console
-$ journalctl _SYSTEMD_UNIT=fhomed.service --no-pager -o json-pretty | jq -s -c  '.[] | {timestamp: .__REALTIME_TIMESTAMP, msg: .MESSAGE}'
-```
-
-**Build**
-
-```console
-$ go build -o fhomed ./cmd/fhomed/*.go
-```
-
-**Install**
-
-```console
-$ go install ./cmd/fhomed
+$ journalctl _SYSTEMD_UNIT=fhome-homekit.service --no-pager -o json-pretty | jq -s -c  '.[] | {timestamp: .__REALTIME_TIMESTAMP, msg: .MESSAGE}'
 ```
 
 ### fhome-exporter
 
 Prometheus exporter that exposes F&Home temperature sensor data at `/metrics`.
 
-Reads the same config files as `fhome` and `fhomed`.
+Reads the same config files as the other CLI apps.
 
 **Metrics example**
 
@@ -171,12 +172,27 @@ $ docker run -p 9222:9222 -v ~/.config/fhome:/root/.config/fhome:ro fhome-export
 | `--json`  |         | Output logs in JSON Lines    |
 | `--debug` |         | Show debug logs              |
 
+### fhome-web
+
+A (currently dummy) web server for F&Home device preview.
+Provides a simple web UI for viewing devices and a `/gate` endpoint for quick device control.
+
+Depends on the `api` package.
+
+**Build**
+
+```console
+$ go build -o fhome-web ./cmd/fhome-web
+```
+
+**Install**
+
+```console
+$ go install ./cmd/fhome-web
+```
+
 [go-reference-badge]: https://pkg.go.dev/badge/github.com/bartekpacia/fhome.svg
-
 [go-reference-link]: https://pkg.go.dev/github.com/bartekpacia/fhome
-
 [go-report-badge]: https://goreportcard.com/badge/github.com/bartekpacia/fhome
-
 [go-report-link]: https://goreportcard.com/report/github.com/bartekpacia/fhome
-
 [fhome]: https://www.fhome.pl

@@ -11,14 +11,14 @@
       "args": ["toggle", "--object-id", "291"]
     },
     {
-      "name": "fhomed",
+      "name": "fhome-homekit",
       "type": "go",
       "request": "launch",
       "mode": "debug",
       "cwd": "${workspaceFolder}",
       "envFile": "${workspaceFolder}/.env",
-      "program": "${workspaceFolder}/cmd/fhomed",
-      "args": ["--pin", "69696969", "--name", "Domek"]
+      "program": "${workspaceFolder}/cmd/fhome-homekit",
+      "args": ["--homekit-pin", "69696969", "--homekit-name", "Domek"]
     }
   ]
 }

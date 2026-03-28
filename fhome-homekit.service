@@ -1,11 +1,11 @@
 [Unit]
-Description=Dameon for F&Home smart home system
+Description=HomeKit bridge for F&Home smart home system
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=simple
-ExecStart=/usr/local/bin/fhomed
+ExecStart=/usr/local/bin/fhome-homekit
 Restart=on-failure
 RestartSec=10s
 

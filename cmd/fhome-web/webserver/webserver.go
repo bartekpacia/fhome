@@ -22,9 +22,7 @@ var templates embed.FS
 
 var tmpl = template.Must(template.ParseFS(templates, "templates/*"))
 
-const port = 9001
-
-func Run(ctx context.Context, client *api.Client, homeConfig *api.Config, email string) error {
+func Run(ctx context.Context, client *api.Client, homeConfig *api.Config, email string, port int) error {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /index", func(w http.ResponseWriter, r *http.Request) {

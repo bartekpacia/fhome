@@ -4,20 +4,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"log/slog"
 	"os"
 	"os/signal"
 	"time"
 
-	"github.com/bartekpacia/fhome/cmd/fhomed/webserver"
-
 	"github.com/bartekpacia/fhome/api"
-	"github.com/bartekpacia/fhome/cmd/fhomed/homekit"
+	"github.com/bartekpacia/fhome/cmd/fhome-homekit/homekit"
 	"github.com/bartekpacia/fhome/highlevel"
 	"github.com/bartekpacia/fhome/internal"
 	"github.com/lmittmann/tint"
-	docs "github.com/urfave/cli-docs/v3"
 	"github.com/urfave/cli/v3"
 )
 
@@ -26,53 +22,11 @@ var version = "dev"
 
 func main() {
 	app := &cli.Command{
-		Name:                  "fhomed",
-		Usage:                 "Long-running daemon for F&Home Cloud",
-		Authors:               []any{"Bartek Pacia <barpac02@gmail.com>"},
-		Version:               version,
-		EnableShellCompletion: true,
-		HideHelpCommand:       true,
-		Commands: []*cli.Command{
-			{
-				Name:   "docs",
-				Usage:  "Print documentation in various formats",
-				Hidden: true,
-				Flags: []cli.Flag{
-					&cli.StringFlag{
-						Name:   "format",
-						Usage:  "output format [markdown, man, or man-with-section]",
-						Hidden: true,
-						Value:  "markdown",
-					},
-				},
-				Action: func(ctx context.Context, cmd *cli.Command) error {
-					format := cmd.String("format")
-					switch format {
-					case "", "markdown":
-						content, err := docs.ToMarkdown(cmd)
-						if err != nil {
-							return fmt.Errorf("generate documentation in markdown: %v", err)
-						}
-						fmt.Println(content)
-					case "man":
-						content, err := docs.ToMan(cmd)
-						if err != nil {
-							return fmt.Errorf("generate documentation in man: %v", err)
-						}
-						fmt.Println(content)
-					case "man-with-section":
-						content, err := docs.ToManWithSection(cmd, 1)
-						if err != nil {
-							return fmt.Errorf("generate documentation in man with section 1: %v", err)
-						}
-						fmt.Println(content)
-					default:
-						return fmt.Errorf("invalid documentation format %#v", format)
-					}
-					return nil
-				},
-			},
-		},
+		Name:            "fhome-homekit",
+		Usage:           "HomeKit bridge for F&Home",
+		Authors:         []any{"Bartek Pacia <barpac02@gmail.com>"},
+		Version:         version,
+		HideHelpCommand: true,
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:  "json",
@@ -82,22 +36,14 @@ func main() {
 				Name:  "debug",
 				Usage: "show debug logs (can also be enabled with FHOME_DEBUG env var)",
 			},
-			&cli.BoolFlag{
-				Name:  "homekit",
-				Usage: "Enable HomeKit bridge",
-			},
-			&cli.BoolFlag{
-				Name:  "webserver",
-				Usage: "Enable web server with simple website preview",
-			},
 			&cli.StringFlag{
 				Name:  "homekit-name",
-				Usage: "name of the HomeKit bridge accessory. Only makes sense when --homekit is set",
-				Value: "fhomed",
+				Usage: "name of the HomeKit bridge accessory",
+				Value: "fhome-homekit",
 			},
 			&cli.StringFlag{
 				Name:  "homekit-pin",
-				Usage: "PIN of the HomeKit bridge accessory. Only makes sense when --homekit is set",
+				Usage: "PIN of the HomeKit bridge accessory",
 				Value: "00102003",
 			},
 		},
@@ -123,48 +69,7 @@ func main() {
 
 			return ctx, nil
 		},
-		Action: func(ctx context.Context, cmd *cli.Command) error {
-			name := cmd.String("homekit-name")
-			pin := cmd.String("homekit-pin")
-
-			config := internal.Load()
-
-			if !cmd.Bool("homekit") && !cmd.Bool("webserver") {
-				return fmt.Errorf("no modules enabled")
-			}
-
-			apiClient, err := highlevel.Connect(ctx, config, nil)
-			if err != nil {
-				return fmt.Errorf("failed to create api apiClient: %v", err)
-			}
-
-			apiConfig, err := highlevel.GetConfigs(ctx, apiClient)
-			if err != nil {
-				return fmt.Errorf("failed to get api configs: %v", err)
-			}
-
-			errs := make(chan error)
-			if cmd.Bool("homekit") {
-				go func() {
-					err := homekitSyncer(ctx, apiClient, apiConfig, name, pin)
-					slog.Debug("homekit syncer exited", slog.Any("error", err))
-					errs <- err
-				}()
-			}
-
-			if cmd.Bool("webserver") {
-				go func() {
-					err := webserver.Run(ctx, apiClient, apiConfig, config.Email)
-					slog.Debug("webserver exited", slog.Any("error", err))
-					errs <- err
-				}()
-			}
-
-			return <-errs
-		},
-		CommandNotFound: func(ctx context.Context, cmd *cli.Command, command string) {
-			log.Printf("invalid command '%s'. See 'fhomed --help'\n", command)
-		},
+		Action: run,
 	}
 
 	ctx, _ := signal.NotifyContext(context.Background(), os.Interrupt)
@@ -175,8 +80,32 @@ func main() {
 	}
 }
 
+func run(ctx context.Context, cmd *cli.Command) error {
+	name := cmd.String("homekit-name")
+	pin := cmd.String("homekit-pin")
+
+	config := internal.Load()
+
+	apiClient, err := highlevel.Connect(ctx, config, nil)
+	if err != nil {
+		return fmt.Errorf("connect to fhome: %v", err)
+	}
+
+	apiConfig, err := highlevel.GetConfigs(ctx, apiClient)
+	if err != nil {
+		return fmt.Errorf("get configs: %v", err)
+	}
+
+	slog.Info("connected to F&Home",
+		slog.Int("panels", len(apiConfig.Panels)),
+		slog.Int("cells", len(apiConfig.Cells())),
+	)
+
+	return homekitSyncer(ctx, apiClient, apiConfig, name, pin)
+}
+
 func homekitSyncer(ctx context.Context, fhomeClient *api.Client, apiConfig *api.Config, name, pin string) error {
-	slog.Debug("starting module: homekit syncer")
+	slog.Debug("starting homekit syncer")
 
 	// HomeKit -> F&Home
 	//
@@ -241,7 +170,7 @@ func homekitSyncer(ctx context.Context, fhomeClient *api.Client, apiConfig *api.
 			attrs := []slog.Attr{
 				slog.Int("object_id", ID),
 				slog.String("value", value),
-				slog.String("callback", "OnGarageDoorUpdate"),
+				slog.String("callback", "OnThermostatUpdate"),
 			}
 
 			err := fhomeClient.SendEvent(ctx, ID, value)
