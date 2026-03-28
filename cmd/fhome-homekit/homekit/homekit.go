@@ -116,7 +116,7 @@ func (c *Client) SetUp(cfg *api.Config) (*Home, error) {
 
 	bridge := accessory.NewBridge(accessory.Info{Name: c.Name})
 
-	fs := hap.NewFsStore("./db") // TODO: Create this in ~/.local/state/fhomed
+	fs := hap.NewFsStore("./db") // TODO: Create this in ~/.local/state/fhome-homekit
 	server, err := hap.NewServer(fs, bridge.A, accessories...)
 	if err != nil {
 		log.Panic(err)

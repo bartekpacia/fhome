@@ -14,9 +14,22 @@ builds:
     env:
       - CGO_ENABLED=0
 
-  - id: fhomed
-    binary: fhomed
-    main: ./cmd/fhomed
+  - id: fhome-homekit
+    binary: fhome-homekit
+    main: ./cmd/fhome-homekit
+    goos:
+      - windows
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=0
+
+  - id: fhome-exporter
+    binary: fhome-exporter
+    main: ./cmd/fhome-exporter
     goos:
       - windows
       - linux
@@ -40,10 +53,22 @@ archives:
       - goos: windows
         formats: zip
 
-  - id: fhomed
-    name_template: "fhomed_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+  - id: fhome-homekit
+    name_template: "fhome-homekit_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     ids:
-      - fhomed
+      - fhome-homekit
+    files:
+      - LICENSE
+      - README.md
+    wrap_in_directory: true
+    format_overrides:
+      - goos: windows
+        formats: zip
+
+  - id: fhome-exporter
+    name_template: "fhome-exporter_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    ids:
+      - fhome-exporter
     files:
       - LICENSE
       - README.md
@@ -74,24 +99,31 @@ brews:
       bin.install "fhome"
       generate_completions_from_executable(bin/"fhome", "completion")
 
-  - name: fhomed
+  - name: fhome-homekit
     ids:
-      - fhomed
+      - fhome-homekit
     repository:
       owner: bartekpacia
       name: homebrew-tools
     directory: Formula
     homepage: https://github.com/bartekpacia/fhome
-    description: Background daemon for F&Home
+    description: HomeKit bridge for F&Home
     license: MIT
     install: |
-      man_content = `./fhomed docs --format man-with-section`
-      File.write("fhomed.1", man_content)
+      bin.install "fhome-homekit"
 
-      bin.install "fhomed"
-      generate_completions_from_executable(bin/"fhomed", "completion")
-      
-      man1.install "fhomed.1"
+  - name: fhome-exporter
+    ids:
+      - fhome-exporter
+    repository:
+      owner: bartekpacia
+      name: homebrew-tools
+    directory: Formula
+    homepage: https://github.com/bartekpacia/fhome
+    description: Prometheus exporter for F&Home
+    license: MIT
+    install: |
+      bin.install "fhome-exporter"
 
 aur_sources:
   - name: fhome
@@ -155,32 +187,42 @@ aurs:
       install -Dm755 completion_bash "${pkgdir}/usr/share/bash-completion/completions/fhome"
       install -Dm755 completion_zsh "${pkgdir}/usr/share/zsh/site-functions/_fhome"
 
-  - name: fhomed-bin
+  - name: fhome-homekit-bin
     ids:
-      - fhomed
+      - fhome-homekit
     homepage: https://github.com/bartekpacia/fhome
-    description: Background daemon for F&Home
+    description: HomeKit bridge for F&Home
     maintainers:
       - Bartek Pacia <barpac02@gmail.com>
     license: MIT
     private_key: "{{ .Env.AUR_SSH_PRIVATE_KEY }}"
     git_url: git@github.com:bartekpacia/aur.git
-    directory: fhomed-bin
-    commit_msg_template: update fhomed to {{ .Tag }}
+    directory: fhome-homekit-bin
+    commit_msg_template: update fhome-homekit to {{ .Tag }}
     package: |
       cd "$pkgname-$pkgver"
       # bin
-      install -Dm755 fhomed "${pkgdir}/usr/bin/fhomed"
+      install -Dm755 fhome-homekit "${pkgdir}/usr/bin/fhome-homekit"
 
       # license
-      install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/fhomed/LICENSE"
+      install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/fhome-homekit/LICENSE"
 
-      # completions
-      ./fhomed completion bash > completion_bash
-      ./fhomed completion zsh > completion_zsh
-      install -Dm755 completion_bash "${pkgdir}/usr/share/bash-completion/completions/fhomed"
-      install -Dm755 completion_zsh "${pkgdir}/usr/share/zsh/site-functions/_fhomed"
+  - name: fhome-exporter-bin
+    ids:
+      - fhome-exporter
+    homepage: https://github.com/bartekpacia/fhome
+    description: Prometheus exporter for F&Home
+    maintainers:
+      - Bartek Pacia <barpac02@gmail.com>
+    license: MIT
+    private_key: "{{ .Env.AUR_SSH_PRIVATE_KEY }}"
+    git_url: git@github.com:bartekpacia/aur.git
+    directory: fhome-exporter-bin
+    commit_msg_template: update fhome-exporter to {{ .Tag }}
+    package: |
+      cd "$pkgname-$pkgver"
+      # bin
+      install -Dm755 fhome-exporter "${pkgdir}/usr/bin/fhome-exporter"
 
-      # man pages
-      ./fhomed docs --format man-with-section > fhomed.1
-      install -Dm644 fhomed.1 "${pkgdir}/usr/share/man/man1/fhomed.1"
+      # license
+      install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/fhome-exporter/LICENSE"

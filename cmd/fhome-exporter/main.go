@@ -19,6 +19,7 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
+// This is set by GoReleaser, see https://goreleaser.com/cookbooks/using-main.version
 var version = "dev"
 
 func main() {
