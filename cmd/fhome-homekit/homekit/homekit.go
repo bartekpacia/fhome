@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"log"
 	"log/slog"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/bartekpacia/fhome/api"
@@ -52,6 +54,7 @@ func (c *Client) SetUp(cfg *api.Config) (*Home, error) {
 			if cell.Icon == api.IconLighting {
 				if strings.Contains(cell.Name, "LED") {
 					a := accessory.NewColoredLightbulb(accessoryInfo)
+					a.A.Id = uint64(cell.ID)
 					coloredLightbulbs[cell.ID] = a
 
 					a.Lightbulb.On.OnValueRemoteUpdate(func(on bool) {
@@ -70,6 +73,7 @@ func (c *Client) SetUp(cfg *api.Config) (*Home, error) {
 					accessories = append(accessories, a.A)
 				} else {
 					a := accessory.NewLightbulb(accessoryInfo)
+					a.A.Id = uint64(cell.ID)
 					lightbulbMap[cell.ID] = a
 
 					a.Lightbulb.On.OnValueRemoteUpdate(func(v bool) {
@@ -81,6 +85,7 @@ func (c *Client) SetUp(cfg *api.Config) (*Home, error) {
 			}
 			if cell.Icon == api.IconTemperature {
 				a := accessory.NewThermostat(accessoryInfo)
+				a.A.Id = uint64(cell.ID)
 				thermostatsMap[cell.ID] = a
 
 				a.Thermostat.TargetTemperature.Val = 12
@@ -103,6 +108,7 @@ func (c *Client) SetUp(cfg *api.Config) (*Home, error) {
 
 			if cell.Icon == api.IconGate {
 				a := accessory.NewGarageDoorOpener(accessoryInfo)
+				a.A.Id = uint64(cell.ID)
 				garageDoorMap[cell.ID] = a
 
 				a.GarageDoorOpener.TargetDoorState.OnValueRemoteUpdate(func(v int) {
@@ -115,8 +121,17 @@ func (c *Client) SetUp(cfg *api.Config) (*Home, error) {
 	}
 
 	bridge := accessory.NewBridge(accessory.Info{Name: c.Name})
+	bridge.A.Id = 1
 
-	fs := hap.NewFsStore("./db") // TODO: Create this in ~/.local/state/fhome-homekit
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return nil, fmt.Errorf("get user home directory: %w", err)
+	}
+	stateDir := filepath.Join(homeDir, ".local", "state", "fhome-homekit")
+	if err := os.MkdirAll(stateDir, 0o755); err != nil {
+		return nil, fmt.Errorf("create state directory: %w", err)
+	}
+	fs := hap.NewFsStore(stateDir)
 	server, err := hap.NewServer(fs, bridge.A, accessories...)
 	if err != nil {
 		log.Panic(err)
