@@ -1,0 +1,21 @@
+agents:
+  queue: linux-small
+
+steps:
+  - label: prepare
+    key: prepare
+    branches: master
+    plugins:
+      - docker#v5.12.0:
+          image: golang:1.26-alpine
+          workdir: /workspace
+    command: |
+      go version
+      echo "--- Verify code formatting"
+      go install mvdan.cc/gofumpt@latest
+      test -z "$(gofumpt -l .)"
+      echo "--- Run linter"
+      go install honnef.co/go/tools/cmd/staticcheck@latest
+      staticcheck ./...
+      echo "--- Run tests with coverage"
+      go test -cover ./...
