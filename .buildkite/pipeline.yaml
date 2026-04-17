@@ -37,11 +37,14 @@ steps:
           workdir: /workspace
     command: .buildkite/scripts/lint.sh
 
-  - label: test
-    key: test
-    depends_on: lint
+  - block: Publish binaries
+    key: publish-gate
+
+  - label: publish
+    key: publish
+    depends_on: [lint, publish-gate]
     plugins:
       - docker#v5.12.0:
-          image: golang:1.26-alpine
+          image: goreleaser/goreleaser:v2
           workdir: /workspace
-    command: .buildkite/scripts/test.sh
+    command: .buildkite/scripts/publish.sh
