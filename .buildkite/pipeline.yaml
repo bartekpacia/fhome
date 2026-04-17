@@ -26,12 +26,7 @@ steps:
       - docker#v5.12.0:
           image: golang:1.26-alpine
           workdir: /workspace
-    command: |
-      echo "~~~ Install formatter"
-      go install mvdan.cc/gofumpt@latest
-      test -z "$(gofumpt -l .)"
-      echo "--- Verify formatting"
-      test -z "$(gofumpt -l .)"
+    command: .buildkite/scripts/format.sh
 
   - label: lint
     key: lint
@@ -40,12 +35,7 @@ steps:
       - docker#v5.12.0:
           image: golang:1.26-alpine
           workdir: /workspace
-    command: |
-      echo "~~~ Install linter"
-      go install honnef.co/go/tools/cmd/staticcheck@latest
-      staticcheck ./...
-      echo "--- Verify linting"
-      test -z "$(staticcheck ./...)"
+    command: .buildkite/scripts/lint.sh
 
   - label: test
     key: test
@@ -54,6 +44,4 @@ steps:
       - docker#v5.12.0:
           image: golang:1.26-alpine
           workdir: /workspace
-    command: |
-      echo "--- Run tests with coverage"
-      go test -cover ./...
+    command: .buildkite/scripts/test.sh
