@@ -3,8 +3,8 @@ agents:
 
 steps:
   - label: prepare
-    key: prepare
-    branches: master
+    # key: prepare # not needed!
+    # branches: master # not needed!
     plugins:
       - docker#v5.12.0:
           image: golang:1.26-alpine
@@ -17,5 +17,40 @@ steps:
       echo "--- Run linter"
       go install honnef.co/go/tools/cmd/staticcheck@latest
       staticcheck ./...
+      echo "--- Run tests with coverage"
+      go test -cover ./...
+
+  - key: format
+    plugins:
+      - docker#v5.12.0:
+          image: golang:1.26-alpine
+          workdir: /workspace
+    command: |
+      echo "--- Install formatter"
+      go install mvdan.cc/gofumpt@latest
+      test -z "$(gofumpt -l .)"
+      echo "--- Verify formatting"
+      test -z "$(gofumpt -l .)"
+
+  - key: lint
+    depends_on: format
+    plugins:
+      - docker#v5.12.0:
+          image: golang:1.26-alpine
+          workdir: /workspace
+    command: |
+      echo "--- Install linter"
+      go install honnef.co/go/tools/cmd/staticcheck@latest
+      staticcheck ./...
+      echo "--- Verify linting"
+      test -z "$(staticcheck ./...)"
+
+  - key: test
+    depends_on: lint
+    plugins:
+      - docker#v5.12.0:
+          image: golang:1.26-alpine
+          workdir: /workspace
+    command: |
       echo "--- Run tests with coverage"
       go test -cover ./...
