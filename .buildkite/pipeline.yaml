@@ -20,7 +20,8 @@ steps:
       echo "--- Run tests with coverage"
       go test -cover ./...
 
-  - key: format
+  - label: format
+    key: format
     plugins:
       - docker#v5.12.0:
           image: golang:1.26-alpine
@@ -32,7 +33,8 @@ steps:
       echo "--- Verify formatting"
       test -z "$(gofumpt -l .)"
 
-  - key: lint
+  - label: lint
+    key: lint
     depends_on: format
     plugins:
       - docker#v5.12.0:
@@ -45,7 +47,8 @@ steps:
       echo "--- Verify linting"
       test -z "$(staticcheck ./...)"
 
-  - key: test
+  - label: test
+    key: test
     depends_on: lint
     plugins:
       - docker#v5.12.0:
