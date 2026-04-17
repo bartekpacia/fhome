@@ -20,6 +20,21 @@ steps:
       echo "--- Run tests with coverage"
       go test -cover ./...
 
+  - label: build & push fhome-publish OCI image
+    key: build-publish-image
+    # if_changed: ".buildkite/images/publish/**"
+    secrets:
+      - MY_BK_REGISTRY_TOKEN
+    plugins:
+      - docker-login#v3.0.0:
+          server: packages.buildkite.com/bartekpacia/my-registry
+          username: buildkite
+          password-env: MY_BK_REGISTRY_TOKEN
+    command: |
+      IMAGE=packages.buildkite.com/bartekpacia/my-registry/fhome-publish:v1
+      docker build -t "$$IMAGE" .buildkite/images/publish
+      docker push "$$IMAGE"
+
   - label: format
     key: format
     plugins:
@@ -43,8 +58,22 @@ steps:
   - label: publish
     key: publish
     depends_on: [lint, publish-gate]
+    if: build.tag =~ /^v/
+    secrets:
+      - AUR_SSH_PRIVATE_KEY
+      - OP_SERVICE_ACCOUNT_TOKEN
+      - MY_BK_REGISTRY_TOKEN
     plugins:
+      - docker-login#v3.0.0:
+          server: packages.buildkite.com/bartekpacia/my-registry
+          username: buildkite
+          password-env: MY_BK_REGISTRY_TOKEN
       - docker#v5.12.0:
-          image: goreleaser/goreleaser:v2
+          image: packages.buildkite.com/bartekpacia/my-registry/fhome-publish:v1
           workdir: /workspace
+          propagate-environment: true
+          environment:
+            - OP_SERVICE_ACCOUNT_TOKEN
+            - AUR_SSH_PRIVATE_KEY
     command: .buildkite/scripts/publish.sh
+
