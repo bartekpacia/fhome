@@ -24,12 +24,12 @@ steps:
     key: build-publish-image
     # if_changed: ".buildkite/images/publish/**"
     secrets:
-      - MY_BK_REGISTRY_TOKEN
+      - MY_BK_API_TOKEN
     plugins:
       - docker-login#v3.0.0:
           server: packages.buildkite.com/bartekpacia/my-registry
           username: buildkite
-          password-env: MY_BK_REGISTRY_TOKEN
+          password-env: MY_BK_API_TOKEN
     command: |
       IMAGE=packages.buildkite.com/bartekpacia/my-registry/fhome-publish:v1
       docker build -t "$$IMAGE" .buildkite/images/publish
@@ -58,7 +58,7 @@ steps:
   - label: publish
     key: publish
     depends_on: [lint, publish-gate]
-    if: build.tag =~ /^v/
+    # if: build.tag =~ /^v/
     secrets:
       - AUR_SSH_PRIVATE_KEY
       - OP_SERVICE_ACCOUNT_TOKEN
