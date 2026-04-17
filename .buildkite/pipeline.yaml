@@ -27,7 +27,7 @@ steps:
           image: golang:1.26-alpine
           workdir: /workspace
     command: |
-      echo "--- Install formatter"
+      echo "~~~ Install formatter"
       go install mvdan.cc/gofumpt@latest
       test -z "$(gofumpt -l .)"
       echo "--- Verify formatting"
@@ -41,7 +41,7 @@ steps:
           image: golang:1.26-alpine
           workdir: /workspace
     command: |
-      echo "--- Install linter"
+      echo "~~~ Install linter"
       go install honnef.co/go/tools/cmd/staticcheck@latest
       staticcheck ./...
       echo "--- Verify linting"
