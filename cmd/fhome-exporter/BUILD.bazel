@@ -1,0 +1,21 @@
+load("@rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "fhome-exporter_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/bartekpacia/fhome/cmd/fhome-exporter",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//api",
+        "//highlevel",
+        "//internal",
+        "@com_github_lmittmann_tint//:tint",
+        "@com_github_urfave_cli_v3//:cli",
+    ],
+)
+
+go_binary(
+    name = "fhome-exporter",
+    embed = [":fhome-exporter_lib"],
+    visibility = ["//visibility:public"],
+)

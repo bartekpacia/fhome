@@ -1,0 +1,13 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "webserver",
+    srcs = ["webserver.go"],
+    embedsrcs = [
+        "assets/styles.css",
+        "templates/index.html.tmpl",
+    ],
+    importpath = "github.com/bartekpacia/fhome/cmd/fhome-web/webserver",
+    visibility = ["//visibility:public"],
+    deps = ["//api"],
+)
