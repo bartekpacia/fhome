@@ -1,0 +1,8 @@
+load("@buildifier_prebuilt//:rules.bzl", "buildifier")
+load("@gazelle//:def.bzl", "gazelle")
+
+gazelle(name = "gazelle")
+
+buildifier(
+    name = "buildifier",
+)

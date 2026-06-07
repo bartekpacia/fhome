@@ -1,0 +1,15 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "internal",
+    srcs = ["config.go"],
+    importpath = "github.com/bartekpacia/fhome/internal",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//highlevel",
+        "@com_github_knadh_koanf//:koanf",
+        "@com_github_knadh_koanf//parsers/toml",
+        "@com_github_knadh_koanf//providers/env",
+        "@com_github_knadh_koanf//providers/file",
+    ],
+)

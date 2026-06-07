@@ -1,0 +1,22 @@
+load("@rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "fhome-homekit_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/bartekpacia/fhome/cmd/fhome-homekit",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//api",
+        "//cmd/fhome-homekit/homekit",
+        "//highlevel",
+        "//internal",
+        "@com_github_lmittmann_tint//:tint",
+        "@com_github_urfave_cli_v3//:cli",
+    ],
+)
+
+go_binary(
+    name = "fhome-homekit",
+    embed = [":fhome-homekit_lib"],
+    visibility = ["//visibility:public"],
+)

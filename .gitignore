@@ -33,3 +33,6 @@ fhome.1
 
 # GoReleaser
 dist/
+
+# Bazel convenience symlinks
+/bazel-*

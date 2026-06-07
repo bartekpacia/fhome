@@ -1,0 +1,21 @@
+load("@rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "fhome-web_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/bartekpacia/fhome/cmd/fhome-web",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//cmd/fhome-web/webserver",
+        "//highlevel",
+        "//internal",
+        "@com_github_lmittmann_tint//:tint",
+        "@com_github_urfave_cli_v3//:cli",
+    ],
+)
+
+go_binary(
+    name = "fhome-web",
+    embed = [":fhome-web_lib"],
+    visibility = ["//visibility:public"],
+)

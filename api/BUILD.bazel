@@ -1,0 +1,27 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "api",
+    srcs = [
+        "client.go",
+        "config.go",
+        "icons.go",
+        "mappers.go",
+        "messages.go",
+        "responses.go",
+        "user_config.go",
+        "utils.go",
+    ],
+    importpath = "github.com/bartekpacia/fhome/api",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_github_gorilla_websocket//:websocket",
+        "@org_golang_x_crypto//pbkdf2",
+    ],
+)
+
+go_test(
+    name = "api_test",
+    srcs = ["mappers_test.go"],
+    embed = [":api"],
+)

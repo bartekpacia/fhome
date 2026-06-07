@@ -1,0 +1,15 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "highlevel",
+    srcs = [
+        "connect.go",
+        "utils.go",
+    ],
+    importpath = "github.com/bartekpacia/fhome/highlevel",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//api",
+        "@com_github_gorilla_websocket//:websocket",
+    ],
+)
