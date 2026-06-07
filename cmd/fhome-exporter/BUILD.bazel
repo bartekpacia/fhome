@@ -1,4 +1,6 @@
 load("@rules_go//go:def.bzl", "go_binary", "go_library")
+load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_load")
 
 go_library(
     name = "fhome-exporter_lib",
@@ -18,4 +20,36 @@ go_binary(
     name = "fhome-exporter",
     embed = [":fhome-exporter_lib"],
     visibility = ["//visibility:public"],
+)
+
+# keep: dockerfile build with bazel
+go_binary(
+    name = "fhome-exporter_linux_amd64",
+    embed = [":fhome-exporter_lib"],
+    goos = "linux",
+    goarch = "amd64",
+)
+
+
+# keep: dockerfile build with bazel
+pkg_tar(
+    name = "fhome-exporter_layer",
+    srcs = [":fhome-exporter_linux_amd64"],
+    package_dir = "/",
+)
+
+# keep: dockerfile build with bazel
+oci_image(
+    name = "fhome-exporter_image",
+    base = "@alpine_3_23_linux_amd64",
+    entrypoint = ["/fhome-exporter_linux_amd64"],
+    exposed_ports = ["9222"],
+    tars = [":fhome-exporter_layer"],
+)
+
+# keep: dockerfile build with bazel
+oci_load(
+    name = "fhome-exporter_load",
+    image = ":fhome-exporter_image",
+    repo_tags = ["fhome-exporter:latest"],
 )
